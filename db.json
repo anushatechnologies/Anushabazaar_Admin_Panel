@@ -1,0 +1,96 @@
+{
+    "users": [
+        {
+            "id": 1,
+            "name": "Srimannarayana",
+            "email": "sri@example.com"
+        },
+        {
+            "id": 2,
+            "name": "Ravi",
+            "email": "ravi@example.com"
+        }
+    ],
+    "all-loans": [
+        {
+            "customerId": "CRFCUST1020837",
+            "appId": "CRF98794",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098794",
+            "customerName": "MOOD BHASKAR",
+            "loanAmount": 600000,
+            "disbursementApprovalDate": "2025-06-28",
+            "disbDate": "2025-07-01"
+        },
+        {
+            "customerId": "CRFCUST1020838",
+            "appId": "CRF98795",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098795",
+            "customerName": "SURESH KUMAR",
+            "loanAmount": 450000,
+            "disbursementApprovalDate": "2025-06-29",
+            "disbDate": "2025-07-03"
+        },
+        {
+            "customerId": "CRFCUST1020839",
+            "appId": "CRF98796",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098796",
+            "customerName": "RAVI TEJA",
+            "loanAmount": 750000,
+            "disbursementApprovalDate": "2025-06-30",
+            "disbDate": "2025-07-05"
+        },
+        {
+            "customerId": "CRFCUST1020840",
+            "appId": "CRF98797",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098797",
+            "customerName": "MOOD BHASKAR",
+            "loanAmount": 600000,
+            "disbursementApprovalDate": "2025-06-28",
+            "disbDate": "2025-07-01"
+        },
+        {
+            "customerId": "CRFCUST1020841",
+            "appId": "CRF98798",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098798",
+            "customerName": "SURESH KUMAR",
+            "loanAmount": 450000,
+            "disbursementApprovalDate": "2025-06-29",
+            "disbDate": "2025-07-03"
+        },
+        {
+            "customerId": "CRFCUST1020842",
+            "appId": "CRF98799",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098799",
+            "customerName": "RAVI TEJA",
+            "loanAmount": 750000,
+            "disbursementApprovalDate": "2025-06-30",
+            "disbDate": "2025-07-05"
+        },
+        {
+            "customerId": "CRFCUST1020843",
+            "appId": "CRF98800",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098800",
+            "customerName": "MOOD BHASKAR",
+            "loanAmount": 600000,
+            "disbursementApprovalDate": "2025-06-28",
+            "disbDate": "2025-07-01"
+        },
+        {
+            "customerId": "CRFCUST1020844",
+            "appId": "CRF98801",
+            "organization": "CRF",
+            "lanNumber": "CRFOCREMIAP10098801",
+            "customerName": "SURESH KUMAR",
+            "loanAmount": 450000,
+            "disbursementApprovalDate": "2025-06-29",
+            "disbDate": "2025-07-03"
+        }
+    ]
+}

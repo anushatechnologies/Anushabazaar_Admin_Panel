@@ -1,0 +1,90 @@
+.otpVerification {
+  .header {
+    margin-bottom: 1rem;
+
+    .title {
+      font-size: 28px;
+      font-weight: 700;
+      color: #1a1a1a;
+      margin-bottom: 4px;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: #666;
+    }
+  }
+
+  .alert {
+    margin-bottom: 1.5rem;
+    border-radius: 8px;
+  }
+
+  .otpForm {
+    .otpLabel {
+      font-size: 14px;
+      color: #1a1a1a;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+
+    .otpInputs {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+
+      input {
+        text-align: center;
+        font-size: 24px;
+        font-weight: 600;
+        padding: 16px 0;
+      }
+    }
+  }
+
+  .verifyButton {
+    padding: 12px 0;
+    margin-bottom: 16px;
+    border-radius: 12px;
+    text-transform: none;
+    font-size: 16px;
+    font-weight: 600;
+    background-color: #1565c0;
+    box-shadow: none;
+
+    &:hover {
+      background-color: #0d47a1;
+      box-shadow: none;
+    }
+  }
+
+  .bottomSection {
+    text-align: center;
+    margin-top: 16px;
+
+    .resendText {
+      font-size: 13px;
+      color: #666;
+      margin-bottom: 8px;
+
+      .resendLink {
+        color: #1565c0;
+        cursor: pointer;
+        text-decoration: underline;
+        font-weight: 600;
+      }
+    }
+
+    .backButton {
+      text-transform: none;
+      color: #1565c0;
+      font-size: 13px;
+
+      &:hover {
+        background: transparent;
+        text-decoration: underline;
+      }
+    }
+  }
+}
