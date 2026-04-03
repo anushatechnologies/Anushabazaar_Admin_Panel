@@ -56,8 +56,8 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
     // ⛔ HANDLE 401 UNAUTHORIZED
     if (result.error.status === 401) {
       console.warn('Session unauthorized (401) for:', fullUrl);
-      // api.dispatch(logoutUser());
-      // window.location.replace('/login?expired=true');
+      api.dispatch(logoutUser());
+      window.location.replace('/login?expired=true');
     }
   }
 
@@ -85,7 +85,7 @@ export const baseApiWithAuth = createApi({
   tagTypes: [
     'Dashboard', 'Orders', 'AdminOrders', 'User', 'Stores', 'StoreTypes', 'Category',
     'CategoryList', 'SubCategory', 'Product', 'ProductList', 'Notification', 'Banner', 'Banners', 'Delivery',
-    'FareSetting', 'FareSettings', 'Payouts', 'Coupons', 'Documents', 'Customers'
+    'FareSetting', 'FareSettings', 'Payouts', 'Coupons', 'Documents', 'Customers', 'Policies'
   ],
   endpoints: () => ({}),
 });

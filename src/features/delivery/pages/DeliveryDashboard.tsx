@@ -59,6 +59,13 @@ export default function DeliveryDashboard() {
       trend: { value: 8, isPositive: true, label: 'vs last month' },
     },
     {
+      title: 'Online Staff',
+      value: stats.onlineDeliveryPersons || 0,
+      icon: <PeopleIcon />,
+      color: 'info' as const,
+      subtitle: 'Currently active',
+    },
+    {
       title: 'Pending Approvals',
       value: stats.pendingApprovals || 0,
       icon: <PendingIcon />,

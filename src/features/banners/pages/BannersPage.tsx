@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
@@ -99,9 +99,11 @@ export default function BannersPage() {
     }).sort((a, b) => a.displayOrder - b.displayOrder);
   }, [banners, search, filterStatus]);
 
-  if (isError && error) {
-    handleError(error);
-  }
+  useEffect(() => {
+    if (isError && error) {
+      handleError(error);
+    }
+  }, [isError, error, handleError]);
 
   const handleOpenCreate = () => {
     setEditingBanner(null);

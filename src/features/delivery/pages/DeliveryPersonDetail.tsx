@@ -127,16 +127,29 @@ export default function DeliveryPersonDetail() {
               {personnel?.firstName?.[0]}
             </Avatar>
             <Typography variant="h5" fontWeight={700}>{personnel?.firstName} {personnel?.lastName}</Typography>
-            <Chip 
-              label={personnel?.isActive ? 'Active' : 'Inactive'} 
-              color={personnel?.isActive ? 'success' : 'error'}
-              sx={{ mt: 1, mr: 1 }}
-            />
-            <Chip 
-              label={personnel?.approvalStatus} 
-              color={personnel?.approvalStatus === 'APPROVED' ? 'success' : 'warning'}
-              sx={{ mt: 1 }}
-            />
+            
+            <Box sx={{ mt: 2, mb: 1 }}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                ACCOUNT STATUS
+              </Typography>
+              <Chip 
+                label={personnel?.isActive ? 'ACTIVE' : 'INACTIVE'} 
+                color={personnel?.isActive ? 'success' : 'error'}
+                sx={{ fontWeight: 700, px: 1 }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                APPROVAL STATUS
+              </Typography>
+              <Chip 
+                label={personnel?.approvalStatus} 
+                color={personnel?.approvalStatus === 'APPROVED' ? 'success' : personnel?.approvalStatus === 'REJECTED' ? 'error' : 'warning'}
+                variant="filled"
+                sx={{ fontWeight: 800, px: 2, height: 32 }}
+              />
+            </Box>
 
             <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {personnel?.approvalStatus === 'PENDING' && (

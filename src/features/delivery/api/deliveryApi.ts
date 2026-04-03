@@ -32,6 +32,7 @@ export interface DeliveryDocument {
 export interface DeliveryDashboardStats {
   totalDeliveryPersons: number;
   approvedDeliveryPersons: number;
+  onlineDeliveryPersons: number;
   pendingApprovals: number;
   totalOrders: number;
   activeOrders: number;

@@ -1,49 +1,56 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Box,
-  Card,
-  CardContent,
   Typography,
   Button,
   Divider,
   Stack,
   TextField,
+  CircularProgress,
 } from '@mui/material';
+import { useGetPolicyQuery, useUpdatePolicyMutation } from '../../settings/api/policyApi';
 
 const TermsAndPayments = () => {
+  const { data, isLoading } = useGetPolicyQuery('PRIVACY_POLICY');
+  const [updatePolicy, { isLoading: isUpdating }] = useUpdatePolicyMutation();
   const [isEditing, setIsEditing] = useState(false);
 
   const [content, setContent] = useState({
-    section1: `In order to access the services of the Platform, You will have to register
-and create an account on the Platform by providing required details.
-Anusha Bazaar may collect personal information such as name, email,
-age, photograph, address, mobile number, contact details, demographic
-information and transaction details including financial information.`,
-
-    section2: `You are solely responsible for the information provided. You must ensure
-that your account information is accurate and updated. If any information
-is found to be incorrect, Anusha Bazaar reserves the right to refuse services
-or suspend access without prior notice.`,
-
-    section3: `Confidentiality of your account credentials shall be your responsibility.
-Anusha Bazaar disclaims any liability for losses due to unauthorized access.`,
-
-    payments1: `All payments shall be made in Indian Rupees only. Accepted payment
-methods may include credit/debit card, net banking, UPI, cash on delivery,
-or other RBI-approved methods as displayed on the Platform.`,
-
-    payments2: `Anusha Bazaar may use third-party payment gateways to process payments.
-You agree to comply with the terms of such third-party providers.`,
-
-    payments3: `You confirm that you are authorized to use the provided payment details
-and are solely responsible for transactions made.`,
-
-    payments4: `The payment facility is not a banking service but only a facilitator
-providing electronic payment processing.`,
+    section1: '',
+    section2: '',
+    section3: '',
+    payments1: '',
+    payments2: '',
+    payments3: '',
+    payments4: '',
   });
+
+  useEffect(() => {
+    if (data?.policy?.content) {
+      try {
+        const parsed = JSON.parse(data.policy.content);
+        setContent(parsed);
+      } catch (e) {
+        // If not JSON, it might be legacy or raw text, but for this feature we'll expect JSON
+        console.error('Failed to parse policy content', e);
+      }
+    }
+  }, [data]);
 
   const handleChange = (key: string, value: string) => {
     setContent({ ...content, [key]: value });
+  };
+
+  const handleSave = async () => {
+    try {
+      await updatePolicy({
+        type: 'PRIVACY_POLICY',
+        content: JSON.stringify(content),
+      }).unwrap();
+      setIsEditing(false);
+    } catch (error) {
+      console.error('Failed to save policy', error);
+    }
   };
 
   return (
@@ -173,6 +180,7 @@ providing electronic payment processing.`,
             <>
               <Button
                 variant="outlined"
+                disabled={isUpdating}
                 onClick={() => setIsEditing(false)}
                 sx={{ borderColor: 'var(--border-soft)', color: 'var(--text-color)' }}
               >
@@ -180,10 +188,11 @@ providing electronic payment processing.`,
               </Button>
               <Button
                 variant="contained"
-                onClick={() => setIsEditing(false)}
-                sx={{ backgroundColor: 'var(--highlight-color)' }}
+                disabled={isUpdating}
+                onClick={handleSave}
+                sx={{ backgroundColor: 'var(--highlight-color)', minWidth: 100 }}
               >
-                Save
+                {isUpdating ? <CircularProgress size={24} color="inherit" /> : 'Save'}
               </Button>
             </>
           ) : (
