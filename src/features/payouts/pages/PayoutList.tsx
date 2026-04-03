@@ -1,11 +1,11 @@
 import React from 'react';
-import { 
-  Box, 
-  Typography, 
-  Card, 
-  CardContent, 
-  Button, 
-  Chip, 
+import {
+  Box,
+  Typography,
+  Card,
+  CardContent,
+  Button,
+  Chip,
   Grid,
   Stack,
   Dialog,
@@ -16,9 +16,9 @@ import {
   MenuItem
 } from '@mui/material';
 import ReusableTable from '../../../components/common/ReusableTable';
-import { 
-  useGetPayoutsQuery, 
-  useGetPayoutStatsQuery, 
+import {
+  useGetPayoutsQuery,
+  useGetPayoutStatsQuery,
   useGenerateWeeklyPayoutsMutation,
   useProcessPayoutMutation,
   useFailPayoutMutation,
@@ -52,10 +52,10 @@ export default function PayoutList() {
   const handleProcess = async () => {
     if (!paymentId) return;
     try {
-      await processPayout({ 
-        id: paymentId, 
-        ...paymentDetails, 
-        adminId: 1 
+      await processPayout({
+        id: paymentId,
+        ...paymentDetails,
+        adminId: 1
       }).unwrap();
       toast.success('Payout marked as paid');
       setPaymentId(null);
@@ -83,9 +83,9 @@ export default function PayoutList() {
           <Typography variant="h4" fontWeight={700}>Payout Management</Typography>
           <Typography color="text.secondary">Review and process delivery staff commissions</Typography>
         </Box>
-        <Button 
-          variant="contained" 
-          size="large" 
+        <Button
+          variant="contained"
+          size="large"
           onClick={handleGenerate}
           sx={{ height: 48 }}
         >
@@ -94,45 +94,75 @@ export default function PayoutList() {
       </Stack>
 
       <Grid container spacing={3} mb={4}>
-        <Grid item xs={12} md={3}>
-           <StatCard title="Total Paid" value={`₹${stats?.totalPaid || 0}`} color="success.main" />
+        <Grid size={{ xs: 12, md: 3 }}>
+          <StatCard title="Total Paid" value={`₹${stats?.totalProcessedAmount || 0}`} color="success.main" />
         </Grid>
-        <Grid item xs={12} md={3}>
-           <StatCard title="Total Pending" value={`₹${stats?.totalPending || 0}`} color="warning.main" />
+        <Grid size={{ xs: 12, md: 3 }}>
+          <StatCard title="Total Pending Amount" value={`₹${stats?.totalPendingAmount || 0}`} color="warning.main" />
         </Grid>
-        <Grid item xs={12} md={3}>
-           <StatCard title="Total Failed" value={`₹${stats?.totalFailed || 0}`} color="error.main" />
+        <Grid size={{ xs: 12, md: 3 }}>
+          <StatCard title="Total Transactions" value={stats?.totalPayouts || 0} color="error.main" />
         </Grid>
-        <Grid item xs={12} md={3}>
-           <StatCard title="Pending Records" value={stats?.pendingPayouts || 0} color="primary.main" />
+        <Grid size={{ xs: 12, md: 3 }}>
+          <StatCard title="Pending Records" value={stats?.pendingPayouts || 0} color="primary.main" />
         </Grid>
       </Grid>
 
       <Card sx={{ borderRadius: 3, boxShadow: 3 }}>
-        <ReusableTable
+        <ReusableTable<any>
           columns={[
             { header: 'ID', key: 'id' },
-            { header: 'Delivery ID', key: 'deliveryPersonId' },
-            { 
-              header: 'Amount', 
-              key: 'amount',
-              render: (row) => <Typography fontWeight={600}>₹{row.amount}</Typography>
+            {
+              header: 'Delivery Staff',
+              key: 'deliveryPerson',
+              render: (row) => (
+                <Box>
+                  <Typography variant="body2" fontWeight={600}>
+                    {row.deliveryPerson?.firstName} {row.deliveryPerson?.lastName}
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    {row.deliveryPerson?.phoneNumber}
+                  </Typography>
+                </Box>
+              )
             },
-            { 
-              header: 'Status', 
+            {
+              header: 'Bank Details',
+              key: 'bank',
+              render: (row) => (
+                <Box>
+                  <Typography variant="caption" display="block">
+                    {row.deliveryPerson?.bankName || 'N/A'}
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700}>
+                    {row.deliveryPerson?.accountNumber || 'N/A'}
+                  </Typography>
+                  <Typography variant="caption" color="primary">
+                    {row.deliveryPerson?.ifscCode || ''}
+                  </Typography>
+                </Box>
+              )
+            },
+            {
+              header: 'Amount',
+              key: 'payoutAmount',
+              render: (row) => <Typography fontWeight={700} color="primary.main">₹{row.payoutAmount}</Typography>
+            },
+            {
+              header: 'Status',
               key: 'status',
               render: (row) => (
-                <Chip 
-                  label={row.status} 
-                  color={row.status === 'PAID' ? 'success' : row.status === 'PENDING' ? 'warning' : 'error'}
+                <Chip
+                  label={row.status}
+                  color={row.status === 'PROCESSED' || row.status === 'PAID' ? 'success' : row.status === 'PENDING' ? 'warning' : 'error'}
                   size="small"
                 />
               )
             },
-            { 
-              header: 'Period', 
-              key: 'periodStart',
-              render: (row) => `${new Date(row.periodStart).toLocaleDateString()} - ${new Date(row.periodEnd).toLocaleDateString()}`
+            {
+              header: 'Period',
+              key: 'weekStartDate',
+              render: (row) => `${new Date(row.weekStartDate).toLocaleDateString()} - ${new Date(row.weekEndDate).toLocaleDateString()}`
             },
             {
               header: 'Actions',
@@ -154,7 +184,7 @@ export default function PayoutList() {
           loading={isPayoutsLoading}
           currentPage={1}
           totalPages={1}
-          onPageChange={() => {}}
+          onPageChange={() => { }}
         />
       </Card>
 
@@ -169,7 +199,7 @@ export default function PayoutList() {
               fullWidth
               label="Payment Method"
               value={paymentDetails.paymentMethod}
-              onChange={(e) => setPaymentDetails({...paymentDetails, paymentMethod: e.target.value})}
+              onChange={(e) => setPaymentDetails({ ...paymentDetails, paymentMethod: e.target.value })}
             >
               <MenuItem value="UPI">UPI</MenuItem>
               <MenuItem value="BANK_TRANSFER">Bank Transfer</MenuItem>
@@ -180,14 +210,14 @@ export default function PayoutList() {
               label="Transaction ID / Reference"
               placeholder="Enter internal or bank reference"
               value={paymentDetails.transactionId}
-              onChange={(e) => setPaymentDetails({...paymentDetails, transactionId: e.target.value})}
+              onChange={(e) => setPaymentDetails({ ...paymentDetails, transactionId: e.target.value })}
             />
           </Stack>
         </DialogContent>
         <DialogActions sx={{ p: 3 }}>
           <Button onClick={() => setPaymentId(null)}>Cancel</Button>
-          <Button 
-            variant="contained" 
+          <Button
+            variant="contained"
             onClick={handleProcess}
             disabled={!paymentDetails.transactionId.trim()}
           >

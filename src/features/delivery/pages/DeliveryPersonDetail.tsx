@@ -1,13 +1,13 @@
 import React, { useState } from 'react';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Grid, 
-  Avatar, 
-  Chip, 
-  Button, 
-  Divider, 
+import {
+  Box,
+  Typography,
+  Paper,
+  Grid,
+  Avatar,
+  Chip,
+  Button,
+  Divider,
   CircularProgress,
   Dialog,
   DialogTitle,
@@ -17,8 +17,8 @@ import {
   Alert
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  useGetDeliveryPersonByIdQuery, 
+import {
+  useGetDeliveryPersonByIdQuery,
   useGetPersonnelDocumentsQuery,
   useApproveProfilePhotoMutation,
   useRejectProfilePhotoMutation,
@@ -32,10 +32,10 @@ import toast from 'react-hot-toast';
 export default function DeliveryPersonDetail() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  
+
   const { data: personnelResponse, isLoading: isPersonnelLoading } = useGetDeliveryPersonByIdQuery(Number(id));
   const { data: docs, isLoading: isDocsLoading } = useGetPersonnelDocumentsQuery(Number(id));
-  
+
   const personnel = personnelResponse?.deliveryPerson;
   const documents = Array.isArray((docs as any)?.documents)
     ? (docs as any).documents
@@ -120,20 +120,20 @@ export default function DeliveryPersonDetail() {
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
           <Paper sx={{ p: 3, borderRadius: 3, textAlign: 'center' }}>
-            <Avatar 
+            <Avatar
               src={personnel?.profilePhotoUrl}
               sx={{ width: 100, height: 100, mx: 'auto', mb: 2, bgcolor: 'primary.main', fontSize: '2rem' }}
             >
               {personnel?.firstName?.[0]}
             </Avatar>
             <Typography variant="h5" fontWeight={700}>{personnel?.firstName} {personnel?.lastName}</Typography>
-            
+
             <Box sx={{ mt: 2, mb: 1 }}>
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                 ACCOUNT STATUS
               </Typography>
-              <Chip 
-                label={personnel?.isOnline ? 'ACTIVE' : 'INACTIVE'} 
+              <Chip
+                label={personnel?.isOnline ? 'ACTIVE' : 'INACTIVE'}
                 color={personnel?.isOnline ? 'success' : 'error'}
                 sx={{ fontWeight: 700, px: 1 }}
               />
@@ -143,8 +143,8 @@ export default function DeliveryPersonDetail() {
               <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
                 APPROVAL STATUS
               </Typography>
-              <Chip 
-                label={personnel?.approvalStatus} 
+              <Chip
+                label={personnel?.approvalStatus}
                 color={personnel?.approvalStatus === 'APPROVED' ? 'success' : personnel?.approvalStatus === 'REJECTED' ? 'error' : 'warning'}
                 variant="filled"
                 sx={{ fontWeight: 800, px: 2, height: 32 }}
@@ -153,7 +153,7 @@ export default function DeliveryPersonDetail() {
 
             <Box sx={{ mt: 3, display: 'flex', flexDirection: 'column', gap: 1.5 }}>
               {personnel?.approvalStatus === 'PENDING' && (
-                <Button 
+                <Button
                   variant="contained"
                   color="warning"
                   fullWidth
@@ -165,7 +165,7 @@ export default function DeliveryPersonDetail() {
                 </Button>
               )}
 
-              <Button 
+              <Button
                 variant={personnel?.isActive ? "outlined" : "contained"}
                 color={personnel?.isActive ? "error" : "success"}
                 fullWidth
@@ -178,22 +178,22 @@ export default function DeliveryPersonDetail() {
             </Box>
 
             <Divider sx={{ my: 3 }} />
-            
+
             <Typography variant="subtitle2" gutterBottom>Profile Photo Status</Typography>
-            <Chip 
+            <Chip
               label={personnel?.profilePhotoStatus || 'UNKNOWN'}
               size="small"
               color={
                 personnel?.profilePhotoStatus === 'APPROVED' ? 'success' :
-                personnel?.profilePhotoStatus === 'PENDING' ? 'warning' : 'error'
+                  personnel?.profilePhotoStatus === 'PENDING' ? 'warning' : 'error'
               }
               sx={{ mb: 2 }}
             />
-            
+
             <Grid container spacing={1}>
               {personnel?.profilePhotoStatus !== 'APPROVED' && (
-                <Grid size={{xs: 12}}>
-                  <Button 
+                <Grid size={{ xs: 12 }}>
+                  <Button
                     fullWidth size="small" variant="contained" color="success"
                     startIcon={<CheckCircle />} onClick={handleApprovePhoto}
                     disabled={isApprovingPhoto}
@@ -203,10 +203,10 @@ export default function DeliveryPersonDetail() {
                 </Grid>
               )}
               {personnel?.profilePhotoStatus !== 'REJECTED' && (
-                <Grid size={{xs: 6}}>
-                  <Button 
+                <Grid size={{ xs: 6 }}>
+                  <Button
                     fullWidth size="small" variant="outlined" color="error"
-                    startIcon={<Cancel />} 
+                    startIcon={<Cancel />}
                     onClick={() => { setPhotoActionType('reject'); setPhotoActionOpen(true); }}
                   >
                     Reject
@@ -214,10 +214,10 @@ export default function DeliveryPersonDetail() {
                 </Grid>
               )}
               {personnel?.profilePhotoStatus !== 'NEEDS_REUPLOAD' && (
-                <Grid size={{xs: 6}}>
-                  <Button 
+                <Grid size={{ xs: 6 }}>
+                  <Button
                     fullWidth size="small" variant="outlined" color="warning"
-                    startIcon={<Refresh />} 
+                    startIcon={<Refresh />}
                     onClick={() => { setPhotoActionType('reupload'); setPhotoActionOpen(true); }}
                   >
                     Reupload
@@ -225,7 +225,7 @@ export default function DeliveryPersonDetail() {
                 </Grid>
               )}
             </Grid>
-            
+
           </Paper>
         </Grid>
 
@@ -253,6 +253,29 @@ export default function DeliveryPersonDetail() {
             </Grid>
           </Paper>
 
+          <Paper sx={{ p: 3, borderRadius: 3, mb: 4 }}>
+            <Typography variant="h6" fontWeight={700} gutterBottom>Bank Account Information</Typography>
+            <Divider sx={{ mb: 2 }} />
+            <Grid container spacing={2}>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" color="text.secondary">Account Holder</Typography>
+                <Typography variant="body1">{personnel?.accountName || 'Not Set'}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" color="text.secondary">Bank Name</Typography>
+                <Typography variant="body1">{personnel?.bankName || 'Not Set'}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" color="text.secondary">Account Number</Typography>
+                <Typography variant="body1">{personnel?.accountNumber || 'Not Set'}</Typography>
+              </Grid>
+              <Grid size={{ xs: 6 }}>
+                <Typography variant="body2" color="text.secondary">IFSC Code</Typography>
+                <Typography variant="body1">{personnel?.ifscCode || 'Not Set'}</Typography>
+              </Grid>
+            </Grid>
+          </Paper>
+
           <Paper sx={{ p: 3, borderRadius: 3 }}>
             <Typography variant="h6" fontWeight={700} gutterBottom>Verification Documents</Typography>
             <Divider sx={{ mb: 2 }} />
@@ -263,9 +286,9 @@ export default function DeliveryPersonDetail() {
                     <Box sx={{ p: 2, border: '1px solid', borderColor: 'divider', borderRadius: 2 }}>
                       <Typography variant="subtitle2">{doc.documentType}</Typography>
                       <Typography variant="caption" color="text.secondary" display="block">Number: {doc.documentNumber}</Typography>
-                      <Button 
-                        size="small" 
-                        variant="text" 
+                      <Button
+                        size="small"
+                        variant="text"
                         onClick={() => handleViewDocument(doc)}
                         sx={{ mt: 1 }}
                       >
@@ -285,7 +308,7 @@ export default function DeliveryPersonDetail() {
         <DialogTitle>{selectedDocumentName} Document</DialogTitle>
         <DialogContent sx={{ display: 'flex', justifyContent: 'center', p: 3 }}>
           {selectedDocumentUrl ? (
-            <Box 
+            <Box
               component="img"
               src={selectedDocumentUrl}
               alt="Document Viewer"
@@ -322,8 +345,8 @@ export default function DeliveryPersonDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setPhotoActionOpen(false)}>Cancel</Button>
-          <Button 
-            onClick={submitPhotoAction} 
+          <Button
+            onClick={submitPhotoAction}
             color={photoActionType === 'reject' ? 'error' : 'warning'}
             variant="contained"
             disabled={!photoRemarks.trim() || isRejectingPhoto || isRequestingReupload}

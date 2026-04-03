@@ -6,12 +6,16 @@ import {
   Stack,
   Switch,
   FormControlLabel,
+  IconButton,
+  Typography,
 } from '@mui/material';
 import {
   useCreateSubCategoryMutation,
   useUpdateSubCategoryMutation,
 } from '../api/subCategoryApi';
 import { toast } from '../../../../components/toast/ToastContainer';
+
+import { Close as CloseIcon, CloudUpload as CloudUploadIcon, Image as ImageIcon } from '@mui/icons-material';
 
 interface Props {
   initialData?: any;
@@ -26,6 +30,8 @@ export default function SubCategoryForm({
   onSave,
   onClose,
 }: Props) {
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | undefined>(initialData?.imageUrl);
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -55,8 +61,17 @@ export default function SubCategoryForm({
         videoUrl: initialData.videoUrl || '',
         isActive: initialData.isActive ?? true,
       });
+      setImagePreview(initialData.imageUrl);
     }
   }, [initialData]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      setImageFile(file);
+      setImagePreview(URL.createObjectURL(file));
+    }
+  };
 
   const handleChange = (e: any) => {
     const { name, value } = e.target;
@@ -73,18 +88,26 @@ export default function SubCategoryForm({
   const handleSubmit = async () => {
     try {
       const payload = {
-        ...formData,
+        name: formData.name,
+        description: formData.description,
+        displayOrder: formData.displayOrder,
+        discount: formData.discount,
         categoryId,
+        isActive: formData.isActive,
       };
 
       if (isEdit) {
         await updateSubCategory({
           id: initialData.id,
-          body: payload,
+          subCategory: payload as any,
+          image: imageFile || undefined,
         }).unwrap();
         toast.success('SubCategory updated successfully');
       } else {
-        await createSubCategory(payload).unwrap();
+        await createSubCategory({
+          subCategory: payload as any,
+          image: imageFile || undefined,
+        }).unwrap();
         toast.success('SubCategory created successfully');
       }
 
@@ -133,21 +156,97 @@ export default function SubCategoryForm({
           fullWidth
         />
 
-        <TextField
-          label="Image URL"
-          name="imageUrl"
-          value={formData.imageUrl}
-          onChange={handleChange}
-          fullWidth
-        />
+        <Box
+          sx={{
+            p: 3,
+            textAlign: 'center',
+            borderRadius: 3,
+            borderStyle: 'dashed',
+            borderWidth: 2,
+            borderColor: imagePreview ? 'primary.main' : 'divider',
+            background: imagePreview ? 'rgba(99, 102, 241, 0.05)' : 'transparent',
+            transition: 'all 0.3s ease',
+          }}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ display: 'none' }}
+            id="subcategory-image"
+          />
 
-        <TextField
-          label="Video URL"
-          name="videoUrl"
-          value={formData.videoUrl}
-          onChange={handleChange}
-          fullWidth
-        />
+          {imagePreview ? (
+            <Box sx={{ position: 'relative', display: 'inline-block' }}>
+              <img
+                src={imagePreview}
+                alt="Preview"
+                style={{
+                  width: 120,
+                  height: 120,
+                  objectFit: 'cover',
+                  borderRadius: 12,
+                  boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
+                }}
+              />
+              <IconButton
+                size="small"
+                onClick={() => {
+                  setImageFile(null);
+                  setImagePreview(undefined);
+                }}
+                sx={{
+                  position: 'absolute',
+                  top: -10,
+                  right: -10,
+                  bgcolor: 'error.main',
+                  color: 'white',
+                  boxShadow: '0 2px 8px rgba(0,0,0,0.2)',
+                  '&:hover': { bgcolor: 'error.dark' },
+                }}
+              >
+                <CloseIcon fontSize="small" />
+              </IconButton>
+            </Box>
+          ) : (
+            <label htmlFor="subcategory-image" style={{ cursor: 'pointer' }}>
+              <Box sx={{ py: 2 }}>
+                <Box
+                  sx={{
+                    width: 64,
+                    height: 64,
+                    borderRadius: '50%',
+                    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    margin: '0 auto',
+                    mb: 2,
+                  }}
+                >
+                  <CloudUploadIcon sx={{ color: 'white', fontSize: 32 }} />
+                </Box>
+                <Typography variant="subtitle2" fontWeight={600} color="primary">
+                  Click to upload image
+                </Typography>
+              </Box>
+            </label>
+          )}
+
+          {imagePreview && (
+            <label htmlFor="subcategory-image">
+              <Button
+                variant="outlined"
+                component="span"
+                size="small"
+                startIcon={<ImageIcon />}
+                sx={{ mt: 2, borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+              >
+                Change Image
+              </Button>
+            </label>
+          )}
+        </Box>
 
         <FormControlLabel
           control={

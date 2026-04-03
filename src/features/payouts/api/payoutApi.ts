@@ -1,12 +1,14 @@
 import { baseApiWithAuth } from '@api/baseApi';
 
+import { DeliveryPerson } from '../../delivery/api/deliveryApi';
+
 export interface Payout {
   id: number;
-  deliveryPersonId: number;
-  amount: number;
-  status: 'PENDING' | 'PAID' | 'FAILED' | 'CANCELLED';
-  periodStart: string;
-  periodEnd: string;
+  deliveryPerson: DeliveryPerson;
+  payoutAmount: number;
+  status: 'PENDING' | 'PROCESSED' | 'FAILED' | 'CANCELLED' | 'PAID';
+  weekStartDate: string;
+  weekEndDate: string;
   transactionId?: string;
   paymentMethod?: string;
   remarks?: string;
@@ -19,6 +21,8 @@ export interface PayoutStats {
   totalFailed: number;
   totalPayouts: number;
   pendingPayouts: number;
+  totalPendingAmount: number;
+  totalProcessedAmount: number;
 }
 
 export const payoutApi = baseApiWithAuth.injectEndpoints({
@@ -51,11 +55,11 @@ export const payoutApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // 10.6 Process Payout (Mark as Paid)
-    processPayout: builder.mutation<any, { 
-      id: number; 
-      transactionId: string; 
-      paymentMethod: string; 
-      adminId: number 
+    processPayout: builder.mutation<any, {
+      id: number;
+      transactionId: string;
+      paymentMethod: string;
+      adminId: number
     }>({
       query: ({ id, ...body }) => ({
         url: `/api/payouts/${id}/process`,

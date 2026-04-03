@@ -44,8 +44,8 @@ export const categoryApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // 3.4 Update Category
-    updateCategory: builder.mutation<Category, { id: number; data: any }>({
-      query: ({ id, data }) => {
+    updateCategory: builder.mutation<Category, { id: number; data: any; image?: File }>({
+      query: ({ id, data, image }) => {
         const formData = new FormData();
         formData.append('category', new Blob([JSON.stringify({
           name: data.name,
@@ -54,9 +54,14 @@ export const categoryApi = baseApiWithAuth.injectEndpoints({
           displayOrder: data.displayOrder,
           discount: data.discount,
         })], { type: 'application/json' }));
-        if (data.image && data.image instanceof File) {
+
+        if (image && image instanceof File) {
+          formData.append('image', image);
+        } else if (data.image && data.image instanceof File) {
+          // Fallback for cases where image is passed inside data
           formData.append('image', data.image);
         }
+
         return {
           url: `/api/categories/${id}`,
           method: 'PUT',

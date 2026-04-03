@@ -16,6 +16,10 @@ export interface DeliveryPerson {
   vehicleModel?: string;
   rating?: number;
   verified: boolean;
+  accountName?: string;
+  accountNumber?: string;
+  bankName?: string;
+  ifscCode?: string;
   createdAt?: string;
 }
 
