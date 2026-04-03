@@ -12,7 +12,10 @@ import {
   LocalShipping as OrdersIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
-import { useGetDeliveryDashboardStatsQuery } from '../api/deliveryApi';
+import { 
+  useGetDeliveryDashboardStatsQuery,
+  type DeliveryDashboardStats 
+} from '../api/deliveryApi';
 import { StatCard } from '../../../components/cards/StatCard';
 import { SkeletonStatCards, SkeletonPageHeader } from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
@@ -23,7 +26,14 @@ export default function DeliveryDashboard() {
   const { data, isLoading, isError, error } = useGetDeliveryDashboardStatsQuery();
   const { handleError } = useErrorHandler();
 
-  const stats = data?.statistics || {};
+  const stats: DeliveryDashboardStats = data?.statistics || {
+    totalDeliveryPersons: 0,
+    approvedDeliveryPersons: 0,
+    pendingApprovals: 0,
+    totalOrders: 0,
+    activeOrders: 0,
+    completedOrders: 0,
+  };
 
   React.useEffect(() => {
     if (isError && error) {

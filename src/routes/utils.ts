@@ -86,7 +86,6 @@ export const RouteLinks: RouteLinkGroup[] = [
       { name: 'Personnel', path: '/delivery/personnel', Icon: People },
       { name: 'Documents', path: '/delivery/documents', Icon: Description },
       { name: 'Fare Settings', path: '/delivery/fare-settings', Icon: AttachMoneyIcon },
-      { name: 'Quick Fare', path: '/delivery/quick-fare', Icon: BoltIcon },
     ],
   },
 
@@ -105,7 +104,6 @@ export const RouteLinks: RouteLinkGroup[] = [
     links: [
       { name: 'Banners', path: '/marketing/banners', Icon: CampaignIcon },
       { name: 'Coupons', path: '/marketing/coupons', Icon: Payment },
-      { name: 'Ratings', path: '/admin/ratings', Icon: Star },
       { name: 'User Logs', path: '/logs/user-logs', Icon: Description },
     ],
   },

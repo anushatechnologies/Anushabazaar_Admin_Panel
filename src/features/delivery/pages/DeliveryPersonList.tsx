@@ -77,7 +77,7 @@ export default function DeliveryPersonList() {
 
   const deliveryPersons = tab === 'all' 
     ? allData?.deliveryPersons || [] 
-    : pendingData?.deliveryPersons || [];
+    : pendingData?.pendingDeliveryPersons || [];
 
   const isLoading = tab === 'all' ? isAllLoading : isPendingLoading;
   const isError = tab === 'all' ? isAllError : isPendingError;
@@ -354,10 +354,10 @@ export default function DeliveryPersonList() {
           <ToggleButton value="pending">
             <PendingIcon sx={{ mr: 1, fontSize: 20 }} />
             Pending Approval
-            {pendingData?.deliveryPersons?.length > 0 && (
+            {(pendingData?.pendingDeliveryPersons?.length || 0) > 0 && (
               <Chip
                 size="small"
-                label={pendingData?.deliveryPersons?.length}
+                label={pendingData?.pendingDeliveryPersons?.length}
                 sx={{
                   ml: 1,
                   height: 20,

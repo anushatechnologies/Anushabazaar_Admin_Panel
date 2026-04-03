@@ -92,22 +92,12 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['User'],
     }),
 
-    getAvailableDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
+    getAvailableDeliveryPersons: builder.query<{ success: boolean; availableDeliveryPersons: DeliveryPerson[] }, void>({
       query: () => '/api/delivery-admin/delivery-persons/available',
       providesTags: ['User'],
     }),
 
-    getAdminPanelAvailableDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
-      query: () => '/api/delivery-admin/delivery-persons/available',
-      providesTags: ['User'],
-    }),
-
-    getPendingDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
-      query: () => '/api/delivery-admin/delivery-persons/pending-approval',
-      providesTags: ['User'],
-    }),
-
-    getAdminPanelPendingDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
+    getPendingDeliveryPersons: builder.query<{ success: boolean; pendingDeliveryPersons: DeliveryPerson[] }, void>({
       query: () => '/api/delivery-admin/delivery-persons/pending-approval',
       providesTags: ['User'],
     }),
@@ -117,22 +107,12 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['User'],
     }),
 
-    getAdminPanelDeliveryPersonById: builder.query<{ success: boolean; deliveryPerson: DeliveryPerson }, number>({
-      query: (id) => `/api/delivery-admin/delivery-persons/${id}`,
-      providesTags: ['User'],
-    }),
-
     getDeliveryPersonDocuments: builder.query<{ success: boolean; documents: DeliveryDocument[] }, number>({
       query: (id) => `/api/delivery-admin/delivery-persons/${id}/documents`,
       providesTags: ['Documents'],
     }),
 
-    getPendingDocuments: builder.query<{ success: boolean; documents: DeliveryDocument[] }, void>({
-      query: () => '/api/delivery-admin/documents/pending-review',
-      providesTags: ['Documents'],
-    }),
-
-    getAdminPanelPendingDocuments: builder.query<{ success: boolean; documents: DeliveryDocument[] }, void>({
+    getPendingDocuments: builder.query<{ success: boolean; pendingDocuments: DeliveryDocument[] }, void>({
       query: () => '/api/delivery-admin/documents/pending-review',
       providesTags: ['Documents'],
     }),
@@ -303,18 +283,12 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
 export const {
   useGetDeliveryDashboardStatsQuery,
-  useGetAdminPanelDashboardQuery,
   useGetDeliveryPersonsQuery,
-  useGetAdminPanelDeliveryPersonsQuery,
   useGetAvailableDeliveryPersonsQuery,
-  useGetAdminPanelAvailableDeliveryPersonsQuery,
   useGetPendingDeliveryPersonsQuery,
-  useGetAdminPanelPendingDeliveryPersonsQuery,
   useGetDeliveryPersonByIdQuery,
-  useGetAdminPanelDeliveryPersonByIdQuery,
   useGetDeliveryPersonDocumentsQuery,
   useGetPendingDocumentsQuery,
-  useGetAdminPanelPendingDocumentsQuery,
   useApproveDocumentMutation,
   useApproveAdminPanelDocumentMutation,
   useRejectDocumentMutation,

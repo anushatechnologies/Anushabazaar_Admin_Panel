@@ -37,10 +37,8 @@ const DeliveryPersonList = lazy(() => import('@features/delivery/pages/DeliveryP
 const DeliveryPersonDetail = lazy(() => import('@features/delivery/pages/DeliveryPersonDetail'));
 const DocumentReview = lazy(() => import('@features/delivery/pages/DocumentReview'));
 const FareSettings = lazy(() => import('@features/delivery/pages/FareSettings'));
-const QuickCommerceFare = lazy(() => import('@features/delivery/pages/QuickCommerceFare'));
 const PayoutList = lazy(() => import('@features/payouts/pages/PayoutList'));
 const IncomeManagement = lazy(() => import('@features/admin/pages/IncomeManagement'));
-const RatingsManagement = lazy(() => import('@features/admin/pages/RatingsManagement'));
 
 // Marketing
 const BannersPage = lazy(() => import('@features/banners/pages/BannersPage'));
@@ -102,10 +100,8 @@ const AppRouter: React.FC = () => {
               <Route path="/admin/delivery/persons/:id" element={<DeliveryPersonDetail />} />
               <Route path="/delivery/documents" element={<DocumentReview />} />
               <Route path="/delivery/fare-settings" element={<FareSettings />} />
-              <Route path="/delivery/quick-fare" element={<QuickCommerceFare />} />
               <Route path="/admin/payouts" element={<PayoutList />} />
               <Route path="/admin/income" element={<IncomeManagement />} />
-              <Route path="/admin/ratings" element={<RatingsManagement />} />
 
               {/* Orders */}
               <Route path="/admin/orders" element={<AdminOrderDashboard />} />

@@ -106,8 +106,8 @@ export default function DocumentReview() {
       : Array.isArray(personsData)
         ? (personsData as any)
         : [];
-  const pendingDocuments = Array.isArray((pendingData as any)?.documents)
-    ? (pendingData as any).documents
+  const pendingDocuments = Array.isArray((pendingData as any)?.pendingDocuments)
+    ? (pendingData as any).pendingDocuments
     : Array.isArray((pendingData as any)?.content)
       ? (pendingData as any).content
       : Array.isArray(pendingData)

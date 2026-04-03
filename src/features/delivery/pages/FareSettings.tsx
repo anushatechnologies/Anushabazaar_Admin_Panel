@@ -25,8 +25,8 @@ import {
 import { motion } from 'framer-motion';
 import toast from 'react-hot-toast';
 import {
-  useGetAdminPanelFareSettingsQuery,
-  useUpdateAdminPanelFareSettingsMutation,
+  useGetFareSettingsQuery,
+  useUpdateFareSettingsMutation,
   FareSettings,
 } from '../api/deliveryApi';
 import { GlassPageHeader, GlassCard, GradientText, GlassBadge } from '../../../components/glassmorphism/GlassComponents';
@@ -50,8 +50,8 @@ const defaultFareSettings: FareSettings = {
 
 export default function FareSettingsPage() {
   const { currentTheme } = useAppTheme();
-  const { data, isLoading } = useGetAdminPanelFareSettingsQuery();
-  const [updateFareSettings, { isLoading: isUpdating }] = useUpdateAdminPanelFareSettingsMutation();
+  const { data, isLoading } = useGetFareSettingsQuery();
+  const [updateFareSettings, { isLoading: isUpdating }] = useUpdateFareSettingsMutation();
   
   const [settings, setSettings] = useState<FareSettings>(defaultFareSettings);
   const [hasChanges, setHasChanges] = useState(false);
