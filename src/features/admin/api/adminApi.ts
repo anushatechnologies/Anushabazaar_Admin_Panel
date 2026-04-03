@@ -418,13 +418,13 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
 
     // SECTION J - Banners
     getAllBanners: builder.query<{ success: boolean; banners: Banner[] }, void>({
-      query: () => '/api/admin-panel/api/banners',
+      query: () => '/api/admin/banners',
       providesTags: ['Banners'],
     }),
 
     createBanner: builder.mutation<{ success: boolean; message: string; banner: Banner }, FormData>({
       query: (formData) => ({
-        url: '/api/admin-panel/api/banners',
+        url: '/api/admin/banners',
         method: 'POST',
         body: formData,
       }),
@@ -433,7 +433,7 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
 
     toggleBannerStatus: builder.mutation<{ success: boolean; message: string }, { id: number; isActive: boolean }>({
       query: ({ id, isActive }) => ({
-        url: `/api/admin-panel/api/banners/${id}/status`,
+        url: `/api/admin/banners/${id}/status`,
         method: 'PUT',
         body: { isActive },
       }),
@@ -442,7 +442,7 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
 
     deleteBanner: builder.mutation<{ success: boolean; message: string }, number>({
       query: (id) => ({
-        url: `/api/admin-panel/api/banners/${id}`,
+        url: `/api/admin/banners/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Banners'],

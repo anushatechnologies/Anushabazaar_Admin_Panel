@@ -174,7 +174,7 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
     approveProfilePhoto: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number }>({
       query: ({ personId, adminId }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/approve-photo`,
+        url: `/api/admin/delivery-persons/${personId}/approve-photo`,
         method: 'POST',
         body: { adminId },
       }),
@@ -183,7 +183,7 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
     rejectProfilePhoto: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/reject-photo`,
+        url: `/api/admin/delivery-persons/${personId}/reject-photo`,
         method: 'POST',
         body: { adminId, remarks },
       }),
@@ -192,16 +192,17 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
     requestProfilePhotoReupload: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/request-photo-reupload`,
+        url: `/api/admin/delivery-persons/${personId}/request-photo-reupload`,
         method: 'POST',
         body: { adminId, remarks },
       }),
       invalidatesTags: ['User'],
     }),
 
+
     updateDeliveryPersonStatus: builder.mutation<{ success: boolean; message: string }, { personId: number; isActive: boolean }>({
       query: ({ personId, isActive }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/status`,
+        url: `/api/admin/delivery-persons/${personId}/status`,
         method: 'PUT',
         body: { isActive },
       }),
@@ -210,7 +211,7 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
     approveDeliveryPerson: builder.mutation<{ success: boolean; message: string; deliveryPerson: DeliveryPerson }, { personId: number; adminId: number }>({
       query: ({ personId, adminId }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/approve`,
+        url: `/api/admin/delivery-persons/${personId}/approve`,
         method: 'POST',
         body: { adminId },
       }),
@@ -219,7 +220,7 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
 
     rejectDeliveryPerson: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin-panel/api/delivery-persons/${personId}/reject`,
+        url: `/api/admin/delivery-persons/${personId}/reject`,
         method: 'POST',
         body: { adminId, remarks },
       }),

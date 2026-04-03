@@ -95,8 +95,8 @@ export default function DeliveryPersonDetail() {
   const handleToggleStatus = async () => {
     if (!personnel) return;
     try {
-      await updateStatus({ personId: Number(id), isActive: !personnel.isActive }).unwrap();
-      toast.success(`Account ${!personnel.isActive ? 'activated' : 'deactivated'}`);
+      await updateStatus({ personId: Number(id), isActive: !personnel.isOnline }).unwrap();
+      toast.success(`Account ${!personnel.isOnline ? 'activated' : 'deactivated'}`);
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to update status');
     }
@@ -133,8 +133,8 @@ export default function DeliveryPersonDetail() {
                 ACCOUNT STATUS
               </Typography>
               <Chip 
-                label={personnel?.isActive ? 'ACTIVE' : 'INACTIVE'} 
-                color={personnel?.isActive ? 'success' : 'error'}
+                label={personnel?.isOnline ? 'ACTIVE' : 'INACTIVE'} 
+                color={personnel?.isOnline ? 'success' : 'error'}
                 sx={{ fontWeight: 700, px: 1 }}
               />
             </Box>

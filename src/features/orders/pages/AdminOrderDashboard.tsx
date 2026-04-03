@@ -343,8 +343,8 @@ const AdminOrderDashboard: React.FC = () => {
             <Dialog open={assignDialogOpen} onClose={() => setAssignDialogOpen(false)} fullWidth maxWidth="xs">
                 <DialogTitle>Assign Delivery Partner</DialogTitle>
                 <DialogContent>
-                    {isLoadingPersonnel ? <CircularProgress /> : availablePersonnel?.deliveryPersons?.length ? (
-                        <Stack spacing={2}>{availablePersonnel.deliveryPersons.map(p => (
+                    {isLoadingPersonnel ? <CircularProgress /> : availablePersonnel?.availableDeliveryPersons?.length ? (
+                        <Stack spacing={2}>{availablePersonnel.availableDeliveryPersons.map(p => (
                             <ListItemButton key={p.id} selected={selectedDeliveryPerson === p.id} onClick={() => setSelectedDeliveryPerson(p.id)} sx={{ borderRadius: 4 }}>
                                 <ListItemAvatar><Avatar sx={{ bgcolor: currentTheme.accent }}><PersonIcon /></Avatar></ListItemAvatar>
                                 <ListItemText primary={`${p.firstName} ${p.lastName}`} secondary={p.phoneNumber} />

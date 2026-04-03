@@ -19,7 +19,7 @@ export const bannersApi = baseApiWithAuth.injectEndpoints({
     // Admin: Create Banner (FormData format)
     createBanner: builder.mutation<any, FormData>({
       query: (formData) => ({
-        url: '/api/admin-panel/api/banners',
+        url: '/api/admin/banners',
         method: 'POST',
         body: formData,
       }),
@@ -28,14 +28,14 @@ export const bannersApi = baseApiWithAuth.injectEndpoints({
     
     // Admin: Get All Banners 
     getAdminBanners: builder.query<any, void>({
-      query: () => '/api/admin-panel/api/banners',
+      query: () => '/api/admin/banners',
       providesTags: ['Banners' as any],
     }),
     
     // Admin: Update Banner
     updateBanner: builder.mutation<any, { id: number; formData: FormData }>({
       query: ({ id, formData }) => ({
-        url: `/api/admin-panel/api/banners/${id}`,
+        url: `/api/admin/banners/${id}`,
         method: 'PUT',
         body: formData,
       }),
@@ -45,7 +45,7 @@ export const bannersApi = baseApiWithAuth.injectEndpoints({
     // Admin: Toggle Banner Status
     toggleBannerStatus: builder.mutation<any, { id: number; isActive: boolean }>({
       query: ({ id, isActive }) => ({
-        url: `/api/admin-panel/api/banners/${id}/status`,
+        url: `/api/admin/banners/${id}/status`,
         method: 'PUT',
         body: { isActive },
       }),
@@ -55,7 +55,7 @@ export const bannersApi = baseApiWithAuth.injectEndpoints({
     // Admin: Delete Banner
     deleteBanner: builder.mutation<any, number>({
       query: (id) => ({
-        url: `/api/admin-panel/api/banners/${id}`,
+        url: `/api/admin/banners/${id}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Banners' as any],
