@@ -4,6 +4,8 @@ export interface Banner {
   id: number;
   name: string;
   targetUrl: string | null;
+  actionType: string | null;
+  actionValue: string | null;
   displayOrder: number;
   imageUrl: string;
   videoUrl: string | null;

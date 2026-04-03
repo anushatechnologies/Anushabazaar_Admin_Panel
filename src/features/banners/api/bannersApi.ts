@@ -6,6 +6,8 @@ export interface Banner {
   imageUrl: string;
   videoUrl?: string;
   targetUrl?: string;
+  actionType?: string;
+  actionValue?: string;
   isActive: boolean;
   displayOrder: number;
   createdAt?: string;

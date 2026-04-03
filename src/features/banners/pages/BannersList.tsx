@@ -14,6 +14,8 @@ export default function BannersList() {
   const [open, setOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
+    actionType: 'NONE',
+    actionValue: '',
     isActive: true,
     displayOrder: 1
   });
@@ -34,18 +36,20 @@ export default function BannersList() {
 
   const handleCreate = async () => {
     try {
-      await createBanner({
-        banner: {
-          name: formData.name,
-          isActive: formData.isActive,
-          displayOrder: Number(formData.displayOrder)
-        },
-        image: imageFile || undefined,
-        video: videoFile || undefined
-      }).unwrap();
+      const dataToSubmit = new FormData();
+      dataToSubmit.append('name', formData.name);
+      dataToSubmit.append('actionType', formData.actionType);
+      dataToSubmit.append('actionValue', formData.actionValue);
+      dataToSubmit.append('isActive', formData.isActive.toString());
+      dataToSubmit.append('displayOrder', formData.displayOrder.toString());
+      
+      if (imageFile) dataToSubmit.append('image', imageFile);
+      if (videoFile) dataToSubmit.append('video', videoFile);
+
+      await createBanner(dataToSubmit).unwrap();
       toast.success('Banner created successfully');
       setOpen(false);
-      setFormData({ name: '', isActive: true, displayOrder: 1 });
+      setFormData({ name: '', actionType: 'NONE', actionValue: '', isActive: true, displayOrder: 1 });
       setImageFile(null); setImagePreview(undefined);
       setVideoFile(null); setVideoPreview(undefined);
       refetch();

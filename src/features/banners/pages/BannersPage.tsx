@@ -42,10 +42,20 @@ import EmptyState from '../../../components/empty-state/EmptyState';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
 import { toast } from '../../../components/toast/ToastContainer';
 import ConfirmDialog from '../../../components/ConfirmDialog';
+import { useGetCategoriesQuery } from '../../category/components/api/categoryApi';
+import { useGetProductsQuery } from '../../products/api/productApi';
+import { 
+  MenuItem, 
+  Select, 
+  Autocomplete,
+  CircularProgress
+} from '@mui/material';
 
 interface BannerFormData {
   name: string;
   targetUrl: string;
+  actionType: string;
+  actionValue: string;
   displayOrder: number;
   image: File | null;
   video: File | null;
@@ -64,6 +74,8 @@ export default function BannersPage() {
   const [formData, setFormData] = useState<BannerFormData>({
     name: '',
     targetUrl: '',
+    actionType: 'NONE',
+    actionValue: '',
     displayOrder: 1,
     image: null,
     video: null,
@@ -96,6 +108,8 @@ export default function BannersPage() {
     setFormData({
       name: '',
       targetUrl: '',
+      actionType: 'NONE',
+      actionValue: '',
       displayOrder: banners.length + 1,
       image: null,
       video: null,
@@ -110,6 +124,8 @@ export default function BannersPage() {
     setFormData({
       name: banner.name,
       targetUrl: banner.targetUrl || '',
+      actionType: banner.actionType || 'NONE',
+      actionValue: banner.actionValue || '',
       displayOrder: banner.displayOrder,
       image: null,
       video: null,
@@ -155,6 +171,8 @@ export default function BannersPage() {
     const submitFormData = new FormData();
     submitFormData.append('name', formData.name);
     submitFormData.append('targetUrl', formData.targetUrl);
+    submitFormData.append('actionType', formData.actionType);
+    submitFormData.append('actionValue', formData.actionValue);
     submitFormData.append('displayOrder', String(formData.displayOrder));
     if (formData.image) submitFormData.append('image', formData.image);
     if (formData.video) submitFormData.append('video', formData.video);
@@ -395,6 +413,18 @@ export default function BannersPage() {
                             </Typography>
                           )}
 
+                          {banner.actionType && banner.actionType !== 'NONE' && (
+                            <Box sx={{ mt: 1 }}>
+                              <Chip
+                                label={`${banner.actionType}: ${banner.actionValue || 'N/A'}`}
+                                size="small"
+                                variant="outlined"
+                                color="secondary"
+                                sx={{ borderRadius: 1, height: 20, fontSize: '0.65rem' }}
+                              />
+                            </Box>
+                          )}
+
                           {/* Actions */}
                           <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
                             <Button
@@ -504,6 +534,53 @@ export default function BannersPage() {
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
             />
 
+            {/* Action Type Selector */}
+            <FormControl fullWidth sx={{ mb: 2 }}>
+              <InputLabel id="action-type-label">Action Type</InputLabel>
+              <Select
+                labelId="action-type-label"
+                value={formData.actionType}
+                label="Action Type"
+                onChange={(e) => {
+                  setFormData({ ...formData, actionType: e.target.value as string, actionValue: '' });
+                }}
+                sx={{ borderRadius: 3 }}
+              >
+                <MenuItem value="NONE">None (No Click Action)</MenuItem>
+                <MenuItem value="CATEGORY">Category (Redirect to Category)</MenuItem>
+                <MenuItem value="PRODUCT">Product (Redirect to Product Details)</MenuItem>
+                <MenuItem value="OFFER">Offers Page</MenuItem>
+                <MenuItem value="EXTERNAL">External Link (WebView)</MenuItem>
+              </Select>
+            </FormControl>
+
+            {/* Action Value Selector */}
+            {formData.actionType === 'CATEGORY' && (
+              <CategorySelectorInternal
+                value={formData.actionValue}
+                onChange={(val) => setFormData({ ...formData, actionValue: val })}
+              />
+            )}
+
+            {formData.actionType === 'PRODUCT' && (
+              <ProductSelectorInternal
+                value={formData.actionValue}
+                onChange={(val) => setFormData({ ...formData, actionValue: val })}
+              />
+            )}
+
+            {formData.actionType === 'EXTERNAL' && (
+              <TextField
+                label="External URL"
+                value={formData.actionValue}
+                onChange={(e) => setFormData({ ...formData, actionValue: e.target.value })}
+                fullWidth
+                placeholder="https://example.com"
+                helperText="Full URL for external navigation"
+                sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+              />
+            )}
+
             {/* Image Upload */}
             <Box>
               <Typography variant="subtitle2" fontWeight={600} sx={{ mb: 1 }}>
@@ -609,5 +686,77 @@ export default function BannersPage() {
         onCancel={() => setDeleteId(null)}
       />
     </Box>
+  );
+}
+
+// --- INTERNAL SELECTORS FOR BannersPage ---
+
+function CategorySelectorInternal({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const { data, isLoading } = useGetCategoriesQuery();
+  const categories = data || [];
+
+  return (
+    <Autocomplete
+      options={categories}
+      getOptionLabel={(option) => option.name}
+      loading={isLoading}
+      value={categories.find((c) => c.id.toString() === value) || null}
+      onChange={(_e, newValue) => {
+        onChange(newValue ? newValue.id.toString() : '');
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Category"
+          placeholder="Search categories..."
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+        />
+      )}
+      fullWidth
+    />
+  );
+}
+
+function ProductSelectorInternal({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const { data, isLoading } = useGetProductsQuery({});
+  const products = data || [];
+
+  return (
+    <Autocomplete
+      options={products}
+      getOptionLabel={(option) => option.name}
+      loading={isLoading}
+      value={products.find((p) => p.id?.toString() === value) || null}
+      onChange={(_e, newValue) => {
+        onChange(newValue ? newValue.id?.toString() || '' : '');
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Product"
+          placeholder="Search products..."
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+          sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
+        />
+      )}
+      fullWidth
+    />
   );
 }

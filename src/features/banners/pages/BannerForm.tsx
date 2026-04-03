@@ -24,6 +24,16 @@ import {
   useUpdateBannerMutation,
   Banner,
 } from '../api/bannersApi';
+import { useGetCategoriesQuery } from '../../category/components/api/categoryApi';
+import { useGetProductsQuery } from '../../products/api/productApi';
+import { 
+  MenuItem, 
+  Select, 
+  FormControl, 
+  InputLabel,
+  Autocomplete,
+  CircularProgress
+} from '@mui/material';
 
 interface BannerFormProps {
   initialData?: Banner | null;
@@ -33,6 +43,8 @@ interface BannerFormProps {
 export default function BannerForm({ initialData, onClose }: BannerFormProps) {
   const [name, setName] = useState(initialData?.name || '');
   const [targetUrl, setTargetUrl] = useState(initialData?.targetUrl || '');
+  const [actionType, setActionType] = useState(initialData?.actionType || 'NONE');
+  const [actionValue, setActionValue] = useState(initialData?.actionValue || '');
   const [displayOrder, setDisplayOrder] = useState(initialData?.displayOrder || 0);
   const [isActive, setIsActive] = useState(initialData?.isActive ?? true);
   const [imageFile, setImageFile] = useState<File | null>(null);
@@ -114,6 +126,8 @@ export default function BannerForm({ initialData, onClose }: BannerFormProps) {
       const formData = new FormData();
       formData.append('name', name.trim());
       formData.append('targetUrl', targetUrl.trim());
+      formData.append('actionType', actionType);
+      formData.append('actionValue', actionValue);
       formData.append('displayOrder', displayOrder.toString());
       formData.append('isActive', isActive.toString());
 
@@ -186,6 +200,58 @@ export default function BannerForm({ initialData, onClose }: BannerFormProps) {
             },
           }}
         />
+ 
+        {/* Action Type Selector */}
+        <FormControl fullWidth sx={{ mb: 2 }}>
+          <InputLabel id="action-type-label">Action Type</InputLabel>
+          <Select
+            labelId="action-type-label"
+            value={actionType}
+            label="Action Type"
+            onChange={(e) => {
+              setActionType(e.target.value);
+              setActionValue(''); // Reset value when type changes
+            }}
+            sx={{ borderRadius: { xs: 1.5, sm: 2 } }}
+          >
+            <MenuItem value="NONE">None (No Click Action)</MenuItem>
+            <MenuItem value="CATEGORY">Category (Redirect to Category)</MenuItem>
+            <MenuItem value="PRODUCT">Product (Redirect to Product Details)</MenuItem>
+            <MenuItem value="OFFER">Offers Page</MenuItem>
+            <MenuItem value="EXTERNAL">External Link (WebView)</MenuItem>
+          </Select>
+        </FormControl>
+
+        {/* Action Value Selector */}
+        {actionType === 'CATEGORY' && (
+          <CategorySelector 
+            value={actionValue} 
+            onChange={setActionValue} 
+          />
+        )}
+
+        {actionType === 'PRODUCT' && (
+          <ProductSelector 
+            value={actionValue} 
+            onChange={setActionValue} 
+          />
+        )}
+
+        {actionType === 'EXTERNAL' && (
+          <TextField
+            label="External URL"
+            value={actionValue}
+            onChange={(e) => setActionValue(e.target.value)}
+            fullWidth
+            placeholder="https://example.com"
+            helperText="Full URL for external navigation"
+            sx={{
+              '& .MuiInputBase-root': {
+                borderRadius: { xs: 1.5, sm: 2 },
+              },
+            }}
+          />
+        )}
 
         {/* Display Order */}
         <TextField
@@ -480,5 +546,87 @@ export default function BannerForm({ initialData, onClose }: BannerFormProps) {
         </Stack>
       </Stack>
     </Box>
+  );
+}
+
+// --- SUB-COMPONENTS ---
+
+function CategorySelector({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const { data, isLoading } = useGetCategoriesQuery();
+  const categories = data || [];
+
+  return (
+    <Autocomplete
+      options={categories}
+      getOptionLabel={(option) => option.name}
+      loading={isLoading}
+      value={categories.find((c) => c.id.toString() === value) || null}
+      onChange={(_e, newValue) => {
+        onChange(newValue ? newValue.id.toString() : '');
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Category"
+          placeholder="Search categories..."
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+          sx={{
+            '& .MuiInputBase-root': {
+              borderRadius: { xs: 1.5, sm: 2 },
+            },
+          }}
+        />
+      )}
+      fullWidth
+      sx={{ mb: 2 }}
+    />
+  );
+}
+
+function ProductSelector({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+  const { data, isLoading } = useGetProductsQuery({}); // Fetch all products for simplicity
+  const products = data || [];
+
+  return (
+    <Autocomplete
+      options={products}
+      getOptionLabel={(option) => option.name}
+      loading={isLoading}
+      value={products.find((p) => p.id?.toString() === value) || null}
+      onChange={(_e, newValue) => {
+        onChange(newValue ? newValue.id?.toString() || '' : '');
+      }}
+      renderInput={(params) => (
+        <TextField
+          {...params}
+          label="Select Product"
+          placeholder="Search products..."
+          InputProps={{
+            ...params.InputProps,
+            endAdornment: (
+              <>
+                {isLoading ? <CircularProgress color="inherit" size={20} /> : null}
+                {params.InputProps.endAdornment}
+              </>
+            ),
+          }}
+          sx={{
+            '& .MuiInputBase-root': {
+              borderRadius: { xs: 1.5, sm: 2 },
+            },
+          }}
+        />
+      )}
+      fullWidth
+      sx={{ mb: 2 }}
+    />
   );
 }
