@@ -1,404 +1,485 @@
 import React, { useState } from 'react';
 import { useSelector } from 'react-redux';
 import { RootState } from '@app/store';
-import { 
-  Box, 
-  Typography, 
-  Paper, 
-  Divider, 
-  Button, 
-  Dialog, 
-  DialogTitle, 
-  DialogContent, 
-  DialogContentText, 
-  DialogActions, 
+import {
+  Box,
+  Typography,
+  Divider,
+  Button,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogContentText,
+  DialogActions,
   TextField,
   CircularProgress,
-  Chip,
   Stack,
   Avatar,
-  IconButton,
-  Grid
+  Grid,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-    useGetAdminOrderByIdQuery, 
-    useGetOrderByIdQuery,
-    useAcceptOrderMutation, 
-    useRejectOrderMutation,
-    useMarkOrderReadyMutation,
-    useMarkOutForDeliveryMutation,
-    useCompleteOrderMutation
+import {
+  useGetAdminOrderByIdQuery,
+  useGetOrderByIdQuery,
+  useAcceptOrderMutation,
+  useRejectOrderMutation,
 } from '../api/orderApi';
-import dayjs from 'dayjs';
 import toast from 'react-hot-toast';
-import { 
-    ArrowBack as ArrowBackIcon, 
-    Payment as PaymentIcon, 
-    ContactPhone as PhoneIcon, 
-    LocationOn as LocationIcon,
-    Inventory as InventoryIcon,
-    CheckCircle as CheckIcon,
-    Cancel as CancelIcon,
-    LocalShipping as DeliveryIcon,
-    DoneAll as CompleteIcon
+import {
+  ArrowBack as ArrowBackIcon,
+  ContactPhone as PhoneIcon,
+  LocationOn as LocationIcon,
+  Inventory as InventoryIcon,
+  CheckCircle as CheckIcon,
+  Cancel as CancelIcon,
 } from '@mui/icons-material';
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-    GlassCard, 
-    GlassBadge, 
-    GradientText, 
-    GlassPageHeader 
+import { motion } from 'framer-motion';
+import {
+  GlassCard,
+  GlassBadge,
+  GradientText,
+  GlassPageHeader,
 } from '../../../components/glassmorphism/GlassComponents';
 import { useAppTheme } from '@contexts/ThemeContext';
 import { AdminOrderDetailDto, CustomerAddressDto, OrderResponse } from '../types';
 
-const pickAddress = (order: AdminOrderDetailDto | OrderResponse | undefined): Partial<CustomerAddressDto> | null => {
-    if (!order) return null;
+const pickAddress = (
+  order: AdminOrderDetailDto | OrderResponse | undefined,
+): Partial<CustomerAddressDto> | null => {
+  if (!order) return null;
 
-    const candidates = [
-        (order as AdminOrderDetailDto).address,
-        (order as any).deliveryAddress,
-        (order as any).customer?.address,
-        (order as any).address,
-    ].filter(Boolean);
+  const candidates = [
+    (order as AdminOrderDetailDto).address,
+    (order as any).deliveryAddress,
+    (order as any).customer?.address,
+    (order as any).address,
+  ].filter(Boolean);
 
-    return (candidates[0] as Partial<CustomerAddressDto>) || null;
+  return (candidates[0] as Partial<CustomerAddressDto>) || null;
 };
 
 const formatAddress = (address: Partial<CustomerAddressDto> | null): string => {
-    if (!address) return '';
+  if (!address) return '';
 
-    const parts = [
-        address.addressLine1,
-        address.addressLine2,
-        address.landmark,
-        address.city,
-        address.state,
-        address.postalCode,
-    ].filter((value): value is string => Boolean(value && String(value).trim()));
+  const parts = [
+    address.addressLine1,
+    address.addressLine2,
+    address.landmark,
+    address.city,
+    address.state,
+    address.postalCode,
+  ].filter((value): value is string => Boolean(value && String(value).trim()));
 
-    return parts.join(', ');
+  return parts.join(', ');
 };
 
 const OrderDetail: React.FC = () => {
-    const { orderId } = useParams<{ orderId: string }>();
-    const navigate = useNavigate();
-    const { currentTheme } = useAppTheme();
-    const userRole = useSelector((state: RootState) => state.auth.user?.role);
-    const isAdmin = userRole === 'ADMIN' || userRole === 'ROLE_ADMIN';
-    
-    // API Hooks
-    const { data: adminOrder, isLoading: isAdminLoading, isError: isAdminError, refetch: refetchAdmin } = useGetAdminOrderByIdQuery(Number(orderId), { skip: !isAdmin });
-    const { data: customerOrder, isLoading: isCustomerLoading, isError: isCustomerError, refetch: refetchCustomer } = useGetOrderByIdQuery(Number(orderId), { skip: isAdmin });
+  const { orderId } = useParams<{ orderId: string }>();
+  const navigate = useNavigate();
+  const { currentTheme } = useAppTheme();
+  const userRole = useSelector((state: RootState) => state.auth.user?.role);
+  const isAdmin = userRole === 'ADMIN' || userRole === 'ROLE_ADMIN';
 
-    const order = isAdmin ? adminOrder : customerOrder;
-    const deliveryAddress = formatAddress(pickAddress(order));
-    const isLoading = isAdmin ? isAdminLoading : isCustomerLoading;
-    const isError = isAdmin ? isAdminError : isCustomerError;
-    const refetch = isAdmin ? refetchAdmin : refetchCustomer;
+  // API Hooks
+  const {
+    data: adminOrder,
+    isLoading: isAdminLoading,
+    isError: isAdminError,
+    refetch: refetchAdmin,
+  } = useGetAdminOrderByIdQuery(Number(orderId), { skip: !isAdmin });
+  const {
+    data: customerOrder,
+    isLoading: isCustomerLoading,
+    isError: isCustomerError,
+    refetch: refetchCustomer,
+  } = useGetOrderByIdQuery(Number(orderId), { skip: isAdmin });
 
-    const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
-    const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
-    const [markReady, { isLoading: isMarkingReady }] = useMarkOrderReadyMutation();
-    const [markOutForDelivery, { isLoading: isMarkingOut }] = useMarkOutForDeliveryMutation();
-    const [completeOrder, { isLoading: isCompleting }] = useCompleteOrderMutation();
+  const order = isAdmin ? adminOrder : customerOrder;
+  const deliveryAddress = formatAddress(pickAddress(order));
+  const isLoading = isAdmin ? isAdminLoading : isCustomerLoading;
+  const isError = isAdmin ? isAdminError : isCustomerError;
+  const refetch = isAdmin ? refetchAdmin : refetchCustomer;
 
-    // Local State for Reject Modal
-    const [rejectModalOpen, setRejectModalOpen] = useState(false);
-    const [rejectReason, setRejectReason] = useState('');
+  const [acceptOrder, { isLoading: isAccepting }] = useAcceptOrderMutation();
+  const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
 
-    const handleAccept = async () => {
-        try {
-            await acceptOrder({ orderId: Number(orderId) }).unwrap();
-            toast.success('Order accepted successfully');
-            refetch(); 
-        } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to accept order');
-        }
-    };
+  // Local State for Reject Modal
+  const [rejectModalOpen, setRejectModalOpen] = useState(false);
+  const [rejectReason, setRejectReason] = useState('');
 
-    const handleRejectOpen = () => {
-        setRejectReason('');
-        setRejectModalOpen(true);
-    };
+  const handleAccept = async () => {
+    try {
+      await acceptOrder({ orderId: Number(orderId) }).unwrap();
+      toast.success('Order accepted successfully');
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to accept order');
+    }
+  };
 
-    const handleRejectClose = () => {
-        setRejectModalOpen(false);
-    };
+  const handleRejectOpen = () => {
+    setRejectReason('');
+    setRejectModalOpen(true);
+  };
 
-    const handleRejectConfirm = async () => {
-        if (!rejectReason.trim()) {
-            toast.error('Please provide a reason for rejection');
-            return;
-        }
+  const handleRejectClose = () => {
+    setRejectModalOpen(false);
+  };
 
-        try {
-            await rejectOrder({ 
-                orderId: Number(orderId), 
-                reason: rejectReason 
-            }).unwrap();
-            
-            toast.success('Order rejected successfully');
-            setRejectModalOpen(false);
-            refetch(); 
-        } catch (error: any) {
-            toast.error(error?.data?.message || 'Failed to reject order');
-        }
-    };
+  const handleRejectConfirm = async () => {
+    if (!rejectReason.trim()) {
+      toast.error('Please provide a reason for rejection');
+      return;
+    }
 
-    const handleAction = async (actionFn: (id: number) => any, successMsg: string) => {
-        try {
-            await actionFn(Number(orderId)).unwrap();
-            toast.success(successMsg);
-            refetch();
-        } catch (error: any) {
-            toast.error(error?.data?.message || 'Action failed');
-        }
-    };
+    try {
+      await rejectOrder({
+        orderId: Number(orderId),
+        reason: rejectReason,
+      }).unwrap();
 
-    const getStatusColor = (status: string) => {
-        const s = status?.toLowerCase() || '';
-        if (['delivered', 'completed', 'success'].includes(s)) return '#10b981';
-        if (['pending', 'processing', 'confirmed'].includes(s)) return '#f59e0b';
-        if (['out for delivery', 'ready'].includes(s)) return '#3b82f6';
-        if (['cancelled', 'rejected'].includes(s)) return '#ef4444';
-        return '#6b7280';
-    };
+      toast.success('Order rejected successfully');
+      setRejectModalOpen(false);
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to reject order');
+    }
+  };
 
-    if (isLoading) return <Box p={4} display="flex" justifyContent="center"><CircularProgress sx={{ color: currentTheme.accent }} /></Box>;
+  const getStatusColor = (status: string) => {
+    const s = status?.toLowerCase() || '';
+    if (['delivered', 'completed', 'success'].includes(s)) return '#10b981';
+    if (['pending', 'processing', 'confirmed'].includes(s)) return '#f59e0b';
+    if (['out for delivery', 'ready'].includes(s)) return '#3b82f6';
+    if (['cancelled', 'rejected'].includes(s)) return '#ef4444';
+    return '#6b7280';
+  };
 
-    if (isError || !order) return (
-        <Box p={4} textAlign="center">
-            <Typography variant="h5" color="error">Order Details Not Found</Typography>
-            <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>Back</Button>
-        </Box>
-    );
-
+  if (isLoading)
     return (
-        <Box sx={{ p: { xs: 2, md: 4 }, background: currentTheme.bg, minHeight: '100vh', color: 'text.primary' }}>
-            <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
-                <Button 
-                    startIcon={<ArrowBackIcon />} 
-                    onClick={() => navigate(-1)}
-                    sx={{ mb: 3, fontWeight: 700, color: 'text.secondary' }}
-                >
-                    Back to History
-                </Button>
-                <GlassPageHeader>
-                    <Box sx={{ display: 'flex', flexDirection: { xs: 'column', sm: 'row' }, justifyContent: 'space-between', alignItems: { xs: 'flex-start', sm: 'center' }, gap: 2 }}>
-                        <Box>
-                            <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: '-0.02em' }}>
-                                <GradientText>Invoice Details</GradientText>
-                            </Typography>
-                            <Typography variant="subtitle1" fontWeight={700} sx={{ opacity: 0.8 }}>
-                                Order #{order.orderNumber}
-                            </Typography>
-                        </Box>
-                        <GlassBadge statusColor={getStatusColor(order.orderStatus)}>
-                            {order.orderStatus}
-                        </GlassBadge>
-                    </Box>
-                </GlassPageHeader>
-            </motion.div>
-
-            {/* Admin Controls */}
-            {isAdmin && (
-                <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 }}>
-                    <GlassCard sx={{ p: 2, mb: 4, display: 'flex', gap: 2, flexWrap: 'wrap', border: `1px solid ${currentTheme.accent}20` }}>
-                        {order.orderStatus?.toLowerCase() === 'pending' && (
-                            <>
-                                <Button 
-                                    variant="contained" 
-                                    color="success" 
-                                    startIcon={<CheckIcon />}
-                                    onClick={handleAccept}
-                                    sx={{ borderRadius: 3, fontWeight: 900 }}
-                                    disabled={isAccepting}
-                                >
-                                    Accept Request
-                                </Button>
-                                <Button 
-                                    variant="outlined" 
-                                    color="error" 
-                                    startIcon={<CancelIcon />}
-                                    onClick={handleRejectOpen}
-                                    sx={{ borderRadius: 3, fontWeight: 900 }}
-                                    disabled={isRejecting}
-                                >
-                                    Reject
-                                </Button>
-                            </>
-                        )}
-                        {(order.orderStatus?.toLowerCase() === 'confirmed' || order.orderStatus?.toLowerCase() === 'processing') && (
-                            <Button 
-                                variant="contained" 
-                                color="primary" 
-                                startIcon={<InventoryIcon />}
-                                onClick={() => handleAction(markReady, 'Order marked as ready')}
-                                sx={{ borderRadius: 3, fontWeight: 900 }}
-                                disabled={isMarkingReady}
-                            >
-                                Mark Ready
-                            </Button>
-                        )}
-                        {order.orderStatus?.toLowerCase() === 'ready' && (
-                            <Button 
-                                variant="contained" 
-                                color="info" 
-                                startIcon={<DeliveryIcon />}
-                                onClick={() => handleAction(markOutForDelivery, 'Order out for delivery')}
-                                sx={{ borderRadius: 3, fontWeight: 900 }}
-                                disabled={isMarkingOut}
-                            >
-                                Dispatch Order
-                            </Button>
-                        )}
-                        {order.orderStatus?.toLowerCase() === 'out for delivery' && (
-                            <Button 
-                                variant="contained" 
-                                color="success" 
-                                startIcon={<CompleteIcon />}
-                                onClick={() => handleAction(completeOrder, 'Order completed')}
-                                sx={{ borderRadius: 3, fontWeight: 900 }}
-                                disabled={isCompleting}
-                            >
-                                Confirm Delivery
-                            </Button>
-                        )}
-                    </GlassCard>
-                </motion.div>
-            )}
-
-            <Grid container spacing={4}>
-                {/* Left Col: Customer & Address */}
-                <Grid size={{ xs: 12, md: 4 }}>
-                    <Stack spacing={3}>
-                        <GlassCard sx={{ p: 3, border: `1px solid ${currentTheme.border}` }}>
-                            <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>Customer Contact</Typography>
-                            <Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center">
-                                <Avatar sx={{ bgcolor: currentTheme.accent, width: 50, height: 50 }}><PhoneIcon /></Avatar>
-                                <Box>
-                                    <Typography variant="h6" fontWeight={800}>{isAdmin ? (adminOrder as any).customerName : 'Me'}</Typography>
-                                    <Typography variant="body2" sx={{ opacity: 0.7 }}>{isAdmin ? (adminOrder as any).customerPhone : 'Confirmed Partner'}</Typography>
-                                </Box>
-                            </Stack>
-                        </GlassCard>
-
-                        <GlassCard sx={{ p: 3, border: `1px solid ${currentTheme.border}`, bgcolor: `${currentTheme.cardBg}50` }}>
-                            <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>Destination info</Typography>
-                            <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
-                                <LocationIcon sx={{ color: currentTheme.accent, mt: 0.5 }} />
-                                <Box>
-                                    <Typography variant="body1" fontWeight={700}>Delivery Location</Typography>
-                                    <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
-                                        {deliveryAddress || 'Address not available'}
-                                    </Typography>
-                                </Box>
-                            </Box>
-                        </GlassCard>
-
-                        <GlassCard sx={{ p: 3, border: `1px solid ${currentTheme.border}40` }}>
-                            <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>Financial Summary</Typography>
-                            <Stack spacing={1} sx={{ mt: 2 }}>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ opacity: 0.7 }}>Method</Typography>
-                                    <Typography variant="body2" fontWeight={800}>{order.paymentMethod}</Typography>
-                                </Box>
-                                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
-                                    <Typography variant="body2" sx={{ opacity: 0.7 }}>Status</Typography>
-                                    <GlassBadge sx={{ fontSize: '10px' }} statusColor={order.paymentStatus === 'PAID' ? '#10b981' : '#f59e0b'}>
-                                        {order.paymentStatus}
-                                    </GlassBadge>
-                                </Box>
-                            </Stack>
-                        </GlassCard>
-                    </Stack>
-                </Grid>
-
-                {/* Right Col: Items */}
-                <Grid size={{ xs: 12, md: 8 }}>
-                    <GlassCard sx={{ p: 0, overflow: 'hidden' }}>
-                        <Box sx={{ p: 3, display: 'flex', justifyContent: 'space-between', alignItems: 'center', bgcolor: `${currentTheme.border}20` }}>
-                            <Typography variant="h6" fontWeight={800}>Inventory Items</Typography>
-                            <Typography variant="subtitle2" sx={{ opacity: 0.6 }}>{order.items?.length || 0} Products</Typography>
-                        </Box>
-                        <Divider sx={{ opacity: 0.2 }} />
-                        <Box sx={{ p: 3 }}>
-                            {order.items?.map((item, idx) => (
-                                <Box key={idx} sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-                                    <Stack direction="row" spacing={3} alignItems="center">
-                                        <Box sx={{ width: 48, height: 48, borderRadius: 3, bgcolor: `${currentTheme.accent}15`, display: 'flex', justifyContent: 'center', alignItems: 'center', color: currentTheme.accent }}>
-                                            <InventoryIcon />
-                                        </Box>
-                                        <Box>
-                                            <Typography variant="body1" fontWeight={800}>{item.productName}</Typography>
-                                            <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 700 }}>{item.variantName} | {item.sku}</Typography>
-                                        </Box>
-                                    </Stack>
-                                    <Box textAlign="right">
-                                        <Typography variant="h6" fontWeight={900}>₹{item.totalPrice.toFixed(2)}</Typography>
-                                        <Typography variant="caption" sx={{ opacity: 0.5 }}>₹{item.unitPrice.toFixed(2)} x {item.quantity}</Typography>
-                                    </Box>
-                                </Box>
-                            ))}
-                            
-                            <Box sx={{ mt: 4, pt: 4, borderTop: `2px dashed ${currentTheme.border}60`, display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
-                                <Box>
-                                    <Typography variant="h6" fontWeight={500} sx={{ opacity: 0.7 }}>Order Grand Total</Typography>
-                                    <Typography variant="caption" color="text.secondary">Inclusive of all taxes and delivery fees</Typography>
-                                </Box>
-                                <Typography variant="h3" fontWeight={900} color={currentTheme.accent}>
-                                    ₹{order.grandTotal.toFixed(2)}
-                                </Typography>
-                            </Box>
-                        </Box>
-                    </GlassCard>
-                </Grid>
-            </Grid>
-
-            {/* Reject Modal */}
-            <Dialog 
-                open={rejectModalOpen} 
-                onClose={handleRejectClose} 
-                maxWidth="sm" 
-                fullWidth
-                PaperProps={{ sx: { borderRadius: 5, background: currentTheme.cardBg, backdropFilter: 'blur(10px)', border: `1px solid ${currentTheme.border}` } }}
-            >
-                <DialogTitle sx={{ fontWeight: 900 }}>Reject Confirmation</DialogTitle>
-                <DialogContent>
-                    <DialogContentText mb={2} sx={{ opacity: 0.8 }}>
-                        Please specify the reason for the rejection. The customer will see this message.
-                    </DialogContentText>
-                    <TextField
-                        autoFocus
-                        margin="dense"
-                        label="Reason for Rejection"
-                        type="text"
-                        fullWidth
-                        multiline
-                        rows={3}
-                        variant="soft"
-                        value={rejectReason}
-                        onChange={(e) => setRejectReason(e.target.value)}
-                        sx={{ input: { color: 'text.primary' } }}
-                    />
-                </DialogContent>
-                <DialogActions sx={{ p: 3 }}>
-                    <Button onClick={handleRejectClose} sx={{ color: 'text.secondary' }}>Dismiss</Button>
-                    <Button 
-                        onClick={handleRejectConfirm} 
-                        color="error" 
-                        variant="contained"
-                        disabled={isRejecting || !rejectReason.trim()}
-                        sx={{ borderRadius: 3, fontWeight: 900, px: 4 }}
-                    >
-                        Confirm Rejection
-                    </Button>
-                </DialogActions>
-            </Dialog>
-        </Box>
+      <Box p={4} display="flex" justifyContent="center">
+        <CircularProgress sx={{ color: currentTheme.accent }} />
+      </Box>
     );
+
+  if (isError || !order)
+    return (
+      <Box p={4} textAlign="center">
+        <Typography variant="h5" color="error">
+          Order Details Not Found
+        </Typography>
+        <Button onClick={() => navigate(-1)} sx={{ mt: 2 }}>
+          Back
+        </Button>
+      </Box>
+    );
+
+  return (
+    <Box
+      sx={{
+        p: { xs: 2, md: 4 },
+        background: currentTheme.bg,
+        minHeight: '100vh',
+        color: 'text.primary',
+      }}
+    >
+      <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
+        <Button
+          startIcon={<ArrowBackIcon />}
+          onClick={() => navigate(-1)}
+          sx={{ mb: 3, fontWeight: 700, color: 'text.secondary' }}
+        >
+          Back to History
+        </Button>
+        <GlassPageHeader>
+          <Box
+            sx={{
+              display: 'flex',
+              flexDirection: { xs: 'column', sm: 'row' },
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              gap: 2,
+            }}
+          >
+            <Box>
+              <Typography variant="h4" fontWeight={900} sx={{ letterSpacing: '-0.02em' }}>
+                <GradientText>Invoice Details</GradientText>
+              </Typography>
+              <Typography variant="subtitle1" fontWeight={700} sx={{ opacity: 0.8 }}>
+                Order #{order.orderNumber}
+              </Typography>
+            </Box>
+            <GlassBadge statusColor={getStatusColor(order.orderStatus)}>
+              {order.orderStatus}
+            </GlassBadge>
+          </Box>
+        </GlassPageHeader>
+      </motion.div>
+
+      {/* Admin Controls */}
+      {isAdmin && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1 }}
+        >
+          <GlassCard
+            sx={{
+              p: 2,
+              mb: 4,
+              display: 'flex',
+              gap: 2,
+              flexWrap: 'wrap',
+              border: `1px solid ${currentTheme.accent}20`,
+            }}
+          >
+            {order.orderStatus?.toLowerCase() === 'pending' && (
+              <>
+                <Button
+                  variant="contained"
+                  color="success"
+                  startIcon={<CheckIcon />}
+                  onClick={handleAccept}
+                  sx={{ borderRadius: 3, fontWeight: 900 }}
+                  disabled={isAccepting}
+                >
+                  Accept Request
+                </Button>
+                <Button
+                  variant="outlined"
+                  color="error"
+                  startIcon={<CancelIcon />}
+                  onClick={handleRejectOpen}
+                  sx={{ borderRadius: 3, fontWeight: 900 }}
+                  disabled={isRejecting}
+                >
+                  Reject
+                </Button>
+              </>
+            )}
+          </GlassCard>
+        </motion.div>
+      )}
+
+      <Grid container spacing={4}>
+        {/* Left Col: Customer & Address */}
+        <Grid size={{ xs: 12, md: 4 }}>
+          <Stack spacing={3}>
+            <GlassCard sx={{ p: 3, border: `1px solid ${currentTheme.border}` }}>
+              <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>
+                Customer Contact
+              </Typography>
+              <Stack direction="row" spacing={2} sx={{ mt: 2 }} alignItems="center">
+                <Avatar sx={{ bgcolor: currentTheme.accent, width: 50, height: 50 }}>
+                  <PhoneIcon />
+                </Avatar>
+                <Box>
+                  <Typography variant="h6" fontWeight={800}>
+                    {isAdmin ? (adminOrder as any).customerName : 'Me'}
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                    {isAdmin ? (adminOrder as any).customerPhone : 'Confirmed Partner'}
+                  </Typography>
+                </Box>
+              </Stack>
+            </GlassCard>
+
+            <GlassCard
+              sx={{
+                p: 3,
+                border: `1px solid ${currentTheme.border}`,
+                bgcolor: `${currentTheme.cardBg}50`,
+              }}
+            >
+              <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>
+                Destination info
+              </Typography>
+              <Box sx={{ mt: 2, display: 'flex', gap: 2 }}>
+                <LocationIcon sx={{ color: currentTheme.accent, mt: 0.5 }} />
+                <Box>
+                  <Typography variant="body1" fontWeight={700}>
+                    Delivery Location
+                  </Typography>
+                  <Typography variant="body2" sx={{ opacity: 0.8, mt: 0.5 }}>
+                    {deliveryAddress || 'Address not available'}
+                  </Typography>
+                </Box>
+              </Box>
+            </GlassCard>
+
+            <GlassCard sx={{ p: 3, border: `1px solid ${currentTheme.border}40` }}>
+              <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>
+                Financial Summary
+              </Typography>
+              <Stack spacing={1} sx={{ mt: 2 }}>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                    Method
+                  </Typography>
+                  <Typography variant="body2" fontWeight={800}>
+                    {order.paymentMethod}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                    Status
+                  </Typography>
+                  <GlassBadge
+                    sx={{ fontSize: '10px' }}
+                    statusColor={order.paymentStatus === 'PAID' ? '#10b981' : '#f59e0b'}
+                  >
+                    {order.paymentStatus}
+                  </GlassBadge>
+                </Box>
+              </Stack>
+            </GlassCard>
+          </Stack>
+        </Grid>
+
+        {/* Right Col: Items */}
+        <Grid size={{ xs: 12, md: 8 }}>
+          <GlassCard sx={{ p: 0, overflow: 'hidden' }}>
+            <Box
+              sx={{
+                p: 3,
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                bgcolor: `${currentTheme.border}20`,
+              }}
+            >
+              <Typography variant="h6" fontWeight={800}>
+                Inventory Items
+              </Typography>
+              <Typography variant="subtitle2" sx={{ opacity: 0.6 }}>
+                {order.items?.length || 0} Products
+              </Typography>
+            </Box>
+            <Divider sx={{ opacity: 0.2 }} />
+            <Box sx={{ p: 3 }}>
+              {order.items?.map((item, idx) => (
+                <Box
+                  key={idx}
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    mb: 3,
+                  }}
+                >
+                  <Stack direction="row" spacing={3} alignItems="center">
+                    <Box
+                      sx={{
+                        width: 48,
+                        height: 48,
+                        borderRadius: 3,
+                        bgcolor: `${currentTheme.accent}15`,
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        color: currentTheme.accent,
+                      }}
+                    >
+                      <InventoryIcon />
+                    </Box>
+                    <Box>
+                      <Typography variant="body1" fontWeight={800}>
+                        {item.productName}
+                      </Typography>
+                      <Typography variant="caption" sx={{ opacity: 0.6, fontWeight: 700 }}>
+                        {item.variantName} | {item.sku}
+                      </Typography>
+                    </Box>
+                  </Stack>
+                  <Box textAlign="right">
+                    <Typography variant="h6" fontWeight={900}>
+                      ₹{item.totalPrice.toFixed(2)}
+                    </Typography>
+                    <Typography variant="caption" sx={{ opacity: 0.5 }}>
+                      ₹{item.unitPrice.toFixed(2)} x {item.quantity}
+                    </Typography>
+                  </Box>
+                </Box>
+              ))}
+
+              <Box
+                sx={{
+                  mt: 4,
+                  pt: 4,
+                  borderTop: `2px dashed ${currentTheme.border}60`,
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'flex-end',
+                }}
+              >
+                <Box>
+                  <Typography variant="h6" fontWeight={500} sx={{ opacity: 0.7 }}>
+                    Order Grand Total
+                  </Typography>
+                  <Typography variant="caption" color="text.secondary">
+                    Inclusive of all taxes and delivery fees
+                  </Typography>
+                </Box>
+                <Typography variant="h3" fontWeight={900} color={currentTheme.accent}>
+                  ₹{order.grandTotal.toFixed(2)}
+                </Typography>
+              </Box>
+            </Box>
+          </GlassCard>
+        </Grid>
+      </Grid>
+
+      {/* Reject Modal */}
+      <Dialog
+        open={rejectModalOpen}
+        onClose={handleRejectClose}
+        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 5,
+            background: currentTheme.cardBg,
+            backdropFilter: 'blur(10px)',
+            border: `1px solid ${currentTheme.border}`,
+          },
+        }}
+      >
+        <DialogTitle sx={{ fontWeight: 900 }}>Reject Confirmation</DialogTitle>
+        <DialogContent>
+          <DialogContentText mb={2} sx={{ opacity: 0.8 }}>
+            Please specify the reason for the rejection. The customer will see this message.
+          </DialogContentText>
+          <TextField
+            autoFocus
+            margin="dense"
+            label="Reason for Rejection"
+            type="text"
+            fullWidth
+            multiline
+            rows={3}
+            variant="soft"
+            value={rejectReason}
+            onChange={(e) => setRejectReason(e.target.value)}
+            sx={{ input: { color: 'text.primary' } }}
+          />
+        </DialogContent>
+        <DialogActions sx={{ p: 3 }}>
+          <Button onClick={handleRejectClose} sx={{ color: 'text.secondary' }}>
+            Dismiss
+          </Button>
+          <Button
+            onClick={handleRejectConfirm}
+            color="error"
+            variant="contained"
+            disabled={isRejecting || !rejectReason.trim()}
+            sx={{ borderRadius: 3, fontWeight: 900, px: 4 }}
+          >
+            Confirm Rejection
+          </Button>
+        </DialogActions>
+      </Dialog>
+    </Box>
+  );
 };
 
 export default OrderDetail;
