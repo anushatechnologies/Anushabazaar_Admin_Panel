@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
@@ -49,6 +49,7 @@ import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/delivery
 import { AdminOrderSummaryDto, CustomerAddressDto } from '../types/index';
 import dayjs from 'dayjs';
 import { toast } from '@components/toast/ToastContainer';
+import { useNavigate } from 'react-router-dom';
 import {
   GlassCard,
   GlassPageHeader,
@@ -60,6 +61,7 @@ import EmptyState from '../../../components/empty-state/EmptyState';
 
 const AdminOrderDashboard: React.FC = () => {
   const { currentTheme } = useAppTheme();
+  const navigate = useNavigate();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -74,7 +76,9 @@ const AdminOrderDashboard: React.FC = () => {
     isError,
     refetch,
   } = useGetAdminOrdersQuery(undefined, {
-    pollingInterval: 5000,
+    pollingInterval: 3000,
+    refetchOnFocus: true,
+    refetchOnReconnect: true,
   });
   const { data: orderDetail, isFetching: isDetailFetching } = useGetAdminOrderByIdQuery(
     selectedOrderId || 0,
@@ -91,6 +95,8 @@ const AdminOrderDashboard: React.FC = () => {
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
+  const knownOrderIdsRef = useRef<Set<number>>(new Set());
+  const hasInitializedRealtimeRef = useRef(false);
 
   const ordersList = useMemo(() => {
     const raw: any = orders;
@@ -100,6 +106,44 @@ const AdminOrderDashboard: React.FC = () => {
     if (Array.isArray(raw.orders)) return raw.orders;
     return [];
   }, [orders]);
+
+  useEffect(() => {
+    if (typeof orders === 'undefined') {
+      return;
+    }
+
+    const currentIds = new Set(ordersList.map((order) => order.id));
+
+    if (!hasInitializedRealtimeRef.current) {
+      knownOrderIdsRef.current = currentIds;
+      hasInitializedRealtimeRef.current = true;
+      return;
+    }
+
+    const newOrders = ordersList
+      .filter((order) => !knownOrderIdsRef.current.has(order.id))
+      .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
+
+    if (newOrders.length > 0) {
+      const latestOrder = newOrders[0];
+      const countLabel =
+        newOrders.length === 1
+          ? `New order received: ${latestOrder.orderNumber}`
+          : `${newOrders.length} new orders received`;
+
+      toast.custom({
+        type: 'success',
+        message: countLabel,
+        duration: 7000,
+        action: {
+          label: 'Open order',
+          onClick: () => navigate(`/admin/orders/${latestOrder.id}`),
+        },
+      });
+    }
+
+    knownOrderIdsRef.current = currentIds;
+  }, [navigate, orders, ordersList]);
 
   const filteredOrders = useMemo(() => {
     const toSt = (st?: string) => (st ?? '').toLowerCase();
@@ -214,6 +258,7 @@ const AdminOrderDashboard: React.FC = () => {
               <GlassBadge statusColor={currentTheme.accent}>
                 {ordersList.length} Total Orders
               </GlassBadge>
+              <GlassBadge statusColor="#10b981">Live refresh: 3s</GlassBadge>
             </Stack>
           </Box>
         </GlassPageHeader>
