@@ -21,18 +21,26 @@ export const categoryApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // 3.3 Create Category
-    createCategory: builder.mutation<Category, any>({
-      query: (categoryData) => {
+    createCategory: builder.mutation<Category, { data: any; image?: File }>({
+      query: ({ data, image }) => {
         const formData = new FormData();
-        formData.append('category', new Blob([JSON.stringify({
-          name: categoryData.name,
-          description: categoryData.description,
-          isActive: categoryData.isActive,
-          displayOrder: categoryData.displayOrder,
-          discount: categoryData.discount,
-        })], { type: 'application/json' }));
-        if (categoryData.image && categoryData.image instanceof File) {
-          formData.append('image', categoryData.image);
+        formData.append(
+          'category',
+          new Blob(
+            [
+              JSON.stringify({
+                name: data.name,
+                description: data.description,
+                isActive: data.isActive,
+                displayOrder: data.displayOrder,
+                discount: data.discount,
+              }),
+            ],
+            { type: 'application/json' },
+          ),
+        );
+        if (image && image instanceof File) {
+          formData.append('image', image);
         }
         return {
           url: '/api/categories',
@@ -47,19 +55,27 @@ export const categoryApi = baseApiWithAuth.injectEndpoints({
     updateCategory: builder.mutation<Category, { id: number; data: any; image?: File }>({
       query: ({ id, data, image }) => {
         const formData = new FormData();
-        formData.append('category', new Blob([JSON.stringify({
-          name: data.name,
-          description: data.description,
-          isActive: data.isActive,
-          displayOrder: data.displayOrder,
-          discount: data.discount,
-        })], { type: 'application/json' }));
+        formData.append(
+          'category',
+          new Blob(
+            [
+              JSON.stringify({
+                name: data.name,
+                description: data.description,
+                isActive: data.isActive,
+                displayOrder: data.displayOrder,
+                discount: data.discount,
+                // Send existing imageUrl so backend preserves it when no new file is uploaded
+                imageUrl: data.imageUrl || null,
+                videoUrl: data.videoUrl || null,
+              }),
+            ],
+            { type: 'application/json' },
+          ),
+        );
 
         if (image && image instanceof File) {
           formData.append('image', image);
-        } else if (data.image && data.image instanceof File) {
-          // Fallback for cases where image is passed inside data
-          formData.append('image', data.image);
         }
 
         return {

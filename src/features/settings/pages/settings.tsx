@@ -1,100 +1,121 @@
-import { useRef, useState, useEffect } from 'react';
-import toast from 'react-hot-toast';
-import { 
-  useGetFareSettingsQuery, 
-  useUpdateFareSettingsMutation 
-} from '../../delivery/api/deliveryApi';
-import { Box, Typography, Button, TextField, Stack, CircularProgress, Card, Grid } from '@mui/material';
+import { Box, Button, Chip, Stack, Typography } from '@mui/material';
+import { AutoAwesome, Construction, SettingsSuggest } from '@mui/icons-material';
+import { motion } from 'framer-motion';
+import { Link as RouterLink } from 'react-router-dom';
 
-export default function App() {
-  // Fare Settings API
-  const { data: fareData, isLoading: isFareLoading } = useGetFareSettingsQuery();
-  const [updateFare, { isLoading: isUpdatingFare }] = useUpdateFareSettingsMutation();
+import {
+  GlassCard,
+  GlassPageHeader,
+  GradientText,
+} from '../../../components/glassmorphism/GlassComponents';
 
-  const [fareForm, setFareForm] = useState({
-    baseFare: 0,
-    perKmFare: 0,
-    surgeMultiplier: 1.0,
-    maxSurgeBonus: 0
-  });
-
-  // Sync fare data when loaded
-  useEffect(() => {
-    if (fareData?.fareSettings) {
-        setFareForm({
-            baseFare: fareData.fareSettings.baseFare,
-            perKmFare: fareData.fareSettings.perKmFare,
-            surgeMultiplier: fareData.fareSettings.surgeMultiplier,
-            maxSurgeBonus: fareData.fareSettings.maxSurgeBonus
-        });
-    }
-  }, [fareData]);
-
-  const handleFareSave = async () => {
-    try {
-        await updateFare(fareForm).unwrap();
-        toast.success('Fare settings updated successfully');
-    } catch (err) {
-        toast.error('Failed to update fare settings');
-    }
-  };
-
+export default function SettingsPage() {
   return (
-    <Box className="min-h-screen bg-gray-50 p-8">
-      <Stack spacing={4} maxWidth="600px" mx="auto">
-        <Typography variant="h4" fontWeight={700} textAlign="center">Settings</Typography>
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, display: 'grid', gap: 3 }}>
+      <motion.div
+        initial={{ opacity: 0, y: -16 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45 }}
+      >
+        <GlassPageHeader>
+          <Stack direction={{ xs: 'column', md: 'row' }} justifyContent="space-between" gap={2}>
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 0.5 }}>
+                <GradientText>Settings</GradientText>
+              </Typography>
+              <Typography color="text.secondary">
+                Platform-level admin preferences and workspace tools will be added here soon.
+              </Typography>
+            </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip
+                icon={<Construction fontSize="small" />}
+                label="Update Soon"
+                color="warning"
+                variant="filled"
+              />
+              <Chip
+                icon={<AutoAwesome fontSize="small" />}
+                label="UI refresh applied"
+                variant="outlined"
+              />
+            </Stack>
+          </Stack>
+        </GlassPageHeader>
+      </motion.div>
 
-        <Card sx={{ borderRadius: 3, boxShadow: 2 }}>
-          <Box p={3} borderBottom="1px solid" borderColor="divider">
-              <Typography variant="h6">Delivery Fare Settings</Typography>
-          </Box>
-          <Box p={3}>
-              {isFareLoading ? (
-                  <Box display="flex" justifyContent="center" p={4}>
-                      <CircularProgress size={32} />
-                  </Box>
-              ) : (
-                  <Stack spacing={3}>
-                      <Box>
-                          <Typography variant="caption" color="text.secondary">Base Fare (₹)</Typography>
-                          <TextField fullWidth size="small" type="number" value={fareForm.baseFare} onChange={(e) => setFareForm({...fareForm, baseFare: Number(e.target.value)})} />
-                      </Box>
-                      <Box>
-                          <Typography variant="caption" color="text.secondary">Per KM Fare (₹)</Typography>
-                          <TextField fullWidth size="small" type="number" value={fareForm.perKmFare} onChange={(e) => setFareForm({...fareForm, perKmFare: Number(e.target.value)})} />
-                      </Box>
-                      <Stack direction="row" spacing={2}>
-                          <Box flex={1}>
-                              <Typography variant="caption" color="text.secondary">Surge Multiplier</Typography>
-                              <TextField fullWidth size="small" type="number" inputProps={{ step: 0.1 }} value={fareForm.surgeMultiplier} onChange={(e) => setFareForm({...fareForm, surgeMultiplier: Number(e.target.value)})} />
-                          </Box>
-                          <Box flex={1}>
-                              <Typography variant="caption" color="text.secondary">Max Surge Bonus</Typography>
-                              <TextField fullWidth size="small" type="number" value={fareForm.maxSurgeBonus} onChange={(e) => setFareForm({...fareForm, maxSurgeBonus: Number(e.target.value)})} />
-                          </Box>
-                      </Stack>
-                      <Button 
-                          fullWidth 
-                          variant="contained" 
-                          color="primary" 
-                          onClick={handleFareSave}
-                          disabled={isUpdatingFare}
-                          sx={{ 
-                            mt: 2,
-                            borderRadius: 2,
-                            py: 1.2,
-                            textTransform: 'none',
-                            fontWeight: 600,
-                            boxShadow: '0 4px 12px rgba(37, 99, 235, 0.2)'
-                          }}
-                      >
-                          {isUpdatingFare ? <CircularProgress size={20} color="inherit" /> : 'Update Fare Settings'}
-                      </Button>
-                  </Stack>
-              )}
-          </Box>
-        </Card>
-      </Stack>
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, delay: 0.08 }}
+      >
+        <GlassCard
+          sx={{
+            minHeight: 380,
+            display: 'grid',
+            placeItems: 'center',
+            textAlign: 'center',
+            background:
+              'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(238,246,255,0.96) 100%)',
+          }}
+        >
+          <Stack spacing={2.5} alignItems="center" sx={{ maxWidth: 560 }}>
+            <Box
+              sx={{
+                width: 88,
+                height: 88,
+                borderRadius: 28,
+                display: 'grid',
+                placeItems: 'center',
+                background:
+                  'linear-gradient(135deg, rgba(37,99,235,0.14) 0%, rgba(124,58,237,0.14) 100%)',
+                color: '#4f46e5',
+                boxShadow: '0 18px 40px rgba(79,70,229,0.16)',
+              }}
+            >
+              <SettingsSuggest sx={{ fontSize: 40 }} />
+            </Box>
+
+            <Box>
+              <Typography variant="h4" sx={{ fontWeight: 800, mb: 1 }}>
+                Settings Update Coming Soon
+              </Typography>
+              <Typography color="text.secondary" sx={{ fontSize: 16, lineHeight: 1.7 }}>
+                The generic admin settings page is being redesigned. Delivery fare configuration is
+                still available from the dedicated
+                <strong> Fare Settings </strong>
+                menu under the Delivery section.
+              </Typography>
+            </Box>
+
+            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+              <Button
+                component={RouterLink}
+                to="/delivery/fare-settings"
+                variant="contained"
+                sx={{
+                  borderRadius: 999,
+                  px: 3,
+                  py: 1.2,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #2563eb 0%, #14b8a6 100%)',
+                }}
+              >
+                Open Fare Settings
+              </Button>
+              <Button
+                component={RouterLink}
+                to="/"
+                variant="outlined"
+                sx={{ borderRadius: 999, px: 3, py: 1.2, textTransform: 'none', fontWeight: 700 }}
+              >
+                Back to Dashboard
+              </Button>
+            </Stack>
+          </Stack>
+        </GlassCard>
+      </motion.div>
     </Box>
   );
 }

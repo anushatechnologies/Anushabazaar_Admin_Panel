@@ -91,9 +91,8 @@ export interface AcceptOrderRequest {
 }
 
 export interface AcceptOrderResponse {
-  success: boolean;
   message: string;
-  order: OrderResponse;
+  orderId: number;
 }
 
 export interface RejectOrderRequest {
@@ -103,9 +102,8 @@ export interface RejectOrderRequest {
 }
 
 export interface RejectOrderResponse {
-  success: boolean;
   message: string;
-  order: OrderResponse;
+  orderId: number;
 }
 
 export interface AssignDeliveryRequest {
@@ -117,5 +115,6 @@ export interface AssignDeliveryRequest {
 export interface AssignDeliveryResponse {
   success: boolean;
   message: string;
-  order: OrderResponse;
+  orderId: number;
+  orderNumber: string;
 }

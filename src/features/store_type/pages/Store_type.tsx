@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { toast } from '../../../components/toast/ToastContainer';
 import AddForm from './add_store';
 import {
@@ -7,44 +7,35 @@ import {
   useUpdateStoreTypeMutation,
   useDeleteStoreTypeMutation,
   StoreRequest as StoreTypeRequest,
+  StoreType,
 } from '../api/storeapi';
-import { useGetSubStoresQuery } from '../../store/api/subStoreApi';
 import ReusableTable from '../../../components/common/ReusableTable';
 import ConfirmDialog from '../../../components/ConfirmDialog';
-
-type StoreType = {
-  id: number;
-  name: string;
-  label: string;
-  displayOrder: number;
-  active: boolean;
-  image?: string;
-  store1Id: number;
-};
 
 const ITEMS_PER_PAGE = 5;
 
 export default function StoreTypePage() {
-  const [stores, setStores] = useState<StoreType[]>([]);
   const [showModal, setShowModal] = useState(false);
   const [editData, setEditData] = useState<StoreType | null>(null);
   const [search, setSearch] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
-  const [mainStoresMap, setMainStoresMap] = useState<Map<number, string>>(new Map());
   const [confirmId, setConfirmId] = useState<number | null>(null);
 
   const [debouncedSearch, setDebouncedSearch] = useState(search);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(search), 500);
+    const timer = setTimeout(() => setDebouncedSearch(search), 250);
     return () => clearTimeout(timer);
   }, [search]);
 
-  const { data, isLoading: loading, error } = useGetStoreTypesQuery({
+  const {
+    data,
+    isLoading: loading,
+    error,
+  } = useGetStoreTypesQuery({
     name: debouncedSearch || undefined,
     page: currentPage - 1,
     size: ITEMS_PER_PAGE,
   });
-  const { data: mainStoresData } = useGetSubStoresQuery({ name: undefined, page: 0, size: 100 });
   const [createStoreType, { isLoading: isCreating }] = useCreateStoreTypeMutation();
   const [updateStoreType, { isLoading: isUpdating }] = useUpdateStoreTypeMutation();
   const [deleteStoreType, { isLoading: isDeleting }] = useDeleteStoreTypeMutation();
@@ -55,24 +46,10 @@ export default function StoreTypePage() {
     }
   }, [error]);
 
-  useEffect(() => {
-    const storesArray = (((data as any)?.content || data || []) as any[]);
-    setStores(
-      storesArray.map((item: any) => ({
-        ...item,
-        image: item.imageUrl,
-      }))
-    );
-  }, [data]);
+  const stores = useMemo(() => ((data as any)?.content || data || []) as StoreType[], [data]);
 
-  useEffect(() => {
-    const storesArray = (((mainStoresData as any)?.content || mainStoresData || []) as any[]);
-    if (storesArray.length > 0) {
-      setMainStoresMap(new Map(storesArray.map((ms: any) => [ms.id, ms.name])));
-    }
-  }, [mainStoresData]);
-
-  const totalPages = (data as any)?.totalPages || Math.max(1, Math.ceil(stores.length / ITEMS_PER_PAGE));
+  const totalPages =
+    (data as any)?.totalPages || Math.max(1, Math.ceil(stores.length / ITEMS_PER_PAGE));
 
   const handleCreate = async (storeData: StoreTypeRequest, imageFile?: File) => {
     if (!imageFile) {
@@ -115,95 +92,187 @@ export default function StoreTypePage() {
 
   return (
     <div className="w-full">
-      <div className="max-w-6xl mx-auto">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-3xl font-bold" style={{ color: 'var(--text-color)' }}>
-            Store Type
-          </h1>
-          <div className="flex gap-3">
-            <input
-              value={search}
-              onChange={(e) => {
-                setSearch(e.target.value);
-                setCurrentPage(1);
-              }}
-              placeholder="Search store types..."
-              className="border px-4 py-2 rounded-lg focus:ring-2 focus:ring-indigo-500 outline-none transition"
-              style={{
-                backgroundColor: 'var(--card-bg)',
-                color: 'var(--text-color)',
-                borderColor: 'var(--border-soft)',
-              }}
-            />
-            <button
-              onClick={() => {
-                setEditData(null);
-                setShowModal(true);
-              }}
-              className="text-white px-6 py-2 rounded-lg shadow-sm transition hover:opacity-90"
-              style={{ backgroundColor: 'var(--highlight-color)' }}
-            >
-              + Add Store Type
-            </button>
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div
+          className="rounded-3xl border p-6 shadow-sm"
+          style={{
+            backgroundColor: 'var(--card-bg)',
+            borderColor: 'var(--border-soft)',
+          }}
+        >
+          <div className="flex flex-col gap-5 lg:flex-row lg:items-end lg:justify-between">
+            <div className="space-y-2">
+              <p className="text-sm font-semibold uppercase tracking-[0.24em] opacity-60">
+                Store setup
+              </p>
+              <h1 className="text-3xl font-bold" style={{ color: 'var(--text-color)' }}>
+                Store Type
+              </h1>
+              <p className="max-w-2xl text-sm opacity-70" style={{ color: 'var(--text-color)' }}>
+                Manage the storefront cards shown to customers. Add, edit, or retire store types
+                with clearer content, contact info, and stronger visual hierarchy.
+              </p>
+            </div>
+            <div className="flex w-full flex-col gap-3 sm:flex-row lg:w-auto">
+              <input
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setCurrentPage(1);
+                }}
+                placeholder="Search store types..."
+                className="w-full rounded-xl border px-4 py-3 outline-none transition focus:ring-2 focus:ring-indigo-500 sm:min-w-[260px]"
+                style={{
+                  backgroundColor: 'var(--card-bg)',
+                  color: 'var(--text-color)',
+                  borderColor: 'var(--border-soft)',
+                }}
+              />
+              <button
+                onClick={() => {
+                  setEditData(null);
+                  setShowModal(true);
+                }}
+                className="inline-flex min-h-[52px] items-center justify-center rounded-xl px-6 py-3 text-sm font-semibold text-white shadow-lg transition hover:-translate-y-0.5 hover:opacity-95"
+                style={{
+                  background: 'linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%)',
+                  boxShadow: '0 16px 30px rgba(37, 99, 235, 0.22)',
+                }}
+              >
+                + Add Store Type
+              </button>
+            </div>
           </div>
         </div>
-        <p className="mb-6 text-sm" style={{ color: 'var(--text-color)', opacity: 0.7 }}>
-          Backend mapping: `stores` = Store Type, linked to a Main Store from `stores1`.
-        </p>
+
+        <div className="grid gap-4 sm:grid-cols-3">
+          <div
+            className="rounded-2xl border px-5 py-4"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-soft)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
+              Visible entries
+            </p>
+            <p className="mt-2 text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+              {(data as any)?.totalElements ?? stores.length}
+            </p>
+          </div>
+          <div
+            className="rounded-2xl border px-5 py-4"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-soft)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
+              Current page
+            </p>
+            <p className="mt-2 text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+              {currentPage}
+            </p>
+          </div>
+          <div
+            className="rounded-2xl border px-5 py-4"
+            style={{ backgroundColor: 'var(--card-bg)', borderColor: 'var(--border-soft)' }}
+          >
+            <p className="text-xs font-semibold uppercase tracking-[0.2em] opacity-60">
+              Total pages
+            </p>
+            <p className="mt-2 text-2xl font-bold" style={{ color: 'var(--text-color)' }}>
+              {totalPages}
+            </p>
+          </div>
+        </div>
 
         <ReusableTable
           columns={[
-            { header: 'Name', key: 'name' },
-            { header: 'Label', key: 'label' },
-            { header: 'Display Order', key: 'displayOrder' },
-            {
-              header: 'Active',
-              key: 'active',
-              render: (item: StoreType) =>
-                item.active ? (
-                  <span className="text-green-500 font-medium">Active</span>
-                ) : (
-                  <span className="text-red-500 font-medium">Inactive</span>
-                ),
-            },
-            {
-              header: 'Main Store',
-              key: 'store1Id',
-              render: (item: StoreType) => mainStoresMap.get(item.store1Id) || item.store1Id || '-',
-            },
             {
               header: 'Image',
-              key: 'image',
+              key: 'imageUrl',
               render: (item: StoreType) =>
-                item.image ? (
+                item.imageUrl ? (
                   <img
-                    src={item.image}
+                    src={item.imageUrl}
                     alt={item.name}
-                    className="w-12 h-12 object-cover rounded-lg shadow-sm border"
+                    className="h-14 w-14 rounded-xl border object-cover shadow-sm"
                     style={{ borderColor: 'var(--border-soft)' }}
                   />
                 ) : (
-                  '-'
+                  <span className="text-xs text-gray-400">No image</span>
                 ),
             },
             {
-              header: 'Action',
+              header: 'Store',
+              key: 'name',
+              render: (item: StoreType) => (
+                <div className="space-y-1">
+                  <div className="font-semibold" style={{ color: 'var(--text-color)' }}>
+                    {item.name}
+                  </div>
+                  <div className="text-xs opacity-60" style={{ color: 'var(--text-color)' }}>
+                    {item.label || 'No short label'}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              header: 'Contact',
+              key: 'phoneNumber',
+              render: (item: StoreType) => (
+                <div className="space-y-1">
+                  <div>{item.phoneNumber || 'Not added'}</div>
+                  <div className="text-xs opacity-60" style={{ color: 'var(--text-color)' }}>
+                    {item.timings || 'Timing not added'}
+                  </div>
+                </div>
+              ),
+            },
+            {
+              header: 'Location',
+              key: 'address',
+              render: (item: StoreType) =>
+                item.address ? `${item.address}${item.city ? ', ' + item.city : ''}` : 'Not added',
+            },
+            {
+              header: 'Order',
+              key: 'displayOrder',
+              render: (item: StoreType) => item.displayOrder ?? '-',
+            },
+            {
+              header: 'Status',
+              key: 'active',
+              render: (item: StoreType) => (
+                <span
+                  className="inline-flex rounded-full px-3 py-1 text-xs font-semibold"
+                  style={{
+                    backgroundColor: item.active
+                      ? 'rgba(22, 163, 74, 0.12)'
+                      : 'rgba(220, 38, 38, 0.1)',
+                    color: item.active ? '#16a34a' : '#dc2626',
+                  }}
+                >
+                  {item.active ? 'Active' : 'Inactive'}
+                </span>
+              ),
+            },
+            {
+              header: 'Actions',
               key: 'id',
               render: (item: StoreType) => (
-                <div className="space-x-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <button
                     onClick={() => {
                       setEditData(item);
                       setShowModal(true);
                     }}
-                    className="text-white px-3 py-1 rounded text-xs shadow-sm transition hover:opacity-80"
-                    style={{ backgroundColor: 'var(--highlight-color)' }}
+                    className="inline-flex min-w-[82px] items-center justify-center rounded-lg border px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5"
+                    style={{
+                      borderColor: 'rgba(37, 99, 235, 0.3)',
+                      background: 'linear-gradient(135deg, #1d4ed8 0%, #0f172a 100%)',
+                    }}
                   >
                     Edit
                   </button>
                   <button
                     onClick={() => setConfirmId(item.id)}
-                    className="bg-red-500 text-white px-3 py-1 rounded text-xs shadow-sm transition hover:opacity-80"
+                    className="inline-flex min-w-[82px] items-center justify-center rounded-lg border border-red-200 bg-red-500 px-4 py-2 text-xs font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-red-600"
                   >
                     Delete
                   </button>
@@ -216,11 +285,12 @@ export default function StoreTypePage() {
           currentPage={currentPage}
           totalPages={totalPages}
           onPageChange={setCurrentPage}
+          emptyMessage="No store types match the current filters."
         />
 
         {showModal && (
           <AddForm
-            initialData={editData ? { ...editData, image: editData.image } : null}
+            initialData={editData || null}
             onSave={(storeData, imageFile) => {
               if (editData) {
                 handleUpdate(editData.id, storeData, imageFile);

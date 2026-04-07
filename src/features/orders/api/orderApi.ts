@@ -1,15 +1,15 @@
 import { baseApiWithAuth } from '@api/baseApi';
-import { 
-  OrderResponse, 
-  AdminOrderSummaryDto, 
-  AdminOrderDetailDto, 
-  AcceptOrderResponse, 
+import {
+  OrderResponse,
+  AdminOrderSummaryDto,
+  AdminOrderDetailDto,
+  AcceptOrderResponse,
   AcceptOrderRequest,
-  RejectOrderResponse, 
+  RejectOrderResponse,
   RejectOrderRequest,
   AssignDeliveryResponse,
   AssignDeliveryRequest,
-  PlaceOrderRequest
+  PlaceOrderRequest,
 } from '../types/index';
 
 export const orderApi = baseApiWithAuth.injectEndpoints({
@@ -19,12 +19,12 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       query: () => '/api/orders',
       providesTags: ['Orders'],
     }),
-    
+
     getOrderById: builder.query<OrderResponse, number>({
       query: (orderId) => `/api/orders/${orderId}`,
       providesTags: (result, error, id) => [{ type: 'Orders', id }],
     }),
-    
+
     placeOrder: builder.mutation<OrderResponse, PlaceOrderRequest>({
       query: (orderData) => ({
         url: '/api/orders',
@@ -33,18 +33,18 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       }),
       invalidatesTags: ['Orders'],
     }),
-    
+
     // Admin endpoints
     getAdminOrders: builder.query<AdminOrderSummaryDto[], void>({
       query: () => '/api/admin/orders',
       providesTags: ['AdminOrders'],
     }),
-    
+
     getAdminOrderById: builder.query<AdminOrderDetailDto, number>({
       query: (orderId) => `/api/admin/orders/${orderId}`,
       providesTags: (result, error, id) => [{ type: 'AdminOrders', id }],
     }),
-    
+
     acceptOrder: builder.mutation<AcceptOrderResponse, AcceptOrderRequest>({
       query: (requestData) => ({
         url: `/api/admin/orders/${requestData.orderId}/accept`,
@@ -53,7 +53,7 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       }),
       invalidatesTags: ['AdminOrders'],
     }),
-    
+
     rejectOrder: builder.mutation<RejectOrderResponse, RejectOrderRequest>({
       query: (requestData) => ({
         url: `/api/admin/orders/${requestData.orderId}/reject`,
@@ -62,7 +62,7 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       }),
       invalidatesTags: ['AdminOrders'],
     }),
-    
+
     assignDelivery: builder.mutation<AssignDeliveryResponse, AssignDeliveryRequest>({
       query: (requestData) => ({
         // Docs: POST /api/admin/orders/{orderId}/assign
@@ -78,34 +78,25 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       }),
       invalidatesTags: ['AdminOrders'],
     }),
-    
-    // 7.6 Order Ready
-    markOrderReady: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/api/admin/orders/${id}/ready`,
+
+    // Override store acceptance on behalf of store (admin panel override)
+    // POST /api/delivery-admin/orders/{orderNumber}/store-accept
+    adminStoreAccept: builder.mutation<
+      { success: boolean; message: string },
+      { orderNumber: string; remarks?: string }
+    >({
+      query: ({ orderNumber, remarks }) => ({
+        url: `/api/delivery-admin/orders/${orderNumber}/store-accept`,
         method: 'POST',
+        body: { remarks: remarks ?? 'Manual Admin Acceptance' },
       }),
-      invalidatesTags: ['AdminOrders', 'Orders'],
+      invalidatesTags: ['AdminOrders'],
     }),
 
-    // 7.7 Out for Delivery
-    markOutForDelivery: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/api/admin/orders/${id}/out-for-delivery`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['AdminOrders', 'Orders'],
-    }),
-
-    // 7.8 Complete Order
-    completeOrder: builder.mutation<void, number>({
-      query: (id) => ({
-        url: `/api/admin/orders/${id}/complete`,
-        method: 'POST',
-      }),
-      invalidatesTags: ['AdminOrders', 'Orders'],
-    }),
-    generateDeliveryOtp: builder.mutation<{ success: boolean; message: string; deliveryOtp: string }, number>({
+    generateDeliveryOtp: builder.mutation<
+      { success: boolean; message: string; deliveryOtp: string },
+      number
+    >({
       query: (orderId) => ({
         url: `/api/admin/orders/${orderId}/generate-delivery-otp`,
         method: 'POST',
@@ -120,13 +111,12 @@ export const {
   useGetMyOrdersQuery,
   useGetOrderByIdQuery,
   usePlaceOrderMutation,
+  // Admin hooks
   useGetAdminOrdersQuery,
   useGetAdminOrderByIdQuery,
   useAcceptOrderMutation,
   useRejectOrderMutation,
   useAssignDeliveryMutation,
-  useMarkOrderReadyMutation,
-  useMarkOutForDeliveryMutation,
-  useCompleteOrderMutation,
+  useAdminStoreAcceptMutation,
   useGenerateDeliveryOtpMutation,
 } = orderApi;

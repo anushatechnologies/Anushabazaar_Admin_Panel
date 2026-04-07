@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, type ChangeEvent } from 'react';
 import {
   Box,
   TextField,
@@ -9,13 +9,14 @@ import {
   IconButton,
   Typography,
 } from '@mui/material';
-import {
-  useCreateSubCategoryMutation,
-  useUpdateSubCategoryMutation,
-} from '../api/subCategoryApi';
+import { useCreateSubCategoryMutation, useUpdateSubCategoryMutation } from '../api/subCategoryApi';
 import { toast } from '../../../../components/toast/ToastContainer';
 
-import { Close as CloseIcon, CloudUpload as CloudUploadIcon, Image as ImageIcon } from '@mui/icons-material';
+import {
+  Close as CloseIcon,
+  CloudUpload as CloudUploadIcon,
+  Image as ImageIcon,
+} from '@mui/icons-material';
 
 interface Props {
   initialData?: any;
@@ -24,48 +25,26 @@ interface Props {
   onClose: () => void;
 }
 
-export default function SubCategoryForm({
-  initialData,
-  categoryId,
-  onSave,
-  onClose,
-}: Props) {
+export default function SubCategoryForm({ initialData, categoryId, onSave, onClose }: Props) {
+  const initialFormData = {
+    name: initialData?.name || '',
+    description: initialData?.description || '',
+    displayOrder: initialData?.displayOrder || 0,
+    discount: initialData?.discount || 0,
+    imageUrl: initialData?.imageUrl || '',
+    videoUrl: initialData?.videoUrl || '',
+    isActive: initialData?.isActive ?? true,
+  };
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>(initialData?.imageUrl);
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    displayOrder: 0,
-    discount: 0,
-    imageUrl: '',
-    videoUrl: '',
-    isActive: true,
-  });
+  const [formData, setFormData] = useState(initialFormData);
 
-  const [createSubCategory, { isLoading: isCreating }] =
-    useCreateSubCategoryMutation();
-  const [updateSubCategory, { isLoading: isUpdating }] =
-    useUpdateSubCategoryMutation();
+  const [createSubCategory, { isLoading: isCreating }] = useCreateSubCategoryMutation();
+  const [updateSubCategory, { isLoading: isUpdating }] = useUpdateSubCategoryMutation();
 
   const isEdit = Boolean(initialData);
 
-  // Load edit data
-  useEffect(() => {
-    if (initialData) {
-      setFormData({
-        name: initialData.name || '',
-        description: initialData.description || '',
-        displayOrder: initialData.displayOrder || 0,
-        discount: initialData.discount || 0,
-        imageUrl: initialData.imageUrl || '',
-        videoUrl: initialData.videoUrl || '',
-        isActive: initialData.isActive ?? true,
-      });
-      setImagePreview(initialData.imageUrl);
-    }
-  }, [initialData]);
-
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setImageFile(file);
@@ -78,10 +57,7 @@ export default function SubCategoryForm({
 
     setFormData({
       ...formData,
-      [name]:
-        name === 'displayOrder' || name === 'discount'
-          ? Number(value)
-          : value,
+      [name]: name === 'displayOrder' || name === 'discount' ? Number(value) : value,
     });
   };
 
@@ -94,6 +70,9 @@ export default function SubCategoryForm({
         discount: formData.discount,
         categoryId,
         isActive: formData.isActive,
+        // Always send existing imageUrl so backend preserves it when no new file is uploaded
+        imageUrl: formData.imageUrl || null,
+        videoUrl: formData.videoUrl || null,
       };
 
       if (isEdit) {
@@ -268,11 +247,7 @@ export default function SubCategoryForm({
             Cancel
           </Button>
 
-          <Button
-            variant="contained"
-            onClick={handleSubmit}
-            disabled={isCreating || isUpdating}
-          >
+          <Button variant="contained" onClick={handleSubmit} disabled={isCreating || isUpdating}>
             {isEdit ? 'Update' : 'Create'}
           </Button>
         </Stack>

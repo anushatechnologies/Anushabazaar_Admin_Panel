@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -44,12 +44,18 @@ import {
   Edit as EditIcon,
   Delete as DeleteIcon,
   Search as SearchIcon,
-  Image as ImageIcon,
   VideoFile as VideoFileIcon,
   ImageNotSupported as ImageNotSupportedIcon,
 } from '@mui/icons-material';
-import { GlassPageHeader, GradientText, GlassCard } from '../../../../components/glassmorphism/GlassComponents';
-import { SkeletonPageHeader, SkeletonTable } from '../../../../components/skeletons/LoadingSkeletons';
+import {
+  GlassPageHeader,
+  GradientText,
+  GlassCard,
+} from '../../../../components/glassmorphism/GlassComponents';
+import {
+  SkeletonPageHeader,
+  SkeletonTable,
+} from '../../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../../components/empty-state/EmptyState';
 import { useAppTheme } from '@contexts/ThemeContext';
 
@@ -63,7 +69,7 @@ export default function SubCategoryList() {
   const [editingSub, setEditingSub] = useState<any>(null);
   const [confirmId, setConfirmId] = useState<number | null>(null);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number>(
-    categoryId ? parseInt(categoryId) : 0
+    categoryId ? parseInt(categoryId) : 0,
   );
   const [searchKeyword, setSearchKeyword] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
@@ -73,19 +79,19 @@ export default function SubCategoryList() {
   const { data: categoriesData, isError: isCatError, error: catError } = useGetCategoriesQuery();
   const categories = categoriesData || [];
 
-  const { 
-    data: allSubCategories, 
-    isLoading: allLoading, 
-    isError: isAllError, 
-    error: allError 
+  const {
+    data: allSubCategories,
+    isLoading: allLoading,
+    isError: isAllError,
+    error: allError,
   } = useGetAllSubCategoriesQuery(undefined, {
     skip: !!selectedCategoryId,
   });
-  const { 
-    data: catSubCategories, 
-    isLoading: catLoading, 
-    isError: isCatSubError, 
-    error: catSubError 
+  const {
+    data: catSubCategories,
+    isLoading: catLoading,
+    isError: isCatSubError,
+    error: catSubError,
   } = useGetSubCategoriesByCategoryQuery(selectedCategoryId, {
     skip: !selectedCategoryId,
   });
@@ -95,13 +101,13 @@ export default function SubCategoryList() {
   const loading = allLoading || catLoading;
   const isError = isAllError || isCatSubError || isCatError;
   const error = allError || catSubError || catError;
-  const subCategories = selectedCategoryId ? (catSubCategories || []) : (allSubCategories || []);
+  const subCategories = selectedCategoryId ? catSubCategories || [] : allSubCategories || [];
 
-  const filteredSubCategories = subCategories.filter(sc =>
+  const filteredSubCategories = subCategories.filter((sc) =>
     searchKeyword
       ? sc.name.toLowerCase().includes(searchKeyword.toLowerCase()) ||
         (sc.description && sc.description.toLowerCase().includes(searchKeyword.toLowerCase()))
-      : true
+      : true,
   );
 
   useEffect(() => {
@@ -113,7 +119,7 @@ export default function SubCategoryList() {
   const totalPages = Math.ceil(filteredSubCategories.length / ITEMS_PER_PAGE);
   const currentData = filteredSubCategories.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
   const handleSave = () => {
@@ -131,7 +137,7 @@ export default function SubCategoryList() {
     }
   };
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_event: ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
   };
 
@@ -177,7 +183,15 @@ export default function SubCategoryList() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
                 <GradientText>SubCategories</GradientText>
@@ -197,8 +211,8 @@ export default function SubCategoryList() {
                     navigate(catId ? `/subcategories/${catId}` : '/subcategories');
                   }}
                   label="Category"
-                  sx={{ 
-                    borderRadius: 3, 
+                  sx={{
+                    borderRadius: 3,
                     background: currentTheme.inputBg,
                     color: currentTheme.text,
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -227,13 +241,13 @@ export default function SubCategoryList() {
                   textTransform: 'none',
                   fontWeight: 600,
                   background: currentTheme.accentGradient,
-                  boxShadow: isDark 
-                    ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)' 
+                  boxShadow: isDark
+                    ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)'
                     : currentTheme.shadow,
                   transition: 'all 0.3s ease',
                   '&:hover': {
-                    boxShadow: isDark 
-                      ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)' 
+                    boxShadow: isDark
+                      ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)'
                       : currentTheme.hoverShadow,
                     transform: 'translateY(-2px)',
                   },
@@ -320,25 +334,40 @@ export default function SubCategoryList() {
                 searchKeyword
                   ? `No results for "${searchKeyword}". Try a different search term.`
                   : selectedCategoryId
-                  ? 'Create your first subcategory for this category.'
-                  : 'Select a category to create subcategories.'
+                    ? 'Create your first subcategory for this category.'
+                    : 'Select a category to create subcategories.'
               }
               actionLabel={selectedCategoryId && !searchKeyword ? 'Add SubCategory' : undefined}
               onAction={selectedCategoryId && !searchKeyword ? handleAddNew : undefined}
             />
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
+              <TableContainer
+                component={Paper}
+                sx={{ boxShadow: 'none', background: 'transparent' }}
+              >
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Image</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Image
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Description</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Order</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Discount</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Status</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: currentTheme.text }}>Actions</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Description
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Order
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Discount
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Status
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Actions
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -359,7 +388,11 @@ export default function SubCategoryList() {
                                 <Avatar
                                   src={sc.imageUrl}
                                   variant="rounded"
-                                  sx={{ width: 48, height: 48, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                                  sx={{
+                                    width: 48,
+                                    height: 48,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                  }}
                                 />
                               ) : (
                                 <Box
@@ -377,17 +410,27 @@ export default function SubCategoryList() {
                                 </Box>
                               )}
                               {sc.videoUrl && (
-                                <Link href={sc.videoUrl} target="_blank" rel="noopener" title="View video">
+                                <Link
+                                  href={sc.videoUrl}
+                                  target="_blank"
+                                  rel="noopener"
+                                  title="View video"
+                                >
                                   <VideoFileIcon fontSize="small" color="action" />
                                 </Link>
                               )}
                             </Box>
                           </TableCell>
                           <TableCell>
-                            <Typography fontWeight={600} sx={{ color: currentTheme.text }}>{sc.name}</Typography>
+                            <Typography fontWeight={600} sx={{ color: currentTheme.text }}>
+                              {sc.name}
+                            </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography sx={{ color: currentTheme.textSecondary, maxWidth: 200 }} noWrap>
+                            <Typography
+                              sx={{ color: currentTheme.textSecondary, maxWidth: 200 }}
+                              noWrap
+                            >
                               {sc.description || '—'}
                             </Typography>
                           </TableCell>
@@ -409,10 +452,12 @@ export default function SubCategoryList() {
                               <Chip
                                 label={`${sc.discount}%`}
                                 size="small"
-                                sx={{ 
-                                  fontWeight: 600, 
+                                sx={{
+                                  fontWeight: 600,
                                   borderRadius: 2,
-                                  background: isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)',
+                                  background: isDark
+                                    ? 'rgba(0, 255, 157, 0.2)'
+                                    : 'rgba(34, 197, 94, 0.15)',
                                   color: currentTheme.success,
                                 }}
                               />
@@ -426,8 +471,12 @@ export default function SubCategoryList() {
                               size="small"
                               sx={{
                                 background: sc.isActive
-                                  ? isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)'
-                                  : isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(156, 163, 175, 0.15)',
+                                  ? isDark
+                                    ? 'rgba(0, 255, 157, 0.2)'
+                                    : 'rgba(34, 197, 94, 0.15)'
+                                  : isDark
+                                    ? 'rgba(255, 71, 87, 0.2)'
+                                    : 'rgba(156, 163, 175, 0.15)',
                                 color: sc.isActive ? currentTheme.success : currentTheme.error,
                                 fontWeight: 600,
                                 borderRadius: 2,
@@ -442,10 +491,16 @@ export default function SubCategoryList() {
                                   size="small"
                                   sx={{
                                     color: currentTheme.accent,
-                                    background: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                    '&:hover': { 
-                                      background: isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(99, 102, 241, 0.2)',
-                                      boxShadow: isDark ? '0 0 10px rgba(0, 245, 255, 0.5)' : 'none',
+                                    background: isDark
+                                      ? 'rgba(0, 245, 255, 0.1)'
+                                      : 'rgba(99, 102, 241, 0.1)',
+                                    '&:hover': {
+                                      background: isDark
+                                        ? 'rgba(0, 245, 255, 0.2)'
+                                        : 'rgba(99, 102, 241, 0.2)',
+                                      boxShadow: isDark
+                                        ? '0 0 10px rgba(0, 245, 255, 0.5)'
+                                        : 'none',
                                     },
                                   }}
                                 >
@@ -459,10 +514,16 @@ export default function SubCategoryList() {
                                   disabled={isDeleting && confirmId === sc.id}
                                   sx={{
                                     color: currentTheme.error,
-                                    background: isDark ? 'rgba(255, 71, 87, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                    '&:hover': { 
-                                      background: isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                      boxShadow: isDark ? '0 0 10px rgba(255, 71, 87, 0.5)' : 'none',
+                                    background: isDark
+                                      ? 'rgba(255, 71, 87, 0.1)'
+                                      : 'rgba(239, 68, 68, 0.1)',
+                                    '&:hover': {
+                                      background: isDark
+                                        ? 'rgba(255, 71, 87, 0.2)'
+                                        : 'rgba(239, 68, 68, 0.2)',
+                                      boxShadow: isDark
+                                        ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                                        : 'none',
                                     },
                                   }}
                                 >
@@ -525,6 +586,7 @@ export default function SubCategoryList() {
         </DialogTitle>
         <DialogContent dividers sx={{ borderColor: currentTheme.border }}>
           <SubCategoryForm
+            key={editingSub?.id ?? 'new-subcategory'}
             initialData={editingSub || undefined}
             categoryId={selectedCategoryId}
             onSave={handleSave}

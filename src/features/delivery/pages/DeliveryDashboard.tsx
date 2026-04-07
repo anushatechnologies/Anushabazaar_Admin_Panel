@@ -1,10 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { 
-  Box, 
-  Typography, 
-  Grid,
-} from '@mui/material';
+import { Box, Button, Typography, Grid } from '@mui/material';
 import {
   People as PeopleIcon,
   CheckCircle as ApprovedIcon,
@@ -12,17 +8,19 @@ import {
   LocalShipping as OrdersIcon,
   Assignment as AssignmentIcon,
 } from '@mui/icons-material';
-import { 
-  useGetDeliveryDashboardStatsQuery,
-  type DeliveryDashboardStats 
-} from '../api/deliveryApi';
+import { useGetDeliveryDashboardStatsQuery, type DeliveryDashboardStats } from '../api/deliveryApi';
 import { StatCard } from '../../../components/cards/StatCard';
-import { SkeletonStatCards, SkeletonPageHeader } from '../../../components/skeletons/LoadingSkeletons';
+import {
+  SkeletonStatCards,
+  SkeletonPageHeader,
+} from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
 import { GlassPageHeader, GradientText } from '../../../components/glassmorphism/GlassComponents';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
+import { useNavigate } from 'react-router-dom';
 
 export default function DeliveryDashboard() {
+  const navigate = useNavigate();
   const { data, isLoading, isError, error } = useGetDeliveryDashboardStatsQuery();
   const { handleError } = useErrorHandler();
 
@@ -43,7 +41,7 @@ export default function DeliveryDashboard() {
 
   const statCards = [
     {
-      title: 'Total Persons',
+      title: 'Delivery Persons',
       value: stats.totalDeliveryPersons || 0,
       icon: <PeopleIcon />,
       color: 'primary' as const,
@@ -120,7 +118,15 @@ export default function DeliveryDashboard() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography
                 variant="h4"
@@ -135,7 +141,7 @@ export default function DeliveryDashboard() {
                 Real-time delivery operations and staff metrics
               </Typography>
             </Box>
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
               <Box
                 sx={{
                   display: 'flex',
@@ -165,6 +171,19 @@ export default function DeliveryDashboard() {
                   Live
                 </Typography>
               </Box>
+              <Button
+                variant="contained"
+                onClick={() => navigate('/delivery/personnel')}
+                sx={{
+                  borderRadius: 999,
+                  px: 2.5,
+                  textTransform: 'none',
+                  fontWeight: 700,
+                  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                }}
+              >
+                Open Delivery Persons
+              </Button>
             </Box>
           </Box>
         </GlassPageHeader>
@@ -199,22 +218,36 @@ export default function DeliveryDashboard() {
           </Typography>
           <Grid container spacing={2}>
             {[
-              { label: 'View Pending Approvals', count: stats.pendingApprovals || 0, color: '#f59e0b' },
-              { label: 'Active Deliveries', count: stats.activeOrders || 0, color: '#3b82f6' },
-              { label: 'Total Persons', count: stats.totalDeliveryPersons || 0, color: '#8b5cf6' },
+              {
+                label: 'Pending Approvals',
+                count: stats.pendingApprovals || 0,
+                color: '#f59e0b',
+                path: '/delivery/personnel',
+              },
+              {
+                label: 'Documents Queue',
+                count: stats.pendingApprovals || 0,
+                color: '#3b82f6',
+                path: '/delivery/documents',
+              },
+              {
+                label: 'Delivery Persons',
+                count: stats.totalDeliveryPersons || 0,
+                color: '#8b5cf6',
+                path: '/delivery/personnel',
+              },
             ].map((action) => (
               <Grid size={{ xs: 12, sm: 4 }} key={action.label}>
-                <motion.div
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
+                <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
                   <Box
+                    onClick={() => navigate(action.path)}
                     sx={{
                       p: 3,
                       borderRadius: 3,
-                      background: 'rgba(255, 255, 255, 0.8)',
+                      background:
+                        'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(248,250,255,0.96) 100%)',
                       backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.3)',
+                      border: '1px solid rgba(255, 255, 255, 0.45)',
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',

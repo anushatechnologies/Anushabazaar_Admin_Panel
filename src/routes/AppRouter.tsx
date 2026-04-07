@@ -1,5 +1,5 @@
 import React, { Suspense, lazy } from 'react';
-import { Routes, Route } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
 import WithAuthLayout from '@layouts/WithAuthLayout';
@@ -21,12 +21,10 @@ const NotFoundPage = lazy(() => import('@pages/NotFoundPage'));
 const PrivacyPolicy = lazy(() => import('@features/privacy_policy/pages/privacy_policy'));
 const ReturnsRefunds = lazy(() => import('@features/returns_refunds/pages/returns_refunds'));
 const TermsConditions = lazy(() => import('@features/terms_conditions/pages/terms_conditions'));
-const NotificationManagement = lazy(() => import('@features/notifications/pages/NotificationManagement'));
+const NotificationManagement = lazy(
+  () => import('@features/notifications/pages/NotificationManagement'),
+);
 const StoreType = lazy(() => import('@features/store_type/pages/Store_type'));
-const Store = lazy(() => import('@features/store/pages/store'));
-const Delevery = lazy(() => import('@features/delivery/pages/delevery'));
-const DeleverySetup = lazy(() => import('@features/delevery_setup/pages/delevery_setup'));
-const Discount = lazy(() => import('@features/discount/pages/discounts'));
 const Settings = lazy(() => import('@features/settings/pages/settings'));
 const Users = lazy(() => import('@features/users/pages/users'));
 // const Logs = lazy(() => import("@features/logs/pages/Logs")); // Blocked by .gitignore
@@ -52,7 +50,6 @@ const AdminOrderDashboard = lazy(() => import('@features/orders/pages/AdminOrder
 const OrderDetail = lazy(() => import('@features/orders/pages/OrderDetail'));
 const MyOrders = lazy(() => import('@features/orders/pages/MyOrders'));
 const CustomerOrderTracking = lazy(() => import('@features/orders/pages/CustomerOrderTracking'));
-
 
 const Loader: React.FC = () => (
   <div style={{ height: '100vh', display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
@@ -84,7 +81,6 @@ const AppRouter: React.FC = () => {
               <Route path="/terms&conditions" element={<TermsConditions />} />
               <Route path="/notifications" element={<NotificationManagement />} />
               <Route path="/store-type" element={<StoreType />} />
-              <Route path="/store" element={<Store />} />
 
               <Route path="/categories" element={<CategoryList />} />
               <Route path="/subcategories" element={<SubCategoryList />} />
@@ -102,6 +98,13 @@ const AppRouter: React.FC = () => {
               <Route path="/delivery/fare-settings" element={<FareSettings />} />
               <Route path="/admin/payouts" element={<PayoutList />} />
               <Route path="/admin/income" element={<IncomeManagement />} />
+              <Route path="/payments/razorpay" element={<IncomeManagement />} />
+              <Route path="/payments/cod" element={<IncomeManagement />} />
+              <Route path="/payments-cod" element={<Navigate to="/payments/cod" replace />} />
+              <Route
+                path="/payments-razorpay"
+                element={<Navigate to="/payments/razorpay" replace />}
+              />
 
               {/* Orders */}
               <Route path="/admin/orders" element={<AdminOrderDashboard />} />

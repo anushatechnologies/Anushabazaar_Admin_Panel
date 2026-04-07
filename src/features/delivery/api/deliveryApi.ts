@@ -6,9 +6,8 @@ export interface DeliveryPerson {
   lastName: string;
   phoneNumber: string;
   email?: string;
-  vehicleType: 'BIKE' | 'SCOOTER' | 'AUTO' | 'HEAVY';
+  vehicleType: 'BIKE' | 'BICYCLE' | 'SCOOTER' | 'CAR' | 'AUTO' | 'HEAVY';
   isOnline: boolean;
-  isActive: boolean;
   isApprovedByAdmin: boolean;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   profilePhotoUrl?: string;
@@ -21,16 +20,61 @@ export interface DeliveryPerson {
   bankName?: string;
   ifscCode?: string;
   createdAt?: string;
+  onboardingStatus?: DeliveryOnboardingStatus;
 }
 
 export interface DeliveryDocument {
   id: number;
-  documentType: 'AADHAAR_CARD' | 'PAN_CARD' | 'DRIVING_LICENSE';
+  documentType:
+    | 'AADHAAR_CARD'
+    | 'AADHAAR_FRONT'
+    | 'AADHAAR_BACK'
+    | 'PAN_CARD'
+    | 'DRIVING_LICENSE'
+    | 'RC_BOOK'
+    | 'INSURANCE';
   documentUrl: string;
-  documentNumber: string;
+  documentNumber?: string;
   status: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_REUPLOAD';
   adminRemarks?: string;
   uploadedAt: string;
+}
+
+export interface DeliveryChecklistItem {
+  code: string;
+  label: string;
+  required: boolean;
+  uploaded: boolean;
+  approved: boolean;
+  status: string;
+  remarks?: string;
+  documentUrl?: string;
+  documentNumber?: string;
+}
+
+export interface DeliveryOnboardingStatus {
+  currentStep: string;
+  phoneVerified: boolean;
+  personalInfoCompleted: boolean;
+  vehicleCompleted: boolean;
+  bankCompleted: boolean;
+  profilePhotoUploaded: boolean;
+  profilePhotoApproved: boolean;
+  profilePhotoStatus: string;
+  profilePhotoRemarks?: string;
+  requiredDocumentsUploaded: boolean;
+  requiredDocumentsApproved: boolean;
+  requiredDocuments: string[];
+  optionalDocuments: string[];
+  missingRequiredDocuments: string[];
+  missingApprovedDocuments: string[];
+  documentChecklist: DeliveryChecklistItem[];
+  readyForFinalApproval: boolean;
+  loginAllowed: boolean;
+  canGoOnline: boolean;
+  completionPercent: number;
+  requiredDocumentCount: number;
+  approvedRequiredDocumentCount: number;
 }
 
 export interface DeliveryDashboardStats {
@@ -49,7 +93,13 @@ export interface DeliveryOrder {
   customerName: string;
   customerPhone: string;
   deliveryAddress: string;
-  orderStatus: 'PENDING' | 'ASSIGNED' | 'PICKED_UP' | 'OUT_FOR_DELIVERY' | 'DELIVERED' | 'CANCELLED';
+  orderStatus:
+    | 'PENDING'
+    | 'ASSIGNED'
+    | 'PICKED_UP'
+    | 'OUT_FOR_DELIVERY'
+    | 'DELIVERED'
+    | 'CANCELLED';
   paymentStatus: string;
   totalAmount: number;
   deliveryFee: number;
@@ -75,54 +125,88 @@ export interface FareSettings {
   updatedAt?: string;
 }
 
+export interface FareRule {
+  id: number;
+  vehicleType: 'BIKE' | 'BICYCLE' | 'SCOOTER' | 'CAR' | 'AUTO' | 'HEAVY';
+  baseFare: number;
+  perKmFare: number;
+  minKm: number;
+  surgeMultiplier: number;
+  active: boolean;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 export const deliveryApi = baseApiWithAuth.injectEndpoints({
   endpoints: (builder) => ({
-    getDeliveryDashboardStats: builder.query<{ success: boolean; statistics: DeliveryDashboardStats }, void>({
+    // ── Dashboard ──────────────────────────────────────────────────────
+    getDeliveryDashboardStats: builder.query<
+      { success: boolean; statistics: DeliveryDashboardStats },
+      void
+    >({
       query: () => '/api/delivery-admin/dashboard',
       providesTags: ['Dashboard'],
     }),
 
-    getAdminPanelDashboard: builder.query<{ success: boolean; statistics: DeliveryDashboardStats }, void>({
-      query: () => '/api/delivery-admin/dashboard',
-      providesTags: ['Dashboard'],
-    }),
-
-    getDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
+    // ── Delivery Persons ───────────────────────────────────────────────
+    getDeliveryPersons: builder.query<
+      { success: boolean; deliveryPersons: DeliveryPerson[] },
+      void
+    >({
       query: () => '/api/delivery-admin/delivery-persons',
       providesTags: ['User'],
     }),
 
-    getAdminPanelDeliveryPersons: builder.query<{ success: boolean; deliveryPersons: DeliveryPerson[] }, void>({
-      query: () => '/api/delivery-admin/delivery-persons',
-      providesTags: ['User'],
-    }),
-
-    getAvailableDeliveryPersons: builder.query<{ success: boolean; availableDeliveryPersons: DeliveryPerson[] }, void>({
+    getAvailableDeliveryPersons: builder.query<
+      { success: boolean; availableDeliveryPersons: DeliveryPerson[] },
+      void
+    >({
       query: () => '/api/delivery-admin/delivery-persons/available',
       providesTags: ['User'],
     }),
 
-    getPendingDeliveryPersons: builder.query<{ success: boolean; pendingDeliveryPersons: DeliveryPerson[] }, void>({
+    getPendingDeliveryPersons: builder.query<
+      { success: boolean; pendingDeliveryPersons: DeliveryPerson[] },
+      void
+    >({
       query: () => '/api/delivery-admin/delivery-persons/pending-approval',
       providesTags: ['User'],
     }),
 
-    getDeliveryPersonById: builder.query<{ success: boolean; deliveryPerson: DeliveryPerson }, number>({
+    getDeliveryPersonById: builder.query<
+      {
+        success: boolean;
+        deliveryPerson: DeliveryPerson;
+        documents: DeliveryDocument[];
+        onboardingStatus?: DeliveryOnboardingStatus;
+      },
+      number
+    >({
       query: (id) => `/api/delivery-admin/delivery-persons/${id}`,
       providesTags: ['User'],
     }),
 
-    getDeliveryPersonDocuments: builder.query<{ success: boolean; documents: DeliveryDocument[] }, number>({
+    getDeliveryPersonDocuments: builder.query<
+      { success: boolean; documents: DeliveryDocument[] },
+      number
+    >({
       query: (id) => `/api/delivery-admin/delivery-persons/${id}/documents`,
       providesTags: ['Documents'],
     }),
 
-    getPendingDocuments: builder.query<{ success: boolean; pendingDocuments: DeliveryDocument[] }, void>({
+    // ── Documents ──────────────────────────────────────────────────────
+    getPendingDocuments: builder.query<
+      { success: boolean; pendingDocuments: DeliveryDocument[] },
+      void
+    >({
       query: () => '/api/delivery-admin/documents/pending-review',
       providesTags: ['Documents'],
     }),
 
-    approveDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { documentId: number; adminId: number }>({
+    approveDocument: builder.mutation<
+      { success: boolean; message: string; document: DeliveryDocument },
+      { documentId: number; adminId: number }
+    >({
       query: ({ documentId, adminId }) => ({
         url: `/api/delivery-admin/documents/${documentId}/approve`,
         method: 'POST',
@@ -131,16 +215,10 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User', 'Documents'],
     }),
 
-    approveAdminPanelDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { documentId: number; adminId: number }>({
-      query: ({ documentId, adminId }) => ({
-        url: `/api/delivery-admin/documents/${documentId}/approve`,
-        method: 'POST',
-        body: { adminId },
-      }),
-      invalidatesTags: ['User', 'Documents'],
-    }),
-
-    rejectDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { documentId: number; adminId: number; remarks: string }>({
+    rejectDocument: builder.mutation<
+      { success: boolean; message: string; document: DeliveryDocument },
+      { documentId: number; adminId: number; remarks: string }
+    >({
       query: ({ documentId, adminId, remarks }) => ({
         url: `/api/delivery-admin/documents/${documentId}/reject`,
         method: 'POST',
@@ -149,16 +227,10 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User', 'Documents'],
     }),
 
-    rejectAdminPanelDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { documentId: number; adminId: number; remarks: string }>({
-      query: ({ documentId, adminId, remarks }) => ({
-        url: `/api/delivery-admin/documents/${documentId}/reject`,
-        method: 'POST',
-        body: { adminId, remarks },
-      }),
-      invalidatesTags: ['User', 'Documents'],
-    }),
-
-    requestDocumentReupload: builder.mutation<{ success: boolean; message: string }, { documentId: number; adminId: number; remarks: string }>({
+    requestDocumentReupload: builder.mutation<
+      { success: boolean; message: string },
+      { documentId: number; adminId: number; remarks: string }
+    >({
       query: ({ documentId, adminId, remarks }) => ({
         url: `/api/delivery-admin/documents/${documentId}/request-reupload`,
         method: 'POST',
@@ -167,72 +239,84 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User', 'Documents'],
     }),
 
-    requestAdminPanelDocumentReupload: builder.mutation<{ success: boolean; message: string }, { documentId: number; adminId: number; remarks: string }>({
-      query: ({ documentId, adminId, remarks }) => ({
-        url: `/api/delivery-admin/documents/${documentId}/request-reupload`,
-        method: 'POST',
-        body: { adminId, remarks },
-      }),
-      invalidatesTags: ['User', 'Documents'],
-    }),
-
-    approveProfilePhoto: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number }>({
+    // ── Profile Photo Actions (AdminController /api/admin/...) ─────────
+    approveProfilePhoto: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number }
+    >({
       query: ({ personId, adminId }) => ({
-        url: `/api/admin/delivery-persons/${personId}/approve-photo`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/approve-photo`,
         method: 'POST',
         body: { adminId },
       }),
       invalidatesTags: ['User'],
     }),
 
-    rejectProfilePhoto: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
+    rejectProfilePhoto: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number; remarks: string }
+    >({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin/delivery-persons/${personId}/reject-photo`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/reject-photo`,
         method: 'POST',
         body: { adminId, remarks },
       }),
       invalidatesTags: ['User'],
     }),
 
-    requestProfilePhotoReupload: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
+    requestProfilePhotoReupload: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number; remarks: string }
+    >({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin/delivery-persons/${personId}/request-photo-reupload`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/request-photo-reupload`,
         method: 'POST',
         body: { adminId, remarks },
       }),
       invalidatesTags: ['User'],
     }),
 
-
-    updateDeliveryPersonStatus: builder.mutation<{ success: boolean; message: string }, { personId: number; isActive: boolean }>({
+    // ── Person Status / Approval ────────────────────────────────────────
+    updateDeliveryPersonStatus: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; isActive: boolean }
+    >({
       query: ({ personId, isActive }) => ({
-        url: `/api/admin/delivery-persons/${personId}/status`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/status`,
         method: 'PUT',
         body: { isActive },
       }),
       invalidatesTags: ['User'],
     }),
 
-    approveDeliveryPerson: builder.mutation<{ success: boolean; message: string; deliveryPerson: DeliveryPerson }, { personId: number; adminId: number }>({
+    approveDeliveryPerson: builder.mutation<
+      { success: boolean; message: string; deliveryPerson: DeliveryPerson },
+      { personId: number; adminId: number }
+    >({
       query: ({ personId, adminId }) => ({
-        url: `/api/admin/delivery-persons/${personId}/approve`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/approve`,
         method: 'POST',
         body: { adminId },
       }),
       invalidatesTags: ['User'],
     }),
 
-    rejectDeliveryPerson: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number; remarks: string }>({
+    rejectDeliveryPerson: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number; remarks: string }
+    >({
       query: ({ personId, adminId, remarks }) => ({
-        url: `/api/admin/delivery-persons/${personId}/reject`,
+        url: `/api/delivery-admin/delivery-persons/${personId}/reject`,
         method: 'POST',
         body: { adminId, remarks },
       }),
       invalidatesTags: ['User'],
     }),
 
-    getDeliveryOrders: builder.query<{ success: boolean; orders: DeliveryOrder[] }, void>({
-      query: () => '/api/admin/delivery-orders',
+    // ── Delivery Orders — correct path: /api/delivery-admin/orders ─────
+    getDeliveryOrders: builder.query<{ success: boolean; orders: DeliveryOrder[] }, string | void>({
+      query: (status) =>
+        status ? `/api/delivery-admin/orders?status=${status}` : '/api/delivery-admin/orders',
       providesTags: ['AdminOrders'],
     }),
 
@@ -241,7 +325,10 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['AdminOrders'],
     }),
 
-    assignOrder: builder.mutation<{ success: boolean; message: string; order: any }, { orderId: number; deliveryPersonId: number }>({
+    assignOrder: builder.mutation<
+      { success: boolean; message: string; order: any },
+      { orderId: number; deliveryPersonId: number }
+    >({
       query: ({ orderId, deliveryPersonId }) => ({
         url: `/api/admin/orders/${orderId}/assign`,
         method: 'POST',
@@ -250,37 +337,48 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['AdminOrders', 'Dashboard'],
     }),
 
-    generateDeliveryOtp: builder.mutation<{ success: boolean; message: string; deliveryOtp: string }, number>({
+    generateDeliveryOtp: builder.mutation<
+      { success: boolean; message: string; deliveryOtp: string },
+      number
+    >({
       query: (orderId) => ({
         url: `/api/admin/orders/${orderId}/generate-delivery-otp`,
         method: 'POST',
       }),
     }),
 
+    // ── Fare Settings — correct path: /api/admin/fare-settings ─────────
     getFareSettings: builder.query<{ success: boolean; fareSettings: FareSettings }, void>({
-      query: () => '/api/delivery-admin/fare-settings',
+      query: () => '/api/admin/fare-settings',
       providesTags: ['FareSettings'],
     }),
 
-    getAdminPanelFareSettings: builder.query<{ success: boolean; fareSettings: FareSettings }, void>({
-      query: () => '/api/delivery-admin/fare-settings',
-      providesTags: ['FareSettings'],
-    }),
-
-    updateFareSettings: builder.mutation<{ success: boolean; fareSettings: FareSettings }, Partial<FareSettings>>({
+    updateFareSettings: builder.mutation<
+      { success: boolean; fareSettings: FareSettings },
+      Partial<FareSettings>
+    >({
       query: (fareSettings) => ({
-        url: '/api/delivery-admin/fare-settings',
+        url: '/api/admin/fare-settings',
         method: 'PUT',
         body: fareSettings,
       }),
       invalidatesTags: ['FareSettings'],
     }),
 
-    updateAdminPanelFareSettings: builder.mutation<{ success: boolean; fareSettings: FareSettings }, Partial<FareSettings>>({
-      query: (fareSettings) => ({
-        url: '/api/delivery-admin/fare-settings',
+    // ── Fare Rules per vehicle type — /api/delivery-admin/fare-rules ───
+    getFareRules: builder.query<{ success: boolean; fareRules: FareRule[] }, void>({
+      query: () => '/api/delivery-admin/fare-rules',
+      providesTags: ['FareSettings'],
+    }),
+
+    updateFareRule: builder.mutation<
+      { success: boolean; fareRule: FareRule },
+      { id: number; rule: Partial<FareRule> }
+    >({
+      query: ({ id, rule }) => ({
+        url: `/api/delivery-admin/fare-rules/${id}`,
         method: 'PUT',
-        body: fareSettings,
+        body: rule,
       }),
       invalidatesTags: ['FareSettings'],
     }),
@@ -296,19 +394,16 @@ export const {
   useGetDeliveryPersonDocumentsQuery,
   useGetPendingDocumentsQuery,
   useApproveDocumentMutation,
-  useApproveAdminPanelDocumentMutation,
   useRejectDocumentMutation,
-  useRejectAdminPanelDocumentMutation,
   useRequestDocumentReuploadMutation,
-  useRequestAdminPanelDocumentReuploadMutation,
   useGetDeliveryOrdersQuery,
   useGetOrdersPendingAssignmentQuery,
   useAssignOrderMutation,
   useGenerateDeliveryOtpMutation,
   useGetFareSettingsQuery,
-  useGetAdminPanelFareSettingsQuery,
   useUpdateFareSettingsMutation,
-  useUpdateAdminPanelFareSettingsMutation,
+  useGetFareRulesQuery,
+  useUpdateFareRuleMutation,
   useApproveDeliveryPersonMutation,
   useRejectDeliveryPersonMutation,
   useUpdateDeliveryPersonStatusMutation,
@@ -317,4 +412,5 @@ export const {
   useRequestProfilePhotoReuploadMutation,
 } = deliveryApi;
 
+// Kept for backwards-compatibility with existing import sites
 export const useGetPersonnelDocumentsQuery = useGetDeliveryPersonDocumentsQuery;

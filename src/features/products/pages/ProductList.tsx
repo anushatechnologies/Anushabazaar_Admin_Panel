@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetProductsQuery,
@@ -44,7 +44,11 @@ import {
   ImageNotSupported as ImageNotSupportedIcon,
 } from '@mui/icons-material';
 import ConfirmDialog from '../../../components/ConfirmDialog';
-import { GlassPageHeader, GradientText, GlassCard } from '../../../components/glassmorphism/GlassComponents';
+import {
+  GlassPageHeader,
+  GradientText,
+  GlassCard,
+} from '../../../components/glassmorphism/GlassComponents';
 import { SkeletonPageHeader, SkeletonTable } from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
 import { useAppTheme } from '@contexts/ThemeContext';
@@ -63,13 +67,23 @@ export default function ProductList() {
 
   const [debouncedSearch, setDebouncedSearch] = useState(searchKeyword);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchKeyword), 500);
+    const timer = setTimeout(() => setDebouncedSearch(searchKeyword), 250);
     return () => clearTimeout(timer);
   }, [searchKeyword]);
 
   // Using RTK Query hooks
-  const { data: allProducts, isLoading: productsLoading, isError: isAllError, error: allError } = useGetProductsQuery({});
-  const { data: searchedProducts, isLoading: searchLoading, isError: isSearchError, error: searchError } = useSearchProductsQuery(debouncedSearch, {
+  const {
+    data: allProducts,
+    isLoading: productsLoading,
+    isError: isAllError,
+    error: allError,
+  } = useGetProductsQuery({});
+  const {
+    data: searchedProducts,
+    isLoading: searchLoading,
+    isError: isSearchError,
+    error: searchError,
+  } = useSearchProductsQuery(debouncedSearch, {
     skip: debouncedSearch.trim().length === 0,
   });
 
@@ -81,7 +95,7 @@ export default function ProductList() {
   const loading = productsLoading || searchLoading;
   const isError = isAllError || isSearchError;
   const error = allError || searchError;
-  const products = debouncedSearch.trim().length > 0 ? (searchedProducts || []) : (allProducts || []);
+  const products = debouncedSearch.trim().length > 0 ? searchedProducts || [] : allProducts || [];
 
   useEffect(() => {
     if (isError && error) {
@@ -89,12 +103,20 @@ export default function ProductList() {
     }
   }, [isError, error, handleError]);
 
-  const handleSave = async (data: ProductRequest, imageFile?: File, galleryUploads: PendingGalleryUpload[] = []) => {
+  const handleSave = async (
+    data: ProductRequest,
+    imageFile?: File,
+    galleryUploads: PendingGalleryUpload[] = [],
+  ) => {
     try {
       let productId = editingProduct?.id;
 
       if (editingProduct) {
-        const updatedProduct = await updateProduct({ id: editingProduct.id, product: data, image: imageFile }).unwrap();
+        const updatedProduct = await updateProduct({
+          id: editingProduct.id,
+          product: data,
+          image: imageFile,
+        }).unwrap();
         productId = updatedProduct?.id ?? editingProduct.id;
         toast.success('Product updated successfully');
       } else {
@@ -110,8 +132,8 @@ export default function ProductList() {
               productId,
               image: item.file,
               displayOrder: item.displayOrder,
-            }).unwrap()
-          )
+            }).unwrap(),
+          ),
         );
         toast.success('Gallery images uploaded successfully');
       }
@@ -149,10 +171,10 @@ export default function ProductList() {
   const totalPages = Math.ceil(products.length / ITEMS_PER_PAGE);
   const currentData = products.slice(
     (currentPage - 1) * ITEMS_PER_PAGE,
-    currentPage * ITEMS_PER_PAGE
+    currentPage * ITEMS_PER_PAGE,
   );
 
-  const handlePageChange = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handlePageChange = (_event: ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
   };
 
@@ -188,25 +210,27 @@ export default function ProductList() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ 
-            display: 'flex', 
-            justifyContent: 'space-between', 
-            alignItems: { xs: 'flex-start', sm: 'center' }, 
-            flexDirection: { xs: 'column', sm: 'row' },
-            gap: { xs: 1.5, sm: 2 } 
-          }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: { xs: 'flex-start', sm: 'center' },
+              flexDirection: { xs: 'column', sm: 'row' },
+              gap: { xs: 1.5, sm: 2 },
+            }}
+          >
             <Box sx={{ width: { xs: '100%', sm: 'auto' } }}>
-              <Typography 
-                variant="h4" 
-                sx={{ 
-                  fontWeight: 700, 
+              <Typography
+                variant="h4"
+                sx={{
+                  fontWeight: 700,
                   mb: 0.5,
-                  fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' }
+                  fontSize: { xs: '1.5rem', sm: '2rem', md: '2.125rem' },
                 }}
               >
                 <GradientText>Products</GradientText>
               </Typography>
-              <Typography 
+              <Typography
                 color="text.secondary"
                 sx={{ fontSize: { xs: '0.8rem', sm: '0.875rem' } }}
               >
@@ -224,8 +248,8 @@ export default function ProductList() {
                 textTransform: 'none',
                 fontWeight: 600,
                 background: currentTheme.accentGradient,
-                boxShadow: isDark 
-                  ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)' 
+                boxShadow: isDark
+                  ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)'
                   : currentTheme.shadow,
                 py: { xs: 1, sm: 1.2 },
                 px: { xs: 2, sm: 3 },
@@ -234,8 +258,8 @@ export default function ProductList() {
                 minWidth: { sm: '140px' },
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                  boxShadow: isDark 
-                    ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)' 
+                  boxShadow: isDark
+                    ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)'
                     : currentTheme.hoverShadow,
                   transform: 'translateY(-2px)',
                 },
@@ -331,20 +355,46 @@ export default function ProductList() {
             <>
               {/* Desktop Table View */}
               <Box sx={{ display: { xs: 'none', md: 'block' } }}>
-                <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
+                <TableContainer
+                  component={Paper}
+                  sx={{ boxShadow: 'none', background: 'transparent' }}
+                >
                   <Table>
                     <TableHead>
                       <TableRow>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Image</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Name</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Variants</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Category</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>SubCategory</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Store</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Active</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Trending</TableCell>
-                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Best Seller</TableCell>
-                        <TableCell align="center" sx={{ fontWeight: 700, color: currentTheme.text }}>Actions</TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Image
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Name
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Variants
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Category
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          SubCategory
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Store
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Active
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Trending
+                        </TableCell>
+                        <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                          Best Seller
+                        </TableCell>
+                        <TableCell
+                          align="center"
+                          sx={{ fontWeight: 700, color: currentTheme.text }}
+                        >
+                          Actions
+                        </TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
@@ -365,7 +415,11 @@ export default function ProductList() {
                                   src={p.imageUrl}
                                   alt={p.name}
                                   variant="rounded"
-                                  sx={{ width: 48, height: 48, boxShadow: '0 2px 8px rgba(0,0,0,0.1)' }}
+                                  sx={{
+                                    width: 48,
+                                    height: 48,
+                                    boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
+                                  }}
                                 />
                               ) : (
                                 <Box
@@ -384,10 +438,16 @@ export default function ProductList() {
                               )}
                             </TableCell>
                             <TableCell>
-                              <Typography fontWeight={600} sx={{ color: currentTheme.text }}>{p.name}</Typography>
+                              <Typography fontWeight={600} sx={{ color: currentTheme.text }}>
+                                {p.name}
+                              </Typography>
                             </TableCell>
                             <TableCell>
-                              <Tooltip title={p.variants?.map((v: any) => v.name).join(', ') || 'No variants'}>
+                              <Tooltip
+                                title={
+                                  p.variants?.map((v: any) => v.name).join(', ') || 'No variants'
+                                }
+                              >
                                 <Chip
                                   label={`${p.variants?.length || 0} variant${p.variants?.length !== 1 ? 's' : ''}`}
                                   size="small"
@@ -422,8 +482,12 @@ export default function ProductList() {
                                 size="small"
                                 sx={{
                                   background: p.isActive
-                                    ? isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)'
-                                    : isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(156, 163, 175, 0.15)',
+                                    ? isDark
+                                      ? 'rgba(0, 255, 157, 0.2)'
+                                      : 'rgba(34, 197, 94, 0.15)'
+                                    : isDark
+                                      ? 'rgba(255, 71, 87, 0.2)'
+                                      : 'rgba(156, 163, 175, 0.15)',
                                   color: p.isActive ? currentTheme.success : currentTheme.error,
                                   fontWeight: 600,
                                   borderRadius: 2,
@@ -436,9 +500,15 @@ export default function ProductList() {
                                 size="small"
                                 sx={{
                                   background: p.isTrending
-                                    ? isDark ? 'rgba(0, 212, 255, 0.2)' : 'rgba(59, 130, 246, 0.15)'
-                                    : isDark ? 'rgba(156, 163, 175, 0.15)' : 'rgba(156, 163, 175, 0.15)',
-                                  color: p.isTrending ? currentTheme.info : currentTheme.textSecondary,
+                                    ? isDark
+                                      ? 'rgba(0, 212, 255, 0.2)'
+                                      : 'rgba(59, 130, 246, 0.15)'
+                                    : isDark
+                                      ? 'rgba(156, 163, 175, 0.15)'
+                                      : 'rgba(156, 163, 175, 0.15)',
+                                  color: p.isTrending
+                                    ? currentTheme.info
+                                    : currentTheme.textSecondary,
                                   fontWeight: 600,
                                   borderRadius: 2,
                                 }}
@@ -450,9 +520,17 @@ export default function ProductList() {
                                 size="small"
                                 sx={{
                                   background: p.bestSeller
-                                    ? isDark ? 'rgba(255, 0, 255, 0.2)' : 'rgba(168, 85, 247, 0.15)'
-                                    : isDark ? 'rgba(156, 163, 175, 0.15)' : 'rgba(156, 163, 175, 0.15)',
-                                  color: p.bestSeller ? (isDark ? '#ff00ff' : '#9333ea') : currentTheme.textSecondary,
+                                    ? isDark
+                                      ? 'rgba(255, 0, 255, 0.2)'
+                                      : 'rgba(168, 85, 247, 0.15)'
+                                    : isDark
+                                      ? 'rgba(156, 163, 175, 0.15)'
+                                      : 'rgba(156, 163, 175, 0.15)',
+                                  color: p.bestSeller
+                                    ? isDark
+                                      ? '#ff00ff'
+                                      : '#9333ea'
+                                    : currentTheme.textSecondary,
                                   fontWeight: 600,
                                   borderRadius: 2,
                                 }}
@@ -466,10 +544,16 @@ export default function ProductList() {
                                     size="small"
                                     sx={{
                                       color: currentTheme.accent,
-                                      background: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                      '&:hover': { 
-                                        background: isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(99, 102, 241, 0.2)',
-                                        boxShadow: isDark ? '0 0 10px rgba(0, 245, 255, 0.5)' : 'none',
+                                      background: isDark
+                                        ? 'rgba(0, 245, 255, 0.1)'
+                                        : 'rgba(99, 102, 241, 0.1)',
+                                      '&:hover': {
+                                        background: isDark
+                                          ? 'rgba(0, 245, 255, 0.2)'
+                                          : 'rgba(99, 102, 241, 0.2)',
+                                        boxShadow: isDark
+                                          ? '0 0 10px rgba(0, 245, 255, 0.5)'
+                                          : 'none',
                                       },
                                     }}
                                   >
@@ -486,10 +570,16 @@ export default function ProductList() {
                                     disabled={isDeleting && productToDelete === p.id}
                                     sx={{
                                       color: currentTheme.error,
-                                      background: isDark ? 'rgba(255, 71, 87, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                      '&:hover': { 
-                                        background: isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                        boxShadow: isDark ? '0 0 10px rgba(255, 71, 87, 0.5)' : 'none',
+                                      background: isDark
+                                        ? 'rgba(255, 71, 87, 0.1)'
+                                        : 'rgba(239, 68, 68, 0.1)',
+                                      '&:hover': {
+                                        background: isDark
+                                          ? 'rgba(255, 71, 87, 0.2)'
+                                          : 'rgba(239, 68, 68, 0.2)',
+                                        boxShadow: isDark
+                                          ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                                          : 'none',
                                       },
                                     }}
                                   >
@@ -527,10 +617,12 @@ export default function ProductList() {
                           border: `1px solid ${currentTheme.border}`,
                           boxShadow: currentTheme.shadow,
                           transition: 'all 0.3s ease',
-                          '&:hover': isDark ? {
-                            boxShadow: '0 8px 32px rgba(0, 245, 255, 0.3)',
-                            border: '1px solid rgba(0, 245, 255, 0.4)',
-                          } : {},
+                          '&:hover': isDark
+                            ? {
+                                boxShadow: '0 8px 32px rgba(0, 245, 255, 0.3)',
+                                border: '1px solid rgba(0, 245, 255, 0.4)',
+                              }
+                            : {},
                         }}
                       >
                         <Box sx={{ display: 'flex', gap: 2, mb: 2 }}>
@@ -557,7 +649,12 @@ export default function ProductList() {
                             </Box>
                           )}
                           <Box flex={1}>
-                            <Typography fontWeight={700} fontSize="1rem" mb={0.5} sx={{ color: currentTheme.text }}>
+                            <Typography
+                              fontWeight={700}
+                              fontSize="1rem"
+                              mb={0.5}
+                              sx={{ color: currentTheme.text }}
+                            >
                               {p.name}
                             </Typography>
                             <Stack direction="row" spacing={1} flexWrap="wrap" gap={0.5}>
@@ -566,8 +663,12 @@ export default function ProductList() {
                                 size="small"
                                 sx={{
                                   background: p.isActive
-                                    ? isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)'
-                                    : isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(156, 163, 175, 0.15)',
+                                    ? isDark
+                                      ? 'rgba(0, 255, 157, 0.2)'
+                                      : 'rgba(34, 197, 94, 0.15)'
+                                    : isDark
+                                      ? 'rgba(255, 71, 87, 0.2)'
+                                      : 'rgba(156, 163, 175, 0.15)',
                                   color: p.isActive ? currentTheme.success : currentTheme.error,
                                   fontWeight: 600,
                                   borderRadius: 2,
@@ -579,7 +680,9 @@ export default function ProductList() {
                                   label="Trending"
                                   size="small"
                                   sx={{
-                                    background: isDark ? 'rgba(0, 212, 255, 0.2)' : 'rgba(59, 130, 246, 0.15)',
+                                    background: isDark
+                                      ? 'rgba(0, 212, 255, 0.2)'
+                                      : 'rgba(59, 130, 246, 0.15)',
                                     color: currentTheme.info,
                                     fontWeight: 600,
                                     borderRadius: 2,
@@ -592,7 +695,9 @@ export default function ProductList() {
                                   label="Best Seller"
                                   size="small"
                                   sx={{
-                                    background: isDark ? 'rgba(255, 0, 255, 0.2)' : 'rgba(168, 85, 247, 0.15)',
+                                    background: isDark
+                                      ? 'rgba(255, 0, 255, 0.2)'
+                                      : 'rgba(168, 85, 247, 0.15)',
                                     color: isDark ? '#ff00ff' : '#9333ea',
                                     fontWeight: 600,
                                     borderRadius: 2,
@@ -604,36 +709,66 @@ export default function ProductList() {
                           </Box>
                         </Box>
 
-                        <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}>
+                        <Box
+                          sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mb: 2 }}
+                        >
                           <Box>
-                            <Typography variant="caption" sx={{ color: currentTheme.textSecondary }}>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: currentTheme.textSecondary }}
+                            >
                               Category
                             </Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ color: currentTheme.text }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{ color: currentTheme.text }}
+                            >
                               {p.categoryName || p.categoryId}
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography variant="caption" sx={{ color: currentTheme.textSecondary }}>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: currentTheme.textSecondary }}
+                            >
                               SubCategory
                             </Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ color: currentTheme.text }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{ color: currentTheme.text }}
+                            >
                               {p.subCategoryName || p.subCategoryId}
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography variant="caption" sx={{ color: currentTheme.textSecondary }}>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: currentTheme.textSecondary }}
+                            >
                               Store
                             </Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ color: currentTheme.text }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{ color: currentTheme.text }}
+                            >
                               {p.storeName || p.storeId || '-'}
                             </Typography>
                           </Box>
                           <Box>
-                            <Typography variant="caption" sx={{ color: currentTheme.textSecondary }}>
+                            <Typography
+                              variant="caption"
+                              sx={{ color: currentTheme.textSecondary }}
+                            >
                               Variants
                             </Typography>
-                            <Typography variant="body2" fontWeight={500} sx={{ color: currentTheme.text }}>
+                            <Typography
+                              variant="body2"
+                              fontWeight={500}
+                              sx={{ color: currentTheme.text }}
+                            >
                               {p.variants?.length || 0}
                             </Typography>
                           </Box>
@@ -653,7 +788,9 @@ export default function ProductList() {
                               color: currentTheme.accent,
                               '&:hover': {
                                 borderColor: currentTheme.accent,
-                                background: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)',
+                                background: isDark
+                                  ? 'rgba(0, 245, 255, 0.1)'
+                                  : 'rgba(99, 102, 241, 0.1)',
                               },
                             }}
                           >
@@ -685,13 +822,15 @@ export default function ProductList() {
               </Box>
 
               {totalPages > 1 && (
-                <Box sx={{ 
-                  display: 'flex', 
-                  justifyContent: 'center', 
-                  mt: { xs: 2, sm: 3 }, 
-                  pb: { xs: 1, sm: 2 },
-                  px: { xs: 1, sm: 0 }
-                }}>
+                <Box
+                  sx={{
+                    display: 'flex',
+                    justifyContent: 'center',
+                    mt: { xs: 2, sm: 3 },
+                    pb: { xs: 1, sm: 2 },
+                    px: { xs: 1, sm: 0 },
+                  }}
+                >
                   <Pagination
                     count={totalPages}
                     page={currentPage}
@@ -704,7 +843,7 @@ export default function ProductList() {
                         borderRadius: 2,
                         fontSize: { xs: '0.75rem', sm: '0.875rem' },
                         minWidth: { xs: 28, sm: 32 },
-                        height: { xs: 28, sm: 32 }
+                        height: { xs: 28, sm: 32 },
                       },
                     }}
                   />
@@ -739,7 +878,12 @@ export default function ProductList() {
         }}
       >
         <DialogTitle>
-          <Typography variant="h6" fontWeight={700} component="span" sx={{ color: currentTheme.text }}>
+          <Typography
+            variant="h6"
+            fontWeight={700}
+            component="span"
+            sx={{ color: currentTheme.text }}
+          >
             {editingProduct ? 'Edit Product' : 'Create Product'}
           </Typography>
         </DialogTitle>

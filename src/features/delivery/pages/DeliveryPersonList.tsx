@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  Box, 
-  Typography, 
-  Card, 
-  Button, 
-  Chip, 
+import {
+  Box,
+  Typography,
+  Card,
+  Button,
+  Chip,
   Avatar,
   Stack,
   ToggleButton,
@@ -16,55 +16,84 @@ import {
   DialogActions,
   Grid,
   IconButton,
-  Paper,
   TextField,
+  FormControl,
+  InputAdornment,
+  MenuItem,
+  Select,
 } from '@mui/material';
 import {
   People as PeopleIcon,
   Pending as PendingIcon,
   Visibility as ViewIcon,
-  PersonAdd as AddPersonIcon,
   Description as DescriptionIcon,
   Close as CloseIcon,
   CheckCircle as CheckCircleIcon,
   Cancel as CancelIcon,
+  Search as SearchIcon,
 } from '@mui/icons-material';
 import ReusableTable from '../../../components/common/ReusableTable';
-import { useGetDeliveryPersonsQuery, 
+import {
+  useGetDeliveryPersonsQuery,
   useGetPendingDeliveryPersonsQuery,
   useGetPersonnelDocumentsQuery,
   useApproveDocumentMutation,
   useRejectDocumentMutation,
   DeliveryPerson,
-  DeliveryDocument
+  DeliveryDocument,
 } from '../api/deliveryApi';
 import { useNavigate } from 'react-router-dom';
-import { SkeletonTable, SkeletonPageHeader, SkeletonDocumentCard } from '../../../components/skeletons/LoadingSkeletons';
+import {
+  SkeletonTable,
+  SkeletonPageHeader,
+  SkeletonDocumentCard,
+} from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
-import { GlassPageHeader, GradientText, GlassCard } from '../../../components/glassmorphism/GlassComponents';
+import {
+  GlassPageHeader,
+  GradientText,
+  GlassCard,
+} from '../../../components/glassmorphism/GlassComponents';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
 import { toast } from '../../../components/toast/ToastContainer';
 
 export default function DeliveryPersonList() {
   const navigate = useNavigate();
   const [tab, setTab] = useState<'all' | 'pending'>('all');
+  const [search, setSearch] = useState('');
+  const [statusFilter, setStatusFilter] = useState<'ALL' | 'PENDING' | 'APPROVED' | 'REJECTED'>(
+    'ALL',
+  );
+  const [vehicleFilter, setVehicleFilter] = useState<'ALL' | DeliveryPerson['vehicleType']>('ALL');
   const [selectedPersonId, setSelectedPersonId] = useState<number | null>(null);
   const [selectedPersonName, setSelectedPersonName] = useState<string>('');
   const [documentModalOpen, setDocumentModalOpen] = useState(false);
   const [rejectDocId, setRejectDocId] = useState<number | null>(null);
   const [rejectRemarks, setRejectRemarks] = useState('');
   const { handleError } = useErrorHandler();
-  
-  const { data: allData, isLoading: isAllLoading, isError: isAllError, error: allError } = useGetDeliveryPersonsQuery();
-  const { data: pendingData, isLoading: isPendingLoading, isError: isPendingError, error: pendingError } = useGetPendingDeliveryPersonsQuery();
-  
+
+  const {
+    data: allData,
+    isLoading: isAllLoading,
+    isError: isAllError,
+    error: allError,
+  } = useGetDeliveryPersonsQuery();
+  const {
+    data: pendingData,
+    isLoading: isPendingLoading,
+    isError: isPendingError,
+    error: pendingError,
+  } = useGetPendingDeliveryPersonsQuery();
+
   const { data: documentsData, isLoading: isDocsLoading } = useGetPersonnelDocumentsQuery(
     selectedPersonId!,
-    { skip: !selectedPersonId }
+    { skip: !selectedPersonId },
   );
-  
+
   const [approveDoc] = useApproveDocumentMutation();
   const [rejectDoc] = useRejectDocumentMutation();
+
+  const hasActiveFilters = Boolean(search) || statusFilter !== 'ALL' || vehicleFilter !== 'ALL';
 
   React.useEffect(() => {
     if (isAllError && allError) {
@@ -75,9 +104,36 @@ export default function DeliveryPersonList() {
     }
   }, [isAllError, allError, isPendingError, pendingError, handleError]);
 
-  const deliveryPersons = tab === 'all' 
-    ? allData?.deliveryPersons || [] 
-    : pendingData?.pendingDeliveryPersons || [];
+  const deliveryPersons = useMemo(
+    () =>
+      tab === 'all' ? allData?.deliveryPersons || [] : pendingData?.pendingDeliveryPersons || [],
+    [tab, allData, pendingData],
+  );
+
+  const filteredDeliveryPersons = useMemo(() => {
+    const query = search.trim().toLowerCase();
+
+    return deliveryPersons.filter((person) => {
+      const haystack = [
+        person.id,
+        person.firstName,
+        person.lastName,
+        person.phoneNumber,
+        person.email,
+        person.vehicleType,
+        person.approvalStatus,
+      ]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+
+      const matchesSearch = !query || haystack.includes(query);
+      const matchesStatus = statusFilter === 'ALL' || person.approvalStatus === statusFilter;
+      const matchesVehicle = vehicleFilter === 'ALL' || person.vehicleType === vehicleFilter;
+
+      return matchesSearch && matchesStatus && matchesVehicle;
+    });
+  }, [deliveryPersons, search, statusFilter, vehicleFilter]);
 
   const isLoading = tab === 'all' ? isAllLoading : isPendingLoading;
   const isError = tab === 'all' ? isAllError : isPendingError;
@@ -106,6 +162,12 @@ export default function DeliveryPersonList() {
     setRejectRemarks('');
   };
 
+  const handleResetFilters = () => {
+    setSearch('');
+    setStatusFilter('ALL');
+    setVehicleFilter('ALL');
+  };
+
   const handleApproveDocument = async (docId: number) => {
     try {
       await approveDoc({ documentId: docId, adminId: 1 }).unwrap();
@@ -129,31 +191,39 @@ export default function DeliveryPersonList() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'APPROVED': return 'success';
-      case 'PENDING': return 'warning';
-      case 'REJECTED': return 'error';
-      default: return 'default';
+      case 'APPROVED':
+        return 'success';
+      case 'PENDING':
+        return 'warning';
+      case 'REJECTED':
+        return 'error';
+      default:
+        return 'default';
     }
   };
 
   const getStatusGradient = (status: string) => {
     switch (status) {
-      case 'APPROVED': return 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
-      case 'PENDING': return 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
-      case 'REJECTED': return 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)';
-      default: return 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)';
+      case 'APPROVED':
+        return 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)';
+      case 'PENDING':
+        return 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)';
+      case 'REJECTED':
+        return 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)';
+      default:
+        return 'linear-gradient(135deg, #9ca3af 0%, #6b7280 100%)';
     }
   };
 
   const columns = [
-    { 
-      header: 'Name', 
+    {
+      header: 'Name',
       key: 'firstName',
       render: (row: DeliveryPerson) => (
         <Stack direction="row" spacing={2} alignItems="center">
-          <Avatar 
+          <Avatar
             src={row.profilePhotoUrl}
-            sx={{ 
+            sx={{
               bgcolor: 'primary.main',
               background: getStatusGradient(row.approvalStatus),
               width: 44,
@@ -162,7 +232,8 @@ export default function DeliveryPersonList() {
               fontSize: '1rem',
             }}
           >
-            {row.firstName?.[0]}{row.lastName?.[0]}
+            {row.firstName?.[0]}
+            {row.lastName?.[0]}
           </Avatar>
           <Box>
             <Typography variant="body2" fontWeight={600}>
@@ -173,42 +244,45 @@ export default function DeliveryPersonList() {
             </Typography>
           </Box>
         </Stack>
-      )
+      ),
     },
-    { 
-      header: 'Phone', 
+    {
+      header: 'Phone',
       key: 'phoneNumber',
       render: (row: DeliveryPerson) => (
-        <Typography variant="body2">
-          {row.phoneNumber || 'N/A'}
-        </Typography>
-      )
+        <Typography variant="body2">{row.phoneNumber || 'N/A'}</Typography>
+      ),
     },
-    { 
-      header: 'Status', 
+    {
+      header: 'Status',
       key: 'approvalStatus',
       render: (row: DeliveryPerson) => (
-        <Chip 
-          label={row.approvalStatus} 
+        <Chip
+          label={row.approvalStatus}
           size="small"
           sx={{
             background: `${getStatusGradient(row.approvalStatus)}20`,
-            color: getStatusColor(row.approvalStatus) === 'success' ? '#16a34a' :
-                   getStatusColor(row.approvalStatus) === 'warning' ? '#d97706' :
-                   getStatusColor(row.approvalStatus) === 'error' ? '#dc2626' : '#6b7280',
+            color:
+              getStatusColor(row.approvalStatus) === 'success'
+                ? '#16a34a'
+                : getStatusColor(row.approvalStatus) === 'warning'
+                  ? '#d97706'
+                  : getStatusColor(row.approvalStatus) === 'error'
+                    ? '#dc2626'
+                    : '#6b7280',
             fontWeight: 600,
             borderRadius: 2,
             px: 1,
           }}
         />
-      )
+      ),
     },
-    { 
-      header: 'Verified', 
+    {
+      header: 'Verified',
       key: 'verified',
       render: (row: DeliveryPerson) => (
-        <Chip 
-          label={row.verified ? 'Verified' : 'Unverified'} 
+        <Chip
+          label={row.verified ? 'Verified' : 'Unverified'}
           size="small"
           sx={{
             background: row.verified ? 'rgba(34, 197, 94, 0.1)' : 'rgba(156, 163, 175, 0.1)',
@@ -217,20 +291,22 @@ export default function DeliveryPersonList() {
             borderRadius: 2,
           }}
         />
-      )
+      ),
     },
-    { 
-      header: 'Joined', 
+    {
+      header: 'Joined',
       key: 'createdAt',
       render: (row: DeliveryPerson) => (
         <Typography variant="body2" color="text.secondary">
-          {row.createdAt ? new Date(row.createdAt).toLocaleDateString('en-US', { 
-            month: 'short', 
-            day: 'numeric', 
-            year: 'numeric' 
-          }) : 'N/A'}
+          {row.createdAt
+            ? new Date(row.createdAt).toLocaleDateString('en-US', {
+                month: 'short',
+                day: 'numeric',
+                year: 'numeric',
+              })
+            : 'N/A'}
         </Typography>
-      )
+      ),
     },
     {
       header: 'Documents',
@@ -251,14 +327,14 @@ export default function DeliveryPersonList() {
         >
           View Docs
         </Button>
-      )
+      ),
     },
     {
       header: 'Actions',
       key: 'id',
       render: (row: DeliveryPerson) => (
-        <Button 
-          size="small" 
+        <Button
+          size="small"
           variant="outlined"
           startIcon={<ViewIcon />}
           onClick={() => handleViewDetails(row.id)}
@@ -271,8 +347,8 @@ export default function DeliveryPersonList() {
         >
           View
         </Button>
-      )
-    }
+      ),
+    },
   ];
 
   if (isLoading) {
@@ -307,15 +383,41 @@ export default function DeliveryPersonList() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
                 <GradientText>Delivery Persons</GradientText>
               </Typography>
               <Typography color="text.secondary">
-                Manage and approve delivery persons ({deliveryPersons.length} total)
+                Manage and approve delivery persons ({filteredDeliveryPersons.length} visible of{' '}
+                {deliveryPersons.length})
               </Typography>
             </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap">
+              <Chip
+                label={`Pending ${pendingData?.pendingDeliveryPersons?.length || 0}`}
+                color="warning"
+                variant="outlined"
+              />
+              <Chip
+                label={`Approved ${deliveryPersons.filter((person) => person.approvalStatus === 'APPROVED').length}`}
+                color="success"
+                variant="outlined"
+              />
+              <Chip
+                label={`Rejected ${deliveryPersons.filter((person) => person.approvalStatus === 'REJECTED').length}`}
+                color="error"
+                variant="outlined"
+              />
+            </Stack>
           </Box>
         </GlassPageHeader>
       </motion.div>
@@ -349,7 +451,7 @@ export default function DeliveryPersonList() {
         >
           <ToggleButton value="all">
             <PeopleIcon sx={{ mr: 1, fontSize: 20 }} />
-            All Staff
+            All Delivery Persons
           </ToggleButton>
           <ToggleButton value="pending">
             <PendingIcon sx={{ mr: 1, fontSize: 20 }} />
@@ -373,6 +475,63 @@ export default function DeliveryPersonList() {
         </ToggleButtonGroup>
       </Box>
 
+      <GlassCard sx={{ mb: 3 }}>
+        <Stack direction={{ xs: 'column', xl: 'row' }} spacing={2}>
+          <TextField
+            fullWidth
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="Search by name, mobile number, email, vehicle, or ID..."
+            sx={{ flex: 1, minWidth: 320 }}
+            InputProps={{
+              startAdornment: (
+                <InputAdornment position="start">
+                  <SearchIcon fontSize="small" />
+                </InputAdornment>
+              ),
+            }}
+          />
+          <FormControl sx={{ minWidth: 180, flexShrink: 0 }}>
+            <Select
+              value={statusFilter}
+              onChange={(event) => setStatusFilter(event.target.value as any)}
+            >
+              <MenuItem value="ALL">All Statuses</MenuItem>
+              <MenuItem value="PENDING">Pending</MenuItem>
+              <MenuItem value="APPROVED">Approved</MenuItem>
+              <MenuItem value="REJECTED">Rejected</MenuItem>
+            </Select>
+          </FormControl>
+          <FormControl sx={{ minWidth: 170, flexShrink: 0 }}>
+            <Select
+              value={vehicleFilter}
+              onChange={(event) => setVehicleFilter(event.target.value as any)}
+            >
+              <MenuItem value="ALL">All Vehicles</MenuItem>
+              <MenuItem value="BIKE">Bike</MenuItem>
+              <MenuItem value="SCOOTER">Scooter</MenuItem>
+              <MenuItem value="AUTO">Auto</MenuItem>
+              <MenuItem value="HEAVY">Heavy</MenuItem>
+            </Select>
+          </FormControl>
+          <Button
+            variant={hasActiveFilters ? 'contained' : 'outlined'}
+            onClick={handleResetFilters}
+            disabled={!hasActiveFilters}
+            sx={{
+              minWidth: 154,
+              borderRadius: 3,
+              textTransform: 'none',
+              fontWeight: 700,
+              boxShadow: hasActiveFilters ? '0 12px 24px rgba(37, 99, 235, 0.18)' : 'none',
+              flexShrink: 0,
+            }}
+          >
+            Reset Filters
+          </Button>
+        </Stack>
+      </GlassCard>
+
       {/* Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
@@ -380,18 +539,26 @@ export default function DeliveryPersonList() {
         transition={{ duration: 0.5, delay: 0.2 }}
       >
         <GlassCard>
-          {deliveryPersons.length === 0 ? (
+          {filteredDeliveryPersons.length === 0 ? (
             <EmptyState
-              type="empty"
-              title={tab === 'pending' ? 'No pending approvals' : 'No delivery persons'}
-              description={tab === 'pending' 
-                ? 'All delivery persons have been approved.' 
-                : 'No delivery persons found.'}
+              type={
+                search || statusFilter !== 'ALL' || vehicleFilter !== 'ALL' ? 'not-found' : 'empty'
+              }
+              title={
+                tab === 'pending' ? 'No matching pending approvals' : 'No delivery persons found'
+              }
+              description={
+                search || statusFilter !== 'ALL' || vehicleFilter !== 'ALL'
+                  ? 'Try a different mobile number, name, status, or vehicle filter.'
+                  : tab === 'pending'
+                    ? 'All delivery persons have been approved.'
+                    : 'No delivery persons found.'
+              }
             />
           ) : (
             <ReusableTable
               columns={columns}
-              data={deliveryPersons}
+              data={filteredDeliveryPersons}
               loading={isLoading}
               currentPage={1}
               totalPages={1}
@@ -488,8 +655,8 @@ export default function DeliveryPersonList() {
                                 doc.status === 'APPROVED'
                                   ? 'rgba(34, 197, 94, 0.9)'
                                   : doc.status === 'REJECTED'
-                                  ? 'rgba(239, 68, 68, 0.9)'
-                                  : 'rgba(245, 158, 11, 0.9)',
+                                    ? 'rgba(239, 68, 68, 0.9)'
+                                    : 'rgba(245, 158, 11, 0.9)',
                               color: 'white',
                               fontWeight: 600,
                             }}
@@ -500,9 +667,14 @@ export default function DeliveryPersonList() {
                             {doc.documentType.replace(/_/g, ' ')}
                           </Typography>
                           <Typography variant="body2" color="text.secondary">
-                            #{doc.documentNumber}
+                            {doc.documentNumber ? `#${doc.documentNumber}` : 'Number not provided'}
                           </Typography>
-                          <Typography variant="caption" color="text.secondary" display="block" sx={{ mt: 1 }}>
+                          <Typography
+                            variant="caption"
+                            color="text.secondary"
+                            display="block"
+                            sx={{ mt: 1 }}
+                          >
                             Uploaded: {new Date(doc.uploadedAt).toLocaleDateString()}
                           </Typography>
 

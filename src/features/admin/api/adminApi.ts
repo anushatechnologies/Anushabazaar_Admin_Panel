@@ -42,19 +42,24 @@ export interface IncomeSummary {
   success: boolean;
   summary: {
     todayIncome: number;
+    weekIncome: number;
     monthIncome: number;
     totalIncome: number;
+    razorpayIncome: number;
+    codIncome: number;
   };
 }
 
 export interface PaymentTransaction {
-  id?: number;
+  id?: number | string;
   txnid?: string;
   transactionId?: string;
   amount: number;
   status: string;
   method?: string;
   paymentMethod?: string;
+  source?: string;
+  orderNumber?: string;
   date?: string;
   createdAt?: string;
 }
@@ -191,12 +196,15 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // SECTION B - Customer Management
-    getAllCustomers: builder.query<CustomersResponse, { 
-      search?: string; 
-      active?: boolean; 
-      page?: number; 
-      size?: number 
-    }>({
+    getAllCustomers: builder.query<
+      CustomersResponse,
+      {
+        search?: string;
+        active?: boolean;
+        page?: number;
+        size?: number;
+      }
+    >({
       query: (params) => ({
         url: '/api/admin/customers',
         params: {
@@ -250,7 +258,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['AdminOrders'],
     }),
 
-    rejectOrder: builder.mutation<{ message: string; orderId: number }, { orderId: number; reason: string }>({
+    rejectOrder: builder.mutation<
+      { message: string; orderId: number },
+      { orderId: number; reason: string }
+    >({
       query: ({ orderId, reason }) => ({
         url: `/api/admin/orders/${orderId}/reject`,
         method: 'POST',
@@ -265,7 +276,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['Documents'],
     }),
 
-    approveDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { documentId: number; adminId: number }>({
+    approveDocument: builder.mutation<
+      { success: boolean; message: string; document: DeliveryDocument },
+      { documentId: number; adminId: number }
+    >({
       query: ({ documentId, adminId }) => ({
         url: `/api/admin/documents/${documentId}/approve`,
         method: 'POST',
@@ -274,11 +288,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Documents'],
     }),
 
-    rejectDocument: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { 
-      documentId: number; 
-      adminId: number; 
-      remarks: string 
-    }>({
+    rejectDocument: builder.mutation<
+      { success: boolean; message: string; document: DeliveryDocument },
+      {
+        documentId: number;
+        adminId: number;
+        remarks: string;
+      }
+    >({
       query: ({ documentId, adminId, remarks }) => ({
         url: `/api/admin/documents/${documentId}/reject`,
         method: 'POST',
@@ -287,11 +304,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Documents'],
     }),
 
-    requestDocumentReupload: builder.mutation<{ success: boolean; message: string; document: DeliveryDocument }, { 
-      documentId: number; 
-      adminId: number; 
-      remarks: string 
-    }>({
+    requestDocumentReupload: builder.mutation<
+      { success: boolean; message: string; document: DeliveryDocument },
+      {
+        documentId: number;
+        adminId: number;
+        remarks: string;
+      }
+    >({
       query: ({ documentId, adminId, remarks }) => ({
         url: `/api/admin/documents/${documentId}/request-reupload`,
         method: 'POST',
@@ -301,7 +321,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // SECTION E - Profile Photo Verification
-    approveProfilePhoto: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number }>({
+    approveProfilePhoto: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number }
+    >({
       query: ({ personId, adminId }) => ({
         url: `/api/admin/delivery-persons/${personId}/approve-photo`,
         method: 'POST',
@@ -310,11 +333,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
-    rejectProfilePhoto: builder.mutation<{ success: boolean; message: string }, { 
-      personId: number; 
-      adminId: number; 
-      remarks: string 
-    }>({
+    rejectProfilePhoto: builder.mutation<
+      { success: boolean; message: string },
+      {
+        personId: number;
+        adminId: number;
+        remarks: string;
+      }
+    >({
       query: ({ personId, adminId, remarks }) => ({
         url: `/api/admin/delivery-persons/${personId}/reject-photo`,
         method: 'POST',
@@ -323,11 +349,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
-    requestPhotoReupload: builder.mutation<{ success: boolean; message: string }, { 
-      personId: number; 
-      adminId: number; 
-      remarks: string 
-    }>({
+    requestPhotoReupload: builder.mutation<
+      { success: boolean; message: string },
+      {
+        personId: number;
+        adminId: number;
+        remarks: string;
+      }
+    >({
       query: ({ personId, adminId, remarks }) => ({
         url: `/api/admin/delivery-persons/${personId}/request-photo-reupload`,
         method: 'POST',
@@ -337,7 +366,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // SECTION G - Final Account Approval
-    finalApproveDeliveryPerson: builder.mutation<{ success: boolean; message: string }, { personId: number; adminId: number }>({
+    finalApproveDeliveryPerson: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; adminId: number }
+    >({
       query: ({ personId, adminId }) => ({
         url: `/api/admin/delivery-persons/${personId}/approve`,
         method: 'POST',
@@ -346,11 +378,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
-    rejectDeliveryPerson: builder.mutation<{ success: boolean; message: string }, { 
-      personId: number; 
-      adminId: number; 
-      remarks: string 
-    }>({
+    rejectDeliveryPerson: builder.mutation<
+      { success: boolean; message: string },
+      {
+        personId: number;
+        adminId: number;
+        remarks: string;
+      }
+    >({
       query: ({ personId, adminId, remarks }) => ({
         url: `/api/admin/delivery-persons/${personId}/reject`,
         method: 'POST',
@@ -359,7 +394,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
-    updateDeliveryPersonStatus: builder.mutation<{ success: boolean; message: string }, { personId: number; isActive: boolean }>({
+    updateDeliveryPersonStatus: builder.mutation<
+      { success: boolean; message: string },
+      { personId: number; isActive: boolean }
+    >({
       query: ({ personId, isActive }) => ({
         url: `/api/admin/delivery-persons/${personId}/status`,
         method: 'PUT',
@@ -374,7 +412,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['AdminOrders'],
     }),
 
-    assignOrderToDelivery: builder.mutation<{ success: boolean; message: string }, { orderId: number; deliveryPersonId: number }>({
+    assignOrderToDelivery: builder.mutation<
+      { success: boolean; message: string },
+      { orderId: number; deliveryPersonId: number }
+    >({
       query: ({ orderId, deliveryPersonId }) => ({
         url: `/api/admin/orders/${orderId}/assign`,
         method: 'POST',
@@ -393,7 +434,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['AdminOrders'],
     }),
 
-    generateDeliveryOtp: builder.mutation<{ success: boolean; message: string; deliveryOtp: string }, number>({
+    generateDeliveryOtp: builder.mutation<
+      { success: boolean; message: string; deliveryOtp: string },
+      number
+    >({
       query: (orderId) => ({
         url: `/api/admin/orders/${orderId}/generate-delivery-otp`,
         method: 'POST',
@@ -407,7 +451,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['FareSettings'],
     }),
 
-    updateFareSettings: builder.mutation<{ success: boolean; message: string }, Partial<FareSettings['fareSettings']>>({
+    updateFareSettings: builder.mutation<
+      { success: boolean; message: string },
+      Partial<FareSettings['fareSettings']>
+    >({
       query: (fareSettings) => ({
         url: '/api/admin/fare-settings',
         method: 'PUT',
@@ -422,16 +469,21 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['Banners'],
     }),
 
-    createBanner: builder.mutation<{ success: boolean; message: string; banner: Banner }, FormData>({
-      query: (formData) => ({
-        url: '/api/admin/banners',
-        method: 'POST',
-        body: formData,
-      }),
-      invalidatesTags: ['Banners'],
-    }),
+    createBanner: builder.mutation<{ success: boolean; message: string; banner: Banner }, FormData>(
+      {
+        query: (formData) => ({
+          url: '/api/admin/banners',
+          method: 'POST',
+          body: formData,
+        }),
+        invalidatesTags: ['Banners'],
+      },
+    ),
 
-    toggleBannerStatus: builder.mutation<{ success: boolean; message: string }, { id: number; isActive: boolean }>({
+    toggleBannerStatus: builder.mutation<
+      { success: boolean; message: string },
+      { id: number; isActive: boolean }
+    >({
       query: ({ id, isActive }) => ({
         url: `/api/admin/banners/${id}/status`,
         method: 'PUT',
@@ -449,11 +501,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
     }),
 
     // SECTION K - Push Notifications
-    sendNotificationToUser: builder.mutation<{ success: boolean; message: string }, { 
-      phoneNumber: string; 
-      title: string; 
-      message: string 
-    }>({
+    sendNotificationToUser: builder.mutation<
+      { success: boolean; message: string },
+      {
+        phoneNumber: string;
+        title: string;
+        message: string;
+      }
+    >({
       query: (data) => ({
         url: '/api/admin/notifications/send',
         method: 'POST',
@@ -461,7 +516,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       }),
     }),
 
-    broadcastToCustomers: builder.mutation<{ success: boolean; message: string }, { title: string; message: string }>({
+    broadcastToCustomers: builder.mutation<
+      { success: boolean; message: string },
+      { title: string; message: string }
+    >({
       query: (data) => ({
         url: '/api/admin/notifications/send-to-customers',
         method: 'POST',
@@ -469,7 +527,10 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       }),
     }),
 
-    broadcastToDeliveryPartners: builder.mutation<{ success: boolean; message: string }, { title: string; message: string }>({
+    broadcastToDeliveryPartners: builder.mutation<
+      { success: boolean; message: string },
+      { title: string; message: string }
+    >({
       query: (data) => ({
         url: '/api/admin/notifications/send-to-delivery',
         method: 'POST',
@@ -568,10 +629,14 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Payouts'],
     }),
 
-    processPayout: builder.mutation<{ message: string }, number>({
-      query: (id) => ({
+    processPayout: builder.mutation<
+      { message: string },
+      { id: number; transactionId: string; paymentMethod: string; adminId?: number }
+    >({
+      query: ({ id, transactionId, paymentMethod, adminId }) => ({
         url: `/api/payouts/${id}/process`,
         method: 'POST',
+        body: { transactionId, paymentMethod, ...(adminId !== undefined && { adminId }) },
       }),
       invalidatesTags: ['Payouts'],
     }),
@@ -661,7 +726,7 @@ export const {
   useGetPendingPayoutsQuery,
   useGetPayoutByIdQuery,
   useGenerateWeeklyPayoutsMutation,
-  useProcessPayoutMutation,
+  useProcessPayoutMutation, // in adminApi — prefer payoutApi.useProcessPayoutMutation for PayoutList page
   useFailPayoutMutation,
   useCancelPayoutMutation,
   useRetryPayoutMutation,

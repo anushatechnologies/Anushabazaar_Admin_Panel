@@ -1,21 +1,69 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
-import { logoutUser } from '@features/auth/authSlice';
+import { logoutUser, setCredentials } from '@features/auth/authSlice';
 
-// -------------------- BASE QUERY FACTORY --------------------
+// ── Token refresh scheduler ──────────────────────────────────────────────────
+// Reads the exp claim from the stored JWT and schedules a refresh 30 min before
+// expiry.  Called once on app startup and again after every successful refresh.
+let _refreshTimer: ReturnType<typeof setTimeout> | null = null;
+
+function scheduleTokenRefresh(token: string, dispatch: (action: any) => void) {
+  if (_refreshTimer) clearTimeout(_refreshTimer);
+
+  try {
+    const [, payloadB64] = token.split('.');
+    const payload = JSON.parse(atob(payloadB64));
+    if (!payload?.exp) return;
+
+    const expiresAt = payload.exp * 1000; // convert to ms
+    const refreshAt = expiresAt - 30 * 60 * 1000; // 30 min before expiry
+    const delay = refreshAt - Date.now();
+
+    if (delay <= 0) return; // already within 30-min window — refresh immediately handled by reauth
+
+    _refreshTimer = setTimeout(async () => {
+      const storedToken = localStorage.getItem('token');
+      if (!storedToken) return;
+
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_API_BASE_URL}/api/auth/adminpanel/refresh`,
+          {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${storedToken}`,
+              'Content-Type': 'application/json',
+            },
+          },
+        );
+        if (!res.ok) throw new Error('refresh failed');
+        const data = await res.json();
+        const newToken: string = data.token;
+        const storedUser = localStorage.getItem('user');
+        const user = storedUser ? JSON.parse(storedUser) : null;
+        dispatch(setCredentials({ token: newToken, user }));
+        scheduleTokenRefresh(newToken, dispatch); // schedule next refresh
+      } catch {
+        // Silent — if refresh fails, user will be logged out on the next 401
+      }
+    }, delay);
+  } catch {
+    // Malformed token — ignore
+  }
+}
+
+// ── Raw base query (no auth) ─────────────────────────────────────────────────
 // IMPORTANT: Do NOT set Content-Type globally. RTK Query handles it:
-// - JSON bodies get application/json.
-// - FormData bodies get multipart/form-data with the correct boundary.
+// - JSON bodies → application/json
+// - FormData bodies → multipart/form-data with the correct boundary
 const rawBaseQuery = fetchBaseQuery({
   baseUrl: import.meta.env.VITE_API_BASE_URL,
   prepareHeaders: (headers, { arg }) => {
-    const method = (typeof arg === 'string' ? 'GET' : (arg as any).method) || 'GET';
     const body = typeof arg === 'string' ? undefined : (arg as any).body;
+    const method = (typeof arg === 'string' ? 'GET' : (arg as any).method) || 'GET';
     const isFormData = typeof FormData !== 'undefined' && body instanceof FormData;
-    
-    // Standardize Accept header
+
     headers.set('Accept', 'application/json');
-    
-    // 💡 AVOID Content-Type on GET requests (RFC non-standard/problematic for some backends)
+
     if (isFormData) {
       headers.delete('Content-Type');
     } else if (method.toUpperCase() !== 'GET' && !headers.has('Content-Type')) {
@@ -24,36 +72,33 @@ const rawBaseQuery = fetchBaseQuery({
 
     const token = localStorage.getItem('token');
     if (token && token !== 'undefined' && token !== 'null') {
-      const authHeader = `Bearer ${token}`;
-      headers.set('Authorization', authHeader);
-      // 🔥 DEBUG: Log if we are sending a token
-      console.log(`[API Header] Authorization: Bearer ${token.substring(0, 10)}... (length: ${token.length})`);
+      headers.set('Authorization', `Bearer ${token}`);
     }
-    
+
     return headers;
   },
 });
 
+// ── Authenticated base query with 401 handler ────────────────────────────────
 const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   const fullUrl = typeof args === 'string' ? args : args.url;
   const method = (typeof args === 'string' ? 'GET' : args.method) || 'GET';
-  
-  // 🔍 DEBUG: Log full request details
-  console.log(`[API Request] ${method} ${fullUrl}`);
+
+  // Kick off token refresh schedule on every request so the timer survives
+  // across page reloads (schedule is re-derived from current token on startup).
+  const token = localStorage.getItem('token');
+  if (token && token !== 'undefined' && token !== 'null') {
+    scheduleTokenRefresh(token, api.dispatch);
+  }
 
   const result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error) {
-    const errorData = result.error as any;
-    
-    // 🔍 DEBUG: Log full error for troubleshooting
     console.group(`[API Error] ${method} ${fullUrl}`);
     console.error('Status:', result.error.status);
-    console.error('Data:', errorData.data);
-    console.error('Message:', errorData.message || errorData.error);
+    console.error('Data:', (result.error as any).data);
     console.groupEnd();
 
-    // ⛔ HANDLE 401 UNAUTHORIZED
     if (result.error.status === 401) {
       console.warn('Session unauthorized (401) for:', fullUrl);
       api.dispatch(logoutUser());
@@ -64,7 +109,7 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
   return result;
 };
 
-// 1. baseApi WITHOUT AUTH (for simple public endpoints if needed)
+// ── Public API (no auth) ─────────────────────────────────────────────────────
 export const baseApi = createApi({
   reducerPath: 'baseApiWithoutAuth',
   baseQuery: fetchBaseQuery({
@@ -78,14 +123,33 @@ export const baseApi = createApi({
   endpoints: () => ({}),
 });
 
-// 2. baseApi WITH AUTH AND REAUTH HANDLING
+// ── Authenticated API ────────────────────────────────────────────────────────
 export const baseApiWithAuth = createApi({
   reducerPath: 'baseApiWithAuth',
   baseQuery: baseQueryWithReauth,
   tagTypes: [
-    'Dashboard', 'Orders', 'AdminOrders', 'User', 'Stores', 'StoreTypes', 'Category',
-    'CategoryList', 'SubCategory', 'Product', 'ProductList', 'Notification', 'Banner', 'Banners', 'Delivery',
-    'FareSetting', 'FareSettings', 'Payouts', 'Coupons', 'Documents', 'Customers', 'Policies'
+    'Dashboard',
+    'Orders',
+    'AdminOrders',
+    'User',
+    'Stores',
+    'StoreTypes',
+    'Category',
+    'CategoryList',
+    'SubCategory',
+    'Product',
+    'ProductList',
+    'Notification',
+    'Banner',
+    'Banners',
+    'Delivery',
+    'FareSetting',
+    'FareSettings',
+    'Payouts',
+    'Coupons',
+    'Documents',
+    'Customers',
+    'Policies',
   ],
   endpoints: () => ({}),
 });

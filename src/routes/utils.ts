@@ -1,6 +1,5 @@
 import {
   Dashboard,
-  LocalShipping,
   Payment,
   Store,
   Category,
@@ -10,15 +9,11 @@ import {
   Notifications,
   People,
   Description,
-  Star,
 } from '@mui/icons-material';
 
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
-import CreditCardIcon from '@mui/icons-material/CreditCard';
-import AccountBalanceWalletIcon from '@mui/icons-material/AccountBalanceWallet';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
-import BoltIcon from '@mui/icons-material/Bolt';
 
 export interface RouteLinkItem {
   name: string;
@@ -38,13 +33,23 @@ export const RouteLinks: RouteLinkGroup[] = [
     section: 'Dashboard',
     links: [{ name: 'Dashboard', path: '/', Icon: Dashboard }],
   },
-  
+
   // ---------------- ORDERS ----------------
   {
     section: 'Orders',
     links: [
-      { name: 'My Orders', path: '/my-orders', Icon: Inventory2, roles: ['CUSTOMER', 'USER', 'ROLE_USER'] },
-      { name: 'Manage Orders', path: '/admin/orders', Icon: Inventory2, roles: ['ADMIN', 'ROLE_ADMIN'] },
+      {
+        name: 'My Orders',
+        path: '/my-orders',
+        Icon: Inventory2,
+        roles: ['CUSTOMER', 'USER', 'ROLE_USER'],
+      },
+      {
+        name: 'Manage Orders',
+        path: '/admin/orders',
+        Icon: Inventory2,
+        roles: ['ADMIN', 'ROLE_ADMIN'],
+      },
     ],
   },
 
@@ -62,19 +67,15 @@ export const RouteLinks: RouteLinkGroup[] = [
   {
     section: 'Payments',
     links: [
-      { name: 'AUPay', path: '/payments-aupay', Icon: CreditCardIcon },
-      { name: 'PhonePe', path: '/payments-phonepe', Icon: AccountBalanceWalletIcon },
-      { name: 'COD', path: '/payments-cod', Icon: LocalAtmIcon },
+      { name: 'Payments & Income', path: '/admin/income', Icon: AttachMoneyIcon },
+      { name: 'COD', path: '/payments/cod', Icon: LocalAtmIcon },
     ],
   },
 
   // ---------------- STORE ----------------
   {
     section: 'Store',
-    links: [
-      { name: 'Main Store', path: '/store', Icon: Store },
-      { name: 'Store Type', path: '/store-type', Icon: Category },
-    ],
+    links: [{ name: 'Store Types', path: '/store-type', Icon: Store }],
   },
 
   // ---------------- DELIVERY ----------------
@@ -82,8 +83,7 @@ export const RouteLinks: RouteLinkGroup[] = [
     section: 'Delivery',
     links: [
       { name: 'Dashboard', path: '/delivery/dashboard', Icon: Dashboard },
-      { name: 'Manage Orders', path: '/admin/orders', Icon: Inventory2, roles: ['ADMIN', 'ROLE_ADMIN'] },
-      { name: 'Personnel', path: '/delivery/personnel', Icon: People },
+      { name: 'Delivery Persons', path: '/delivery/personnel', Icon: People },
       { name: 'Documents', path: '/delivery/documents', Icon: Description },
       { name: 'Fare Settings', path: '/delivery/fare-settings', Icon: AttachMoneyIcon },
     ],
@@ -92,10 +92,7 @@ export const RouteLinks: RouteLinkGroup[] = [
   // ---------------- FINANCIALS ----------------
   {
     section: 'Financials',
-    links: [
-      { name: 'Income', path: '/admin/income', Icon: AttachMoneyIcon },
-      { name: 'Payouts', path: '/admin/payouts', Icon: LocalAtmIcon },
-    ],
+    links: [{ name: 'Payouts', path: '/admin/payouts', Icon: LocalAtmIcon }],
   },
 
   // ---------------- MARKETING ----------------

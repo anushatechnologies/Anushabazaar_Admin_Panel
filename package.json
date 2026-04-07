@@ -30,11 +30,11 @@
   },
   "lint-staged": {
     "src/**/*.{ts,tsx}": [
-      "eslint --fix",
-      "prettier --write"
+      "scripts\\run-eslint.cmd --fix",
+      "scripts\\run-prettier.cmd --write"
     ],
     "src/**/*.{scss,css,json,md}": [
-      "prettier --write"
+      "scripts\\run-prettier.cmd --write"
     ]
   },
   "devDependencies": {

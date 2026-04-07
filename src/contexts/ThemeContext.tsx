@@ -117,15 +117,14 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
     return saved && ['light', 'dark', 'system'].includes(saved) ? saved : 'system';
   });
 
-  const [systemIsDark, setSystemIsDark] = useState(() =>
-    window.matchMedia('(prefers-color-scheme: dark)').matches
+  const [systemIsDark, setSystemIsDark] = useState(
+    () => window.matchMedia('(prefers-color-scheme: dark)').matches,
   );
 
   useEffect(() => {
     const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
     const handleChange = (event: MediaQueryListEvent) => setSystemIsDark(event.matches);
 
-    setSystemIsDark(mediaQuery.matches);
     mediaQuery.addEventListener('change', handleChange);
 
     return () => mediaQuery.removeEventListener('change', handleChange);
@@ -163,13 +162,62 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
         shape: { borderRadius: 18 },
         typography: {
           fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
-          h1: { fontFamily: '"Space Grotesk", "Manrope", sans-serif', fontWeight: 700 },
-          h2: { fontFamily: '"Space Grotesk", "Manrope", sans-serif', fontWeight: 700 },
-          h3: { fontFamily: '"Space Grotesk", "Manrope", sans-serif', fontWeight: 700 },
-          h4: { fontFamily: '"Space Grotesk", "Manrope", sans-serif', fontWeight: 700 },
-          h5: { fontWeight: 700 },
-          h6: { fontWeight: 700 },
-          button: { fontWeight: 700 },
+          h1: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+          },
+          h2: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.04em',
+          },
+          h3: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.035em',
+          },
+          h4: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.03em',
+          },
+          h5: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.025em',
+          },
+          h6: {
+            fontFamily: '"Space Grotesk", "Manrope", sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.02em',
+          },
+          subtitle1: {
+            fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
+            fontWeight: 600,
+            letterSpacing: '-0.01em',
+          },
+          subtitle2: {
+            fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
+            fontWeight: 700,
+            letterSpacing: '-0.01em',
+          },
+          body1: {
+            fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
+            fontWeight: 500,
+            lineHeight: 1.7,
+          },
+          body2: {
+            fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
+            fontWeight: 500,
+            lineHeight: 1.65,
+          },
+          button: {
+            fontFamily: '"Manrope", "Segoe UI", system-ui, sans-serif',
+            fontWeight: 700,
+            textTransform: 'none',
+            letterSpacing: '-0.01em',
+          },
         },
         components: {
           MuiCssBaseline: {
@@ -247,7 +295,7 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
           },
         },
       }),
-    [currentTheme, isDark]
+    [currentTheme, isDark],
   );
 
   useEffect(() => {

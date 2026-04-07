@@ -1,1 +1,16 @@
-npx lint-staged
+#!/usr/bin/env sh
+
+NODE_BIN=""
+
+if [ -x "/c/Program Files/nodejs/node.exe" ]; then
+  NODE_BIN="/c/Program Files/nodejs/node.exe"
+elif command -v node >/dev/null 2>&1; then
+  NODE_BIN="$(command -v node)"
+fi
+
+if [ -z "$NODE_BIN" ]; then
+  echo "husky - node executable not found"
+  exit 127
+fi
+
+"$NODE_BIN" "./node_modules/lint-staged/bin/lint-staged.js"

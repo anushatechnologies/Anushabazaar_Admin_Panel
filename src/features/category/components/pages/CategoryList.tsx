@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, type ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   useGetCategoriesQuery,
@@ -43,8 +43,15 @@ import {
   Search as SearchIcon,
   ImageNotSupported as ImageNotSupportedIcon,
 } from '@mui/icons-material';
-import { GlassPageHeader, GradientText, GlassCard } from '../../../../components/glassmorphism/GlassComponents';
-import { SkeletonPageHeader, SkeletonTable } from '../../../../components/skeletons/LoadingSkeletons';
+import {
+  GlassPageHeader,
+  GradientText,
+  GlassCard,
+} from '../../../../components/glassmorphism/GlassComponents';
+import {
+  SkeletonPageHeader,
+  SkeletonTable,
+} from '../../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../../components/empty-state/EmptyState';
 import { useAppTheme } from '@contexts/ThemeContext';
 
@@ -61,15 +68,25 @@ export default function CategoryList() {
 
   const [debouncedSearch, setDebouncedSearch] = useState(searchKeyword);
   useEffect(() => {
-    const timer = setTimeout(() => setDebouncedSearch(searchKeyword), 500);
+    const timer = setTimeout(() => setDebouncedSearch(searchKeyword), 250);
     return () => clearTimeout(timer);
   }, [searchKeyword]);
 
   // Using RTK Query hooks
-  const { data: allCategories, isLoading: categoriesLoading, isError: isAllError, error: allError } = useGetCategoriesQuery(undefined, {
+  const {
+    data: allCategories,
+    isLoading: categoriesLoading,
+    isError: isAllError,
+    error: allError,
+  } = useGetCategoriesQuery(undefined, {
     skip: debouncedSearch.trim().length > 0,
   });
-  const { data: searchedCategories, isLoading: searchLoading, isError: isSearchError, error: searchError } = useSearchCategoriesQuery(debouncedSearch, {
+  const {
+    data: searchedCategories,
+    isLoading: searchLoading,
+    isError: isSearchError,
+    error: searchError,
+  } = useSearchCategoriesQuery(debouncedSearch, {
     skip: debouncedSearch.trim().length === 0,
   });
 
@@ -80,7 +97,8 @@ export default function CategoryList() {
   const loading = categoriesLoading || searchLoading;
   const isError = isAllError || isSearchError;
   const error = allError || searchError;
-  const categories = debouncedSearch.trim().length > 0 ? (searchedCategories || []) : (allCategories || []);
+  const categories =
+    debouncedSearch.trim().length > 0 ? searchedCategories || [] : allCategories || [];
 
   useEffect(() => {
     if (isError && error) {
@@ -137,7 +155,7 @@ export default function CategoryList() {
     currentPage * ITEMS_PER_PAGE,
   );
 
-  const handleChangePage = (event: React.ChangeEvent<unknown>, value: number) => {
+  const handleChangePage = (_event: ChangeEvent<unknown>, value: number) => {
     setCurrentPage(value);
   };
 
@@ -157,9 +175,9 @@ export default function CategoryList() {
           type="error"
           title="Failed to load categories"
           description={
-            error 
-              ? `Error: ${JSON.stringify(error)}` 
-              : "There was an error loading the categories. Please try again."
+            error
+              ? `Error: ${JSON.stringify(error)}`
+              : 'There was an error loading the categories. Please try again.'
           }
           secondaryActionLabel="Retry"
           onSecondaryAction={() => window.location.reload()}
@@ -177,7 +195,15 @@ export default function CategoryList() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
                 <GradientText>Categories</GradientText>
@@ -196,13 +222,13 @@ export default function CategoryList() {
                 textTransform: 'none',
                 fontWeight: 600,
                 background: currentTheme.accentGradient,
-                boxShadow: isDark 
-                  ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)' 
+                boxShadow: isDark
+                  ? '0 4px 15px rgba(0, 245, 255, 0.4), 0 0 30px rgba(0, 245, 255, 0.2)'
                   : currentTheme.shadow,
                 transition: 'all 0.3s ease',
                 '&:hover': {
-                  boxShadow: isDark 
-                    ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)' 
+                  boxShadow: isDark
+                    ? '0 6px 20px rgba(0, 245, 255, 0.6), 0 0 40px rgba(0, 245, 255, 0.3)'
                     : currentTheme.hoverShadow,
                   transform: 'translateY(-2px)',
                 },
@@ -294,17 +320,32 @@ export default function CategoryList() {
             />
           ) : (
             <>
-              <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
+              <TableContainer
+                component={Paper}
+                sx={{ boxShadow: 'none', background: 'transparent' }}
+              >
                 <Table>
                   <TableHead>
                     <TableRow>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Image</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Image
+                      </TableCell>
                       <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Name</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Description</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Order</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Discount</TableCell>
-                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>Status</TableCell>
-                      <TableCell align="center" sx={{ fontWeight: 700, color: currentTheme.text }}>Actions</TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Description
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Order
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Discount
+                      </TableCell>
+                      <TableCell sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Status
+                      </TableCell>
+                      <TableCell align="center" sx={{ fontWeight: 700, color: currentTheme.text }}>
+                        Actions
+                      </TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>
@@ -348,10 +389,15 @@ export default function CategoryList() {
                             )}
                           </TableCell>
                           <TableCell>
-                            <Typography fontWeight={600} sx={{ color: currentTheme.text }}>{cat.name}</Typography>
+                            <Typography fontWeight={600} sx={{ color: currentTheme.text }}>
+                              {cat.name}
+                            </Typography>
                           </TableCell>
                           <TableCell>
-                            <Typography sx={{ color: currentTheme.textSecondary, maxWidth: 200 }} noWrap>
+                            <Typography
+                              sx={{ color: currentTheme.textSecondary, maxWidth: 200 }}
+                              noWrap
+                            >
                               {cat.description || '—'}
                             </Typography>
                           </TableCell>
@@ -373,10 +419,12 @@ export default function CategoryList() {
                               <Chip
                                 label={`${cat.discount}%`}
                                 size="small"
-                                sx={{ 
-                                  fontWeight: 600, 
+                                sx={{
+                                  fontWeight: 600,
                                   borderRadius: 2,
-                                  background: isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)',
+                                  background: isDark
+                                    ? 'rgba(0, 255, 157, 0.2)'
+                                    : 'rgba(34, 197, 94, 0.15)',
                                   color: currentTheme.success,
                                 }}
                               />
@@ -390,8 +438,12 @@ export default function CategoryList() {
                               size="small"
                               sx={{
                                 background: cat.isActive
-                                  ? isDark ? 'rgba(0, 255, 157, 0.2)' : 'rgba(34, 197, 94, 0.15)'
-                                  : isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(156, 163, 175, 0.15)',
+                                  ? isDark
+                                    ? 'rgba(0, 255, 157, 0.2)'
+                                    : 'rgba(34, 197, 94, 0.15)'
+                                  : isDark
+                                    ? 'rgba(255, 71, 87, 0.2)'
+                                    : 'rgba(156, 163, 175, 0.15)',
                                 color: cat.isActive ? currentTheme.success : currentTheme.error,
                                 fontWeight: 600,
                                 borderRadius: 2,
@@ -406,10 +458,16 @@ export default function CategoryList() {
                                   size="small"
                                   sx={{
                                     color: currentTheme.accent,
-                                    background: isDark ? 'rgba(0, 245, 255, 0.1)' : 'rgba(99, 102, 241, 0.1)',
-                                    '&:hover': { 
-                                      background: isDark ? 'rgba(0, 245, 255, 0.2)' : 'rgba(99, 102, 241, 0.2)',
-                                      boxShadow: isDark ? '0 0 10px rgba(0, 245, 255, 0.5)' : 'none',
+                                    background: isDark
+                                      ? 'rgba(0, 245, 255, 0.1)'
+                                      : 'rgba(99, 102, 241, 0.1)',
+                                    '&:hover': {
+                                      background: isDark
+                                        ? 'rgba(0, 245, 255, 0.2)'
+                                        : 'rgba(99, 102, 241, 0.2)',
+                                      boxShadow: isDark
+                                        ? '0 0 10px rgba(0, 245, 255, 0.5)'
+                                        : 'none',
                                     },
                                   }}
                                 >
@@ -423,10 +481,16 @@ export default function CategoryList() {
                                   disabled={isDeleting && confirmId === cat.id}
                                   sx={{
                                     color: currentTheme.error,
-                                    background: isDark ? 'rgba(255, 71, 87, 0.1)' : 'rgba(239, 68, 68, 0.1)',
-                                    '&:hover': { 
-                                      background: isDark ? 'rgba(255, 71, 87, 0.2)' : 'rgba(239, 68, 68, 0.2)',
-                                      boxShadow: isDark ? '0 0 10px rgba(255, 71, 87, 0.5)' : 'none',
+                                    background: isDark
+                                      ? 'rgba(255, 71, 87, 0.1)'
+                                      : 'rgba(239, 68, 68, 0.1)',
+                                    '&:hover': {
+                                      background: isDark
+                                        ? 'rgba(255, 71, 87, 0.2)'
+                                        : 'rgba(239, 68, 68, 0.2)',
+                                      boxShadow: isDark
+                                        ? '0 0 10px rgba(255, 71, 87, 0.5)'
+                                        : 'none',
                                     },
                                   }}
                                 >
