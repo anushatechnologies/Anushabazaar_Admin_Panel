@@ -35,6 +35,8 @@ const DeliveryPersonList = lazy(() => import('@features/delivery/pages/DeliveryP
 const DeliveryPersonDetail = lazy(() => import('@features/delivery/pages/DeliveryPersonDetail'));
 const DocumentReview = lazy(() => import('@features/delivery/pages/DocumentReview'));
 const FareSettings = lazy(() => import('@features/delivery/pages/FareSettings'));
+const LiveMap = lazy(() => import('@features/delivery/pages/LiveMap'));
+const AssignmentDashboard = lazy(() => import('@features/delivery/pages/AssignmentDashboard'));
 const PayoutList = lazy(() => import('@features/payouts/pages/PayoutList'));
 const IncomeManagement = lazy(() => import('@features/admin/pages/IncomeManagement'));
 
@@ -96,6 +98,8 @@ const AppRouter: React.FC = () => {
               <Route path="/admin/delivery/persons/:id" element={<DeliveryPersonDetail />} />
               <Route path="/delivery/documents" element={<DocumentReview />} />
               <Route path="/delivery/fare-settings" element={<FareSettings />} />
+              <Route path="/delivery/live-map" element={<LiveMap />} />
+              <Route path="/delivery/assignment-dashboard" element={<AssignmentDashboard />} />
               <Route path="/admin/payouts" element={<PayoutList />} />
               <Route path="/admin/income" element={<IncomeManagement />} />
               <Route path="/payments/razorpay" element={<IncomeManagement />} />

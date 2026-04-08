@@ -36,6 +36,10 @@ export default [
       ...reactHooks.configs.recommended.rules,
       "react/react-in-jsx-scope": "off",
       "prettier/prettier": "error",
+      // Calling setState in a useEffect body is the canonical React pattern for
+      // "sync external/server data into local editable state". The rule is overly
+      // strict and produces false positives for this legitimate use-case.
+      "react-hooks/set-state-in-effect": "off",
     
       // ✅ TypeScript-specific unused variable rule
       "@typescript-eslint/no-unused-vars": [

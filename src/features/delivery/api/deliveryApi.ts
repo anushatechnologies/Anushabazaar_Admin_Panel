@@ -1,18 +1,21 @@
 import { baseApiWithAuth } from '@api/baseApi';
 
+export type VehicleType = 'BIKE' | 'SCOOTY' | 'EV' | 'AUTO' | 'HEAVY';
+
 export interface DeliveryPerson {
   id: number;
   firstName: string;
   lastName: string;
   phoneNumber: string;
   email?: string;
-  vehicleType: 'BIKE' | 'BICYCLE' | 'SCOOTER' | 'CAR' | 'AUTO' | 'HEAVY';
+  vehicleType: VehicleType;
   isOnline: boolean;
   isApprovedByAdmin: boolean;
   approvalStatus: 'PENDING' | 'APPROVED' | 'REJECTED';
   profilePhotoUrl?: string;
   profilePhotoStatus: 'PENDING' | 'APPROVED' | 'REJECTED' | 'NEEDS_REUPLOAD';
   vehicleModel?: string;
+  registrationNumber?: string;
   rating?: number;
   verified: boolean;
   accountName?: string;
@@ -127,14 +130,39 @@ export interface FareSettings {
 
 export interface FareRule {
   id: number;
-  vehicleType: 'BIKE' | 'BICYCLE' | 'SCOOTER' | 'CAR' | 'AUTO' | 'HEAVY';
+  vehicleType: VehicleType;
+  /** Flat fare for 0 → baseKm distance (e.g. ₹25 for 0-2km) */
   baseFare: number;
-  perKmFare: number;
-  minKm: number;
-  surgeMultiplier: number;
+  /** Distance covered by baseFare (default 2.0 km) */
+  baseKm: number;
+  /** Rate per full km beyond baseKm (e.g. ₹7/km) */
+  perKmRate: number;
+  /** Admin-set rain surcharge amount (e.g. ₹30) */
+  rainSurcharge: number;
+  /** Whether rain surcharge is currently ON */
+  rainActive: boolean;
+  /** Loading charge — only AUTO and HEAVY */
+  loadingCharge: number;
+  /** Unloading charge — only AUTO and HEAVY */
+  unloadingCharge: number;
   active: boolean;
   createdAt?: string;
   updatedAt?: string;
+}
+
+export interface FareBreakdown {
+  vehicleType: string;
+  distanceKm: number;
+  baseFare: number;
+  baseKm: number;
+  extraKm: number;
+  perKmRate: number;
+  extraCharge: number;
+  rainActive: boolean;
+  rainSurcharge: number;
+  loadingCharge: number;
+  unloadingCharge: number;
+  totalFare: number;
 }
 
 export const deliveryApi = baseApiWithAuth.injectEndpoints({
@@ -372,7 +400,7 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
     }),
 
     updateFareRule: builder.mutation<
-      { success: boolean; fareRule: FareRule },
+      { success: boolean; message: string; fareRule: FareRule },
       { id: number; rule: Partial<FareRule> }
     >({
       query: ({ id, rule }) => ({
@@ -381,6 +409,66 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
         body: rule,
       }),
       invalidatesTags: ['FareSettings'],
+    }),
+
+    /** Toggle rain ON/OFF for a vehicle type (BIKE toggles all light vehicles) */
+    toggleRain: builder.mutation<
+      { success: boolean; vehicleType: string; rainActive: boolean; rowsUpdated: number },
+      { vehicleType: VehicleType; rainActive: boolean }
+    >({
+      query: ({ vehicleType, rainActive }) => ({
+        url: `/api/delivery-admin/fare-rules/${vehicleType}/rain-toggle`,
+        method: 'POST',
+        body: { rainActive },
+      }),
+      invalidatesTags: ['FareSettings'],
+    }),
+
+    /** Preview fare calculation for any vehicle + distance */
+    calculateFare: builder.mutation<
+      { success: boolean; fareBreakdown: FareBreakdown },
+      { vehicleType: VehicleType; distanceKm: number }
+    >({
+      query: (body) => ({
+        url: '/api/delivery-admin/fare-rules/calculate',
+        method: 'POST',
+        body,
+      }),
+    }),
+
+    // ── Phase 3 — Nearby Riders (Haversine) ──────────────────────────────
+    getNearbyRiders: builder.query<
+      {
+        success: boolean;
+        storeId: number;
+        radiusKm: number;
+        count: number;
+        riders: DeliveryPerson[];
+      },
+      { storeId: number; radiusKm?: number }
+    >({
+      query: ({ storeId, radiusKm = 5 }) =>
+        `/api/delivery-admin/nearby-riders?storeId=${storeId}&radiusKm=${radiusKm}`,
+      providesTags: ['User'],
+    }),
+
+    /** PUT /api/delivery-admin/stores/{id}/location — Set store GPS coords */
+    updateStoreLocation: builder.mutation<
+      { success: boolean; message: string },
+      { storeId: number; latitude: number; longitude: number }
+    >({
+      query: ({ storeId, latitude, longitude }) => ({
+        url: `/api/delivery-admin/stores/${storeId}/location`,
+        method: 'PUT',
+        body: { latitude, longitude },
+      }),
+      invalidatesTags: ['User'],
+    }),
+
+    /** GET /api/delivery-admin/orders — All delivery orders */
+    getActiveDeliveryOrders: builder.query<{ success: boolean; orders: any[] }, void>({
+      query: () => '/api/delivery-admin/orders',
+      providesTags: ['AdminOrders'],
     }),
   }),
 });
@@ -404,12 +492,17 @@ export const {
   useUpdateFareSettingsMutation,
   useGetFareRulesQuery,
   useUpdateFareRuleMutation,
+  useToggleRainMutation,
+  useCalculateFareMutation,
   useApproveDeliveryPersonMutation,
   useRejectDeliveryPersonMutation,
   useUpdateDeliveryPersonStatusMutation,
   useApproveProfilePhotoMutation,
   useRejectProfilePhotoMutation,
   useRequestProfilePhotoReuploadMutation,
+  useGetNearbyRidersQuery,
+  useUpdateStoreLocationMutation,
+  useGetActiveDeliveryOrdersQuery,
 } = deliveryApi;
 
 // Kept for backwards-compatibility with existing import sites

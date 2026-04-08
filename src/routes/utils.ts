@@ -14,6 +14,8 @@ import {
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
 import CampaignIcon from '@mui/icons-material/Campaign';
 import AttachMoneyIcon from '@mui/icons-material/AttachMoney';
+import MapIcon from '@mui/icons-material/Map';
+import AssignmentIcon from '@mui/icons-material/Assignment';
 
 export interface RouteLinkItem {
   name: string;
@@ -86,6 +88,8 @@ export const RouteLinks: RouteLinkGroup[] = [
       { name: 'Delivery Persons', path: '/delivery/personnel', Icon: People },
       { name: 'Documents', path: '/delivery/documents', Icon: Description },
       { name: 'Fare Settings', path: '/delivery/fare-settings', Icon: AttachMoneyIcon },
+      { name: 'Live Map', path: '/delivery/live-map', Icon: MapIcon },
+      { name: 'Assignments', path: '/delivery/assignment-dashboard', Icon: AssignmentIcon },
     ],
   },
 
