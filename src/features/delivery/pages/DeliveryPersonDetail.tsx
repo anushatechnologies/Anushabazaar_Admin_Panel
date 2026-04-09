@@ -53,7 +53,7 @@ export default function DeliveryPersonDetail() {
   const personnel = personnelResponse?.deliveryPerson;
   const onboardingStatus = personnelResponse?.onboardingStatus;
   const accountActive = Boolean(
-    personnel?.approvalStatus === 'APPROVED' && personnel?.isApprovedByAdmin && personnel?.verified,
+    personnel?.approvalStatus === 'APPROVED' && personnel?.isApprovedByAdmin,
   );
   const documents = Array.isArray((docs as any)?.documents)
     ? (docs as any).documents

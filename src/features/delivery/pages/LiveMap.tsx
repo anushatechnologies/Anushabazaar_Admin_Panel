@@ -49,9 +49,11 @@ const LiveMap: React.FC = () => {
     data: ridersData,
     refetch: refetchRiders,
     isFetching: fetchingRiders,
-  } = useGetDeliveryPersonsQuery();
-  const { data: storesData, refetch: refetchStores } =
-    storesApi.endpoints.getStoresForMap.useQuery();
+  } = useGetDeliveryPersonsQuery(undefined, { pollingInterval: 10000 });
+  const { data: storesData, refetch: refetchStores } = storesApi.endpoints.getStoresForMap.useQuery(
+    undefined,
+    { pollingInterval: 30000 },
+  );
 
   // Load Google Maps script once.
   // setMapLoaded is called either immediately (already loaded) or via the
@@ -223,13 +225,25 @@ const LiveMap: React.FC = () => {
           color="error"
           variant="outlined"
         />
-        {storesOnMap.length === 0 && (
-          <Alert severity="info" sx={{ py: 0, flex: 1 }}>
-            No stores have GPS. Add via:{' '}
-            <code>PUT /api/delivery-admin/stores/{'{id}'}/location</code>
-          </Alert>
-        )}
+        <Typography variant="caption" color="text.secondary">
+          Auto-refreshes every 10 s
+        </Typography>
       </Box>
+
+      {/* Online but no GPS warning */}
+      {onlineRiders.length > 0 && ridersOnMap.length === 0 && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          <strong>{onlineRiders.map((r: any) => `${r.firstName} ${r.lastName}`).join(', ')}</strong>{' '}
+          is online but has no GPS location yet. Location will appear once the rider opens the app
+          and pings location (every 30 s automatically).
+        </Alert>
+      )}
+
+      {storesOnMap.length === 0 && (
+        <Alert severity="info" sx={{ mb: 2, py: 0 }}>
+          No stores have GPS. Add via: <code>PUT /api/delivery-admin/stores/{'{id}'}/location</code>
+        </Alert>
+      )}
 
       {/* Map */}
       {!mapLoaded ? (
