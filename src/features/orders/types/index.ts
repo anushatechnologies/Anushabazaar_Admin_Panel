@@ -75,7 +75,16 @@ export interface AdminOrderDetailDto {
   paymentMethod: string;
   placedAt: string;
   items: OrderItemDto[];
+  storeGroups?: StoreGroupDto[];
   deliveryHistory?: DeliveryHistoryDto[];
+}
+
+export interface StoreGroupDto {
+  storeId: number;
+  storeName: string;
+  storePhone?: string;
+  subtotal: number;
+  items: OrderItemDto[];
 }
 
 export interface DeliveryHistoryDto {

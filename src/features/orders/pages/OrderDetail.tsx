@@ -41,7 +41,7 @@ import {
   GlassPageHeader,
 } from '../../../components/glassmorphism/GlassComponents';
 import { useAppTheme } from '@contexts/ThemeContext';
-import { AdminOrderDetailDto, CustomerAddressDto, OrderResponse } from '../types';
+import { AdminOrderDetailDto, CustomerAddressDto, OrderResponse, StoreGroupDto } from '../types';
 
 const pickAddress = (
   order: AdminOrderDetailDto | OrderResponse | undefined,
@@ -96,6 +96,9 @@ const OrderDetail: React.FC = () => {
 
   const order = isAdmin ? adminOrder : customerOrder;
   const deliveryAddress = formatAddress(pickAddress(order));
+  const storeGroups = isAdmin
+    ? ((adminOrder as AdminOrderDetailDto | undefined)?.storeGroups ?? [])
+    : [];
   const isLoading = isAdmin ? isAdminLoading : isCustomerLoading;
   const isError = isAdmin ? isAdminError : isCustomerError;
   const refetch = isAdmin ? refetchAdmin : refetchCustomer;
@@ -149,7 +152,7 @@ const OrderDetail: React.FC = () => {
   const getStatusColor = (status: string) => {
     const s = status?.toLowerCase() || '';
     if (['delivered', 'completed', 'success'].includes(s)) return '#10b981';
-    if (['pending', 'processing', 'confirmed'].includes(s)) return '#f59e0b';
+    if (['pending', 'placed', 'processing', 'confirmed'].includes(s)) return '#f59e0b';
     if (['out for delivery', 'ready'].includes(s)) return '#3b82f6';
     if (['cancelled', 'rejected'].includes(s)) return '#ef4444';
     return '#6b7280';
@@ -233,7 +236,7 @@ const OrderDetail: React.FC = () => {
               border: `1px solid ${currentTheme.accent}20`,
             }}
           >
-            {order.orderStatus?.toLowerCase() === 'pending' && (
+            {['pending', 'placed'].includes(order.orderStatus?.toLowerCase() || '') && (
               <>
                 <Button
                   variant="contained"
@@ -401,6 +404,68 @@ const OrderDetail: React.FC = () => {
                   </Box>
                 </Box>
               ))}
+
+              {storeGroups.length > 0 && (
+                <Box sx={{ mt: 4 }}>
+                  <Typography variant="overline" sx={{ fontWeight: 900, opacity: 0.6 }}>
+                    Store Dispatch Groups
+                  </Typography>
+                  <Stack spacing={2} sx={{ mt: 2 }}>
+                    {storeGroups.map((group: StoreGroupDto) => (
+                      <GlassCard
+                        key={group.storeId}
+                        sx={{
+                          p: 2,
+                          border: `1px solid ${currentTheme.border}40`,
+                          background: `${currentTheme.cardBg}60`,
+                        }}
+                      >
+                        <Box
+                          sx={{
+                            display: 'flex',
+                            justifyContent: 'space-between',
+                            alignItems: 'flex-start',
+                            gap: 2,
+                            mb: 1.5,
+                          }}
+                        >
+                          <Box>
+                            <Typography variant="subtitle1" fontWeight={800}>
+                              {group.storeName}
+                            </Typography>
+                            <Typography variant="caption" sx={{ opacity: 0.65 }}>
+                              {group.storePhone || 'Phone not available'}
+                            </Typography>
+                          </Box>
+                          <GlassBadge statusColor={currentTheme.accent}>
+                            ₹{Number(group.subtotal || 0).toFixed(2)}
+                          </GlassBadge>
+                        </Box>
+                        <Stack spacing={1}>
+                          {group.items?.map((groupItem, groupIndex) => (
+                            <Box
+                              key={`${group.storeId}-${groupIndex}`}
+                              sx={{
+                                display: 'flex',
+                                justifyContent: 'space-between',
+                                gap: 2,
+                              }}
+                            >
+                              <Typography variant="body2" fontWeight={700}>
+                                {groupItem.productName} ({groupItem.variantName})
+                              </Typography>
+                              <Typography variant="body2" sx={{ opacity: 0.75 }}>
+                                {groupItem.quantity} x ₹
+                                {Number(groupItem.unitPrice || 0).toFixed(2)}
+                              </Typography>
+                            </Box>
+                          ))}
+                        </Stack>
+                      </GlassCard>
+                    ))}
+                  </Stack>
+                </Box>
+              )}
 
               <Box
                 sx={{
