@@ -304,6 +304,28 @@ export const deliveryApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['User'],
     }),
 
+    // ── Admin Edit: personal + bank details ────────────────────────────
+    updateDeliveryPersonDetails: builder.mutation<
+      { success: boolean; message: string; deliveryPerson: DeliveryPerson },
+      {
+        personId: number;
+        vehicleType?: string;
+        vehicleModel?: string;
+        registrationNumber?: string;
+        accountName?: string;
+        accountNumber?: string;
+        bankName?: string;
+        ifscCode?: string;
+      }
+    >({
+      query: ({ personId, ...body }) => ({
+        url: `/api/delivery-admin/delivery-persons/${personId}/details`,
+        method: 'PUT',
+        body,
+      }),
+      invalidatesTags: ['User'],
+    }),
+
     // ── Person Status / Approval ────────────────────────────────────────
     updateDeliveryPersonStatus: builder.mutation<
       { success: boolean; message: string },
@@ -494,6 +516,7 @@ export const {
   useUpdateFareRuleMutation,
   useToggleRainMutation,
   useCalculateFareMutation,
+  useUpdateDeliveryPersonDetailsMutation,
   useApproveDeliveryPersonMutation,
   useRejectDeliveryPersonMutation,
   useUpdateDeliveryPersonStatusMutation,

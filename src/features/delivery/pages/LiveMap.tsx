@@ -93,13 +93,23 @@ const LiveMap: React.FC = () => {
     ridersData.deliveryPersons
       .filter((r: any) => r.isOnline && r.latitude && r.longitude)
       .forEach((rider: any) => {
+        // Bike SVG icon for rider marker
+        const bikeSvg = `<svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24">
+          <circle cx="12" cy="12" r="12" fill="#0E8A63"/>
+          <path d="M5 15a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5zm14 0a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" fill="#fff"/>
+          <path d="M12 7l-1.5 5H5.5M12 7l2 3h4.5M12 7l-1 3" stroke="#fff" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+          <circle cx="19" cy="12.5" r="1.5" fill="#fff"/>
+          <circle cx="5" cy="12.5" r="1.5" fill="#fff"/>
+        </svg>`;
+        const bikeIconUrl = 'data:image/svg+xml;charset=UTF-8,' + encodeURIComponent(bikeSvg);
         const marker = new window.google.maps.Marker({
           position: { lat: rider.latitude, lng: rider.longitude },
           map: mapInstanceRef.current,
           title: `${rider.firstName} ${rider.lastName}`,
           icon: {
-            url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
-            scaledSize: new window.google.maps.Size(32, 32),
+            url: bikeIconUrl,
+            scaledSize: new window.google.maps.Size(40, 40),
+            anchor: new window.google.maps.Point(20, 20),
           },
         });
         const info = new window.google.maps.InfoWindow({

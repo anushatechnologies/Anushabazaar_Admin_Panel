@@ -15,6 +15,10 @@ import {
   DialogActions,
   TextField,
   Alert,
+  MenuItem,
+  Select,
+  FormControl,
+  InputLabel,
 } from '@mui/material';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAppSelector } from '@app/hooks';
@@ -26,6 +30,7 @@ import {
   useRequestProfilePhotoReuploadMutation,
   useUpdateDeliveryPersonStatusMutation,
   useApproveDeliveryPersonMutation,
+  useUpdateDeliveryPersonDetailsMutation,
 } from '../api/deliveryApi';
 import {
   ArrowBack as ArrowBackIcon,
@@ -34,6 +39,7 @@ import {
   Refresh,
   PowerSettingsNew,
   LockOutlined,
+  EditOutlined,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 
@@ -83,11 +89,72 @@ export default function DeliveryPersonDetail() {
     useRequestProfilePhotoReuploadMutation();
   const [updateStatus, { isLoading: isUpdatingStatus }] = useUpdateDeliveryPersonStatusMutation();
   const [approveApplication, { isLoading: isApprovingApp }] = useApproveDeliveryPersonMutation();
+  const [updateDetails, { isLoading: isUpdatingDetails }] =
+    useUpdateDeliveryPersonDetailsMutation();
 
   // Photo Reject/Reupload Dialog
   const [photoActionOpen, setPhotoActionOpen] = useState(false);
   const [photoActionType, setPhotoActionType] = useState<'reject' | 'reupload' | null>(null);
   const [photoRemarks, setPhotoRemarks] = useState('');
+
+  // Edit Personal Info Dialog
+  const [editPersonalOpen, setEditPersonalOpen] = useState(false);
+  const [editVehicleType, setEditVehicleType] = useState('');
+  const [editVehicleModel, setEditVehicleModel] = useState('');
+  const [editRegNumber, setEditRegNumber] = useState('');
+
+  // Edit Bank Info Dialog
+  const [editBankOpen, setEditBankOpen] = useState(false);
+  const [editAccountName, setEditAccountName] = useState('');
+  const [editAccountNumber, setEditAccountNumber] = useState('');
+  const [editBankName, setEditBankName] = useState('');
+  const [editIfscCode, setEditIfscCode] = useState('');
+
+  const openEditPersonal = () => {
+    setEditVehicleType(personnel?.vehicleType || 'BIKE');
+    setEditVehicleModel(personnel?.vehicleModel || '');
+    setEditRegNumber(personnel?.registrationNumber || '');
+    setEditPersonalOpen(true);
+  };
+
+  const openEditBank = () => {
+    setEditAccountName(personnel?.accountName || '');
+    setEditAccountNumber(personnel?.accountNumber || '');
+    setEditBankName(personnel?.bankName || '');
+    setEditIfscCode(personnel?.ifscCode || '');
+    setEditBankOpen(true);
+  };
+
+  const handleSavePersonal = async () => {
+    try {
+      await updateDetails({
+        personId: Number(id),
+        vehicleType: editVehicleType,
+        vehicleModel: editVehicleModel,
+        registrationNumber: editRegNumber,
+      }).unwrap();
+      toast.success('Personal details updated');
+      setEditPersonalOpen(false);
+    } catch (e: any) {
+      toast.error(e?.data?.message || 'Update failed');
+    }
+  };
+
+  const handleSaveBank = async () => {
+    try {
+      await updateDetails({
+        personId: Number(id),
+        accountName: editAccountName,
+        accountNumber: editAccountNumber,
+        bankName: editBankName,
+        ifscCode: editIfscCode,
+      }).unwrap();
+      toast.success('Bank details updated');
+      setEditBankOpen(false);
+    } catch (e: any) {
+      toast.error(e?.data?.message || 'Update failed');
+    }
+  };
 
   const handleViewDocument = (doc: any) => {
     setSelectedDocumentUrl(doc.documentUrl);
@@ -398,22 +465,28 @@ export default function DeliveryPersonDetail() {
               <Typography variant="h6" fontWeight={700}>
                 Personal Information
               </Typography>
-              {personnel?.approvalStatus === 'APPROVED' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    ml: 'auto',
-                    color: 'success.main',
-                  }}
+              <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                {personnel?.approvalStatus === 'APPROVED' && (
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'success.main' }}
+                  >
+                    <LockOutlined fontSize="small" />
+                    <Typography variant="caption" fontWeight={700} color="success.main">
+                      LOCKED
+                    </Typography>
+                  </Box>
+                )}
+                <Button
+                  size="small"
+                  startIcon={<EditOutlined />}
+                  onClick={openEditPersonal}
+                  variant="outlined"
+                  color="primary"
+                  sx={{ borderRadius: 2 }}
                 >
-                  <LockOutlined fontSize="small" />
-                  <Typography variant="caption" fontWeight={700} color="success.main">
-                    LOCKED
-                  </Typography>
-                </Box>
-              )}
+                  Edit
+                </Button>
+              </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
@@ -456,22 +529,28 @@ export default function DeliveryPersonDetail() {
               <Typography variant="h6" fontWeight={700}>
                 Bank Account Information
               </Typography>
-              {personnel?.approvalStatus === 'APPROVED' && (
-                <Box
-                  sx={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 0.5,
-                    ml: 'auto',
-                    color: 'success.main',
-                  }}
+              <Box sx={{ ml: 'auto', display: 'flex', alignItems: 'center', gap: 1 }}>
+                {personnel?.approvalStatus === 'APPROVED' && (
+                  <Box
+                    sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'success.main' }}
+                  >
+                    <LockOutlined fontSize="small" />
+                    <Typography variant="caption" fontWeight={700} color="success.main">
+                      LOCKED
+                    </Typography>
+                  </Box>
+                )}
+                <Button
+                  size="small"
+                  startIcon={<EditOutlined />}
+                  onClick={openEditBank}
+                  variant="outlined"
+                  color="primary"
+                  sx={{ borderRadius: 2 }}
                 >
-                  <LockOutlined fontSize="small" />
-                  <Typography variant="caption" fontWeight={700} color="success.main">
-                    LOCKED
-                  </Typography>
-                </Box>
-              )}
+                  Edit
+                </Button>
+              </Box>
             </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
@@ -559,6 +638,94 @@ export default function DeliveryPersonDetail() {
         </DialogContent>
         <DialogActions>
           <Button onClick={() => setDocumentViewerOpen(false)}>Close</Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Personal Info Dialog */}
+      <Dialog
+        open={editPersonalOpen}
+        onClose={() => setEditPersonalOpen(false)}
+        maxWidth="sm"
+        fullWidth
+      >
+        <DialogTitle>Edit Vehicle & Personal Details</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <FormControl fullWidth size="small">
+            <InputLabel>Vehicle Type</InputLabel>
+            <Select
+              value={editVehicleType}
+              label="Vehicle Type"
+              onChange={(e) => setEditVehicleType(e.target.value)}
+            >
+              {['BIKE', 'SCOOTY', 'EV', 'AUTO', 'HEAVY'].map((t) => (
+                <MenuItem key={t} value={t}>
+                  {t}
+                </MenuItem>
+              ))}
+            </Select>
+          </FormControl>
+          <TextField
+            label="Vehicle Model"
+            size="small"
+            fullWidth
+            value={editVehicleModel}
+            onChange={(e) => setEditVehicleModel(e.target.value)}
+          />
+          <TextField
+            label="Registration Number"
+            size="small"
+            fullWidth
+            value={editRegNumber}
+            onChange={(e) => setEditRegNumber(e.target.value)}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditPersonalOpen(false)}>Cancel</Button>
+          <Button onClick={handleSavePersonal} variant="contained" disabled={isUpdatingDetails}>
+            {isUpdatingDetails ? 'Saving…' : 'Save'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      {/* Edit Bank Info Dialog */}
+      <Dialog open={editBankOpen} onClose={() => setEditBankOpen(false)} maxWidth="sm" fullWidth>
+        <DialogTitle>Edit Bank Account Details</DialogTitle>
+        <DialogContent sx={{ display: 'flex', flexDirection: 'column', gap: 2, pt: 2 }}>
+          <TextField
+            label="Account Holder Name"
+            size="small"
+            fullWidth
+            value={editAccountName}
+            onChange={(e) => setEditAccountName(e.target.value)}
+          />
+          <TextField
+            label="Bank Name"
+            size="small"
+            fullWidth
+            value={editBankName}
+            onChange={(e) => setEditBankName(e.target.value)}
+          />
+          <TextField
+            label="Account Number"
+            size="small"
+            fullWidth
+            value={editAccountNumber}
+            onChange={(e) => setEditAccountNumber(e.target.value)}
+          />
+          <TextField
+            label="IFSC Code"
+            size="small"
+            fullWidth
+            value={editIfscCode}
+            onChange={(e) => setEditIfscCode(e.target.value)}
+            inputProps={{ style: { textTransform: 'uppercase' } }}
+          />
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setEditBankOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveBank} variant="contained" disabled={isUpdatingDetails}>
+            {isUpdatingDetails ? 'Saving…' : 'Save'}
+          </Button>
         </DialogActions>
       </Dialog>
 
