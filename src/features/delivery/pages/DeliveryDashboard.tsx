@@ -27,6 +27,7 @@ export default function DeliveryDashboard() {
   const stats: DeliveryDashboardStats = data?.statistics || {
     totalDeliveryPersons: 0,
     approvedDeliveryPersons: 0,
+    onlineDeliveryPersons: 0,
     pendingApprovals: 0,
     totalOrders: 0,
     activeOrders: 0,
@@ -45,7 +46,7 @@ export default function DeliveryDashboard() {
       value: stats.totalDeliveryPersons || 0,
       icon: <PeopleIcon />,
       color: 'primary' as const,
-      subtitle: 'Active delivery staff',
+      subtitle: 'Registered delivery staff',
       trend: { value: 12, isPositive: true, label: 'vs last month' },
     },
     {

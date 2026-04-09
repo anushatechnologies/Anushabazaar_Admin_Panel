@@ -52,6 +52,9 @@ export default function DeliveryPersonDetail() {
 
   const personnel = personnelResponse?.deliveryPerson;
   const onboardingStatus = personnelResponse?.onboardingStatus;
+  const accountActive = Boolean(
+    personnel?.approvalStatus === 'APPROVED' && personnel?.isApprovedByAdmin && personnel?.verified,
+  );
   const documents = Array.isArray((docs as any)?.documents)
     ? (docs as any).documents
     : Array.isArray((docs as any)?.content)
@@ -123,7 +126,7 @@ export default function DeliveryPersonDetail() {
     if (!personnel) return;
     try {
       await updateStatus({ personId: Number(id), isActive: !personnel.isOnline }).unwrap();
-      toast.success(`Account ${!personnel.isOnline ? 'activated' : 'deactivated'}`);
+      toast.success(`Rider marked ${!personnel.isOnline ? 'online' : 'offline'}`);
     } catch (error: any) {
       toast.error(error?.data?.message || 'Failed to update status');
     }
@@ -193,8 +196,20 @@ export default function DeliveryPersonDetail() {
                 ACCOUNT STATUS
               </Typography>
               <Chip
-                label={personnel?.isOnline ? 'ACTIVE' : 'INACTIVE'}
-                color={personnel?.isOnline ? 'success' : 'error'}
+                label={accountActive ? 'ACTIVE' : 'INACTIVE'}
+                color={accountActive ? 'success' : 'error'}
+                sx={{ fontWeight: 700, px: 1 }}
+              />
+            </Box>
+
+            <Box sx={{ mb: 1 }}>
+              <Typography variant="caption" color="text.secondary" display="block" gutterBottom>
+                ONLINE STATUS
+              </Typography>
+              <Chip
+                label={personnel?.isOnline ? 'ONLINE' : 'OFFLINE'}
+                color={personnel?.isOnline ? 'success' : 'default'}
+                variant={personnel?.isOnline ? 'filled' : 'outlined'}
                 sx={{ fontWeight: 700, px: 1 }}
               />
             </Box>
@@ -233,13 +248,13 @@ export default function DeliveryPersonDetail() {
 
               <Button
                 variant={personnel?.isOnline ? 'outlined' : 'contained'}
-                color={personnel?.isOnline ? 'error' : 'success'}
+                color={personnel?.isOnline ? 'warning' : 'success'}
                 fullWidth
                 startIcon={<PowerSettingsNew />}
                 onClick={handleToggleStatus}
                 disabled={isUpdatingStatus}
               >
-                {personnel?.isOnline ? 'Deactivate Account' : 'Activate Account'}
+                {personnel?.isOnline ? 'Mark Offline' : 'Mark Online'}
               </Button>
             </Box>
 
