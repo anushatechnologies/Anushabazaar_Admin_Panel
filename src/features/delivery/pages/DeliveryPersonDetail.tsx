@@ -33,6 +33,7 @@ import {
   Cancel,
   Refresh,
   PowerSettingsNew,
+  LockOutlined,
 } from '@mui/icons-material';
 import toast from 'react-hot-toast';
 
@@ -43,8 +44,11 @@ export default function DeliveryPersonDetail() {
 
   const { data: personnelResponse, isLoading: isPersonnelLoading } = useGetDeliveryPersonByIdQuery(
     Number(id),
+    { pollingInterval: 5000 },
   );
-  const { data: docs, isLoading: isDocsLoading } = useGetPersonnelDocumentsQuery(Number(id));
+  const { data: docs, isLoading: isDocsLoading } = useGetPersonnelDocumentsQuery(Number(id), {
+    pollingInterval: 5000,
+  });
 
   const personnel = personnelResponse?.deliveryPerson;
   const onboardingStatus = personnelResponse?.onboardingStatus;
@@ -143,9 +147,26 @@ export default function DeliveryPersonDetail() {
 
   return (
     <Box sx={{ p: 4 }}>
-      <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)} sx={{ mb: 4 }}>
-        Back
-      </Button>
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', mb: 3 }}>
+        <Button startIcon={<ArrowBackIcon />} onClick={() => navigate(-1)}>
+          Back
+        </Button>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box
+            sx={{
+              width: 8,
+              height: 8,
+              borderRadius: '50%',
+              backgroundColor: '#22c55e',
+              animation: 'pulse 2s infinite',
+              '@keyframes pulse': { '0%,100%': { opacity: 1 }, '50%': { opacity: 0.3 } },
+            }}
+          />
+          <Typography variant="caption" color="success.main" fontWeight={700}>
+            Live — refreshes every 5 s
+          </Typography>
+        </Box>
+      </Box>
 
       <Grid container spacing={4}>
         <Grid size={{ xs: 12, md: 4 }}>
@@ -352,10 +373,35 @@ export default function DeliveryPersonDetail() {
             )}
           </Paper>
 
-          <Paper sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Personal Information
-            </Typography>
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              mb: 4,
+              border: personnel?.approvalStatus === 'APPROVED' ? '1px solid #4caf50' : undefined,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="h6" fontWeight={700}>
+                Personal Information
+              </Typography>
+              {personnel?.approvalStatus === 'APPROVED' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    ml: 'auto',
+                    color: 'success.main',
+                  }}
+                >
+                  <LockOutlined fontSize="small" />
+                  <Typography variant="caption" fontWeight={700} color="success.main">
+                    LOCKED
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
@@ -385,10 +431,35 @@ export default function DeliveryPersonDetail() {
             </Grid>
           </Paper>
 
-          <Paper sx={{ p: 3, borderRadius: 3, mb: 4 }}>
-            <Typography variant="h6" fontWeight={700} gutterBottom>
-              Bank Account Information
-            </Typography>
+          <Paper
+            sx={{
+              p: 3,
+              borderRadius: 3,
+              mb: 4,
+              border: personnel?.approvalStatus === 'APPROVED' ? '1px solid #4caf50' : undefined,
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1 }}>
+              <Typography variant="h6" fontWeight={700}>
+                Bank Account Information
+              </Typography>
+              {personnel?.approvalStatus === 'APPROVED' && (
+                <Box
+                  sx={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: 0.5,
+                    ml: 'auto',
+                    color: 'success.main',
+                  }}
+                >
+                  <LockOutlined fontSize="small" />
+                  <Typography variant="caption" fontWeight={700} color="success.main">
+                    LOCKED
+                  </Typography>
+                </Box>
+              )}
+            </Box>
             <Divider sx={{ mb: 2 }} />
             <Grid container spacing={2}>
               <Grid size={{ xs: 6 }}>
