@@ -47,6 +47,22 @@ export default function Coupons() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
 
+  const getCouponDisplayStatus = (coupon: Coupon) => {
+    if (!coupon.active) {
+      return { key: 'inactive', label: 'Inactive', color: 'error' as const };
+    }
+
+    const now = dayjs();
+    if (coupon.startDate && dayjs(coupon.startDate).isAfter(now)) {
+      return { key: 'scheduled', label: 'Scheduled', color: 'warning' as const };
+    }
+    if (coupon.expiryDate && dayjs(coupon.expiryDate).isBefore(now)) {
+      return { key: 'expired', label: 'Expired', color: 'default' as const };
+    }
+
+    return { key: 'active', label: 'Active', color: 'success' as const };
+  };
+
   const [formData, setFormData] = useState<Partial<Coupon>>({
     code: '',
     description: '',
@@ -119,8 +135,13 @@ export default function Coupons() {
         !query ||
         coupon.code.toLowerCase().includes(query) ||
         coupon.description?.toLowerCase().includes(query);
+      const couponStatus = getCouponDisplayStatus(coupon);
       const matchesStatus =
-        statusFilter === 'all' ? true : statusFilter === 'active' ? coupon.active : !coupon.active;
+        statusFilter === 'all'
+          ? true
+          : statusFilter === 'active'
+            ? couponStatus.key === 'active'
+            : couponStatus.key !== 'active';
 
       return matchesSearch && matchesStatus;
     });
@@ -165,13 +186,10 @@ export default function Coupons() {
     {
       header: 'Status',
       key: 'active',
-      render: (row: Coupon) => (
-        <Chip
-          size="small"
-          color={row.active ? 'success' : 'error'}
-          label={row.active ? 'Active' : 'Inactive'}
-        />
-      ),
+      render: (row: Coupon) => {
+        const status = getCouponDisplayStatus(row);
+        return <Chip size="small" color={status.color} label={status.label} />;
+      },
     },
     {
       header: 'Actions',
