@@ -1,9 +1,11 @@
 import { Navigate, Outlet } from 'react-router-dom';
+import { getStoredAccessToken, getStoredRefreshToken } from '@features/auth/authCookies';
 
-const PublicRoute: React.FC = () => {
-  const token = localStorage.getItem('token');
+const PublicRoute = () => {
+  const token = getStoredAccessToken();
+  const refreshToken = getStoredRefreshToken();
 
-  return token ? <Navigate to="/" replace /> : <Outlet />;
+  return token || refreshToken ? <Navigate to="/" replace /> : <Outlet />;
 };
 
 export default PublicRoute;

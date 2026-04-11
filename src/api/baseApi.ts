@@ -1,10 +1,61 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react';
+import {
+  getStoredAccessToken,
+  getStoredAuthUser,
+  getStoredRefreshToken,
+} from '@features/auth/authCookies';
 import { logoutUser, setCredentials } from '@features/auth/authSlice';
 
 // ── Token refresh scheduler ──────────────────────────────────────────────────
 // Reads the exp claim from the stored JWT and schedules a refresh 30 min before
 // expiry.  Called once on app startup and again after every successful refresh.
 let _refreshTimer: ReturnType<typeof setTimeout> | null = null;
+let _refreshPromise: Promise<boolean> | null = null;
+
+async function performAdminRefresh(dispatch: (action: any) => void) {
+  if (_refreshPromise) return _refreshPromise;
+
+  _refreshPromise = (async () => {
+    const storedRefreshToken = getStoredRefreshToken();
+    if (!storedRefreshToken) {
+      return false;
+    }
+
+    try {
+      const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/adminpanel/refresh`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Accept: 'application/json',
+        },
+        body: JSON.stringify({ refreshToken: storedRefreshToken }),
+      });
+
+      if (!res.ok) {
+        throw new Error('refresh failed');
+      }
+
+      const data = await res.json();
+      const newToken: string | null = data.accessToken || data.token || null;
+      const newRefreshToken: string | null = data.refreshToken || storedRefreshToken;
+      const user = getStoredAuthUser();
+
+      if (!newToken) {
+        return false;
+      }
+
+      dispatch(setCredentials({ token: newToken, refreshToken: newRefreshToken, user }));
+      scheduleTokenRefresh(newToken, dispatch);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
+}
 
 function scheduleTokenRefresh(token: string, dispatch: (action: any) => void) {
   if (_refreshTimer) clearTimeout(_refreshTimer);
@@ -15,36 +66,11 @@ function scheduleTokenRefresh(token: string, dispatch: (action: any) => void) {
     if (!payload?.exp) return;
 
     const expiresAt = payload.exp * 1000; // convert to ms
-    const refreshAt = expiresAt - 30 * 60 * 1000; // 30 min before expiry
-    const delay = refreshAt - Date.now();
-
-    if (delay <= 0) return; // already within 30-min window — refresh immediately handled by reauth
+    const refreshAt = expiresAt - 60 * 1000; // 60 seconds before expiry
+    const delay = Math.max(refreshAt - Date.now(), 0);
 
     _refreshTimer = setTimeout(async () => {
-      const storedToken = localStorage.getItem('token');
-      if (!storedToken) return;
-
-      try {
-        const res = await fetch(
-          `${import.meta.env.VITE_API_BASE_URL}/api/auth/adminpanel/refresh`,
-          {
-            method: 'POST',
-            headers: {
-              Authorization: `Bearer ${storedToken}`,
-              'Content-Type': 'application/json',
-            },
-          },
-        );
-        if (!res.ok) throw new Error('refresh failed');
-        const data = await res.json();
-        const newToken: string = data.token;
-        const storedUser = localStorage.getItem('user');
-        const user = storedUser ? JSON.parse(storedUser) : null;
-        dispatch(setCredentials({ token: newToken, user }));
-        scheduleTokenRefresh(newToken, dispatch); // schedule next refresh
-      } catch {
-        // Silent — if refresh fails, user will be logged out on the next 401
-      }
+      await performAdminRefresh(dispatch);
     }, delay);
   } catch {
     // Malformed token — ignore
@@ -70,8 +96,8 @@ const rawBaseQuery = fetchBaseQuery({
       headers.set('Content-Type', 'application/json');
     }
 
-    const token = localStorage.getItem('token');
-    if (token && token !== 'undefined' && token !== 'null') {
+    const token = getStoredAccessToken();
+    if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
 
@@ -86,12 +112,12 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
 
   // Kick off token refresh schedule on every request so the timer survives
   // across page reloads (schedule is re-derived from current token on startup).
-  const token = localStorage.getItem('token');
-  if (token && token !== 'undefined' && token !== 'null') {
+  const token = getStoredAccessToken();
+  if (token) {
     scheduleTokenRefresh(token, api.dispatch);
   }
 
-  const result = await rawBaseQuery(args, api, extraOptions);
+  let result = await rawBaseQuery(args, api, extraOptions);
 
   if (result.error) {
     console.group(`[API Error] ${method} ${fullUrl}`);
@@ -100,9 +126,17 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
     console.groupEnd();
 
     if (result.error.status === 401) {
-      console.warn('Session unauthorized (401) for:', fullUrl);
-      api.dispatch(logoutUser());
-      window.location.replace('/login?expired=true');
+      const refreshed = await performAdminRefresh(api.dispatch);
+
+      if (refreshed) {
+        result = await rawBaseQuery(args, api, extraOptions);
+      }
+
+      if (result.error?.status === 401) {
+        console.warn('Session unauthorized (401) for:', fullUrl);
+        api.dispatch(logoutUser());
+        window.location.replace('/login?expired=true');
+      }
     }
   }
 

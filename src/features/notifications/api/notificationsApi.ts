@@ -1,4 +1,5 @@
 import { baseApiWithAuth } from '@api/baseApi';
+import { getStoredAccessToken } from '@features/auth/authCookies';
 
 const BASE_URL = import.meta.env.VITE_API_BASE_URL;
 
@@ -94,14 +95,16 @@ export const {
 
 // Manual fetch functions for components
 const getAuthHeaders = () => {
-  const token = localStorage.getItem('token');
+  const token = getStoredAccessToken();
   return {
     'Content-Type': 'application/json',
-    ...(token && { 'Authorization': `Bearer ${token}` }),
+    ...(token && { Authorization: `Bearer ${token}` }),
   };
 };
 
-export const sendNotificationToUser = async (data: SendNotificationRequest): Promise<SendNotificationResponse> => {
+export const sendNotificationToUser = async (
+  data: SendNotificationRequest,
+): Promise<SendNotificationResponse> => {
   const response = await fetch(`${BASE_URL}/api/admin/notifications/send`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -114,7 +117,9 @@ export const sendNotificationToUser = async (data: SendNotificationRequest): Pro
   return response.json();
 };
 
-export const broadcastToCustomers = async (data: BroadcastNotificationRequest): Promise<SendNotificationResponse> => {
+export const broadcastToCustomers = async (
+  data: BroadcastNotificationRequest,
+): Promise<SendNotificationResponse> => {
   const response = await fetch(`${BASE_URL}/api/admin/notifications/send-to-customers`, {
     method: 'POST',
     headers: getAuthHeaders(),
@@ -127,7 +132,9 @@ export const broadcastToCustomers = async (data: BroadcastNotificationRequest): 
   return response.json();
 };
 
-export const broadcastToDelivery = async (data: BroadcastNotificationRequest): Promise<SendNotificationResponse> => {
+export const broadcastToDelivery = async (
+  data: BroadcastNotificationRequest,
+): Promise<SendNotificationResponse> => {
   const response = await fetch(`${BASE_URL}/api/admin/notifications/send-to-delivery`, {
     method: 'POST',
     headers: getAuthHeaders(),

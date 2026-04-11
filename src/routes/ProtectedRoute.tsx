@@ -1,17 +1,23 @@
 import { Navigate, Outlet } from 'react-router-dom';
 import { useAppSelector } from '@app/hooks';
+import { getStoredAccessToken, getStoredRefreshToken } from '@features/auth/authCookies';
 
-const ProtectedRoute: React.FC = () => {
+const ProtectedRoute = () => {
   const isLoggedIn = useAppSelector((state: any) => state.auth?.isLoggedIn);
 
-  // ✅ ALSO CHECK localStorage as backup
-  const token = localStorage.getItem('token');
-  const hasToken = !!token;
+  const hasToken = !!getStoredAccessToken();
+  const hasRefreshToken = !!getStoredRefreshToken();
 
-  console.log('ProtectedRoute - isLoggedIn:', isLoggedIn, 'hasToken:', hasToken);
+  console.log(
+    'ProtectedRoute - isLoggedIn:',
+    isLoggedIn,
+    'hasToken:',
+    hasToken,
+    'hasRefreshToken:',
+    hasRefreshToken,
+  );
 
-  // ✅ Allow access if Redux OR localStorage has token
-  if (isLoggedIn || hasToken) {
+  if (isLoggedIn || hasToken || hasRefreshToken) {
     return <Outlet />;
   }
 

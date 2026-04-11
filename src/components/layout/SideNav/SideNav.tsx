@@ -1,17 +1,18 @@
-import React, { useEffect, useRef, useState } from 'react';
+import { useRef, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight, LogOut, User } from 'lucide-react';
 import { Tooltip, Avatar, Divider, Menu, MenuItem } from '@mui/material';
 import { useAppDispatch, useAppSelector } from '@app/hooks';
+import { getStoredRefreshToken } from '@features/auth/authCookies';
 import { logoutUser } from '@features/auth/authSlice';
 import { Logo } from '@assets/index';
 import { RouteLinks } from '@routes/utils';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 
 const SIDEBAR_W = 284;
 const COLLAPSED_W = 84;
 
-const SideNav: React.FC = () => {
+const SideNav = () => {
   const location = useLocation();
   const navRef = useRef<HTMLElement | null>(null);
   const [collapsed, setCollapsed] = useState(false);
@@ -23,8 +24,23 @@ const SideNav: React.FC = () => {
 
   if (!isLoggedIn) return null;
 
-  const handleLogout = () => {
-    localStorage.clear();
+  const handleLogout = async () => {
+    const refreshToken = getStoredRefreshToken();
+    if (refreshToken) {
+      try {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL}/api/auth/adminpanel/logout`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+          body: JSON.stringify({ refreshToken }),
+        });
+      } catch {
+        // Best effort logout — local cleanup still proceeds.
+      }
+    }
+
     dispatch(logoutUser());
     setAnchorEl(null);
     navigate('/login', { replace: true });
@@ -32,7 +48,6 @@ const SideNav: React.FC = () => {
 
   const avatarLetter = user?.email?.[0]?.toUpperCase() ?? 'A';
   const displayName = user?.email?.split('@')[0] ?? 'Admin';
-
 
   return (
     <motion.aside
@@ -50,15 +65,44 @@ const SideNav: React.FC = () => {
         overflow: 'hidden',
       }}
     >
-      <div style={{ padding: collapsed ? '24px 18px 20px' : '24px 22px 20px', borderBottom: '1px solid var(--color-border)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 14, justifyContent: collapsed ? 'center' : 'flex-start' }}>
-          <div style={{ width: 42, height: 42, borderRadius: 14, background: 'var(--color-accent-grad)', display: 'grid', placeItems: 'center', boxShadow: 'var(--shadow-sm)' }}>
+      <div
+        style={{
+          padding: collapsed ? '24px 18px 20px' : '24px 22px 20px',
+          borderBottom: '1px solid var(--color-border)',
+        }}
+      >
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 14,
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          }}
+        >
+          <div
+            style={{
+              width: 42,
+              height: 42,
+              borderRadius: 14,
+              background: 'var(--color-accent-grad)',
+              display: 'grid',
+              placeItems: 'center',
+              boxShadow: 'var(--shadow-sm)',
+            }}
+          >
             <img src={Logo} alt="Logo" style={{ width: 22, height: 22 }} />
           </div>
           {!collapsed && (
             <div>
-              <div style={{ color: 'var(--sidebar-title)', fontWeight: 800, fontSize: 18 }} className="panel-title">Anusha Admin</div>
-              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>Operations Console</div>
+              <div
+                style={{ color: 'var(--sidebar-title)', fontWeight: 800, fontSize: 18 }}
+                className="panel-title"
+              >
+                Anusha Admin
+              </div>
+              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>
+                Operations Console
+              </div>
             </div>
           )}
         </div>
@@ -86,19 +130,31 @@ const SideNav: React.FC = () => {
 
       <nav ref={navRef} style={{ flex: 1, overflowY: 'auto', padding: '16px 10px 10px' }}>
         {RouteLinks.map((group) => {
-          const visibleLinks = group.links.filter((link) => !link.roles || (user?.role && link.roles.includes(user.role)));
+          const visibleLinks = group.links.filter(
+            (link) => !link.roles || (user?.role && link.roles.includes(user.role)),
+          );
           if (!visibleLinks.length) return null;
 
           return (
             <div key={group.section} style={{ marginBottom: 14 }}>
               {!collapsed && (
-                <div style={{ padding: '10px 12px', color: 'var(--nav-section)', fontSize: 11, fontWeight: 800, letterSpacing: '0.12em', textTransform: 'uppercase' }}>
+                <div
+                  style={{
+                    padding: '10px 12px',
+                    color: 'var(--nav-section)',
+                    fontSize: 11,
+                    fontWeight: 800,
+                    letterSpacing: '0.12em',
+                    textTransform: 'uppercase',
+                  }}
+                >
                   {group.section}
                 </div>
               )}
 
               {visibleLinks.map(({ path, name, Icon }) => {
-                const isActive = location.pathname === path || location.pathname.startsWith(path + '/');
+                const isActive =
+                  location.pathname === path || location.pathname.startsWith(path + '/');
                 return (
                   <Tooltip key={name} title={collapsed ? name : ''} placement="right">
                     <Link to={path} style={{ textDecoration: 'none', display: 'block' }}>
@@ -113,7 +169,9 @@ const SideNav: React.FC = () => {
                           gap: 12,
                           color: isActive ? 'var(--nav-active-text)' : 'var(--nav-text)',
                           background: isActive ? 'var(--nav-active-bg)' : 'transparent',
-                          border: isActive ? '1px solid var(--color-border)' : '1px solid transparent',
+                          border: isActive
+                            ? '1px solid var(--color-border)'
+                            : '1px solid transparent',
                           boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
                           transition: 'all 0.18s ease',
                         }}
@@ -129,7 +187,11 @@ const SideNav: React.FC = () => {
                         }}
                       >
                         <Icon fontSize="small" sx={{ fontSize: 18 }} />
-                        {!collapsed && <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 600 }}>{name}</span>}
+                        {!collapsed && (
+                          <span style={{ fontSize: 14, fontWeight: isActive ? 700 : 600 }}>
+                            {name}
+                          </span>
+                        )}
                       </div>
                     </Link>
                   </Tooltip>
@@ -140,13 +202,46 @@ const SideNav: React.FC = () => {
         })}
       </nav>
 
-      <div style={{ margin: 12, padding: 12, borderRadius: 22, border: '1px solid var(--sidebar-user-border)', background: 'var(--sidebar-user-bg)' }}>
-        <div onClick={(event) => setAnchorEl(event.currentTarget)} style={{ display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', justifyContent: collapsed ? 'center' : 'flex-start' }}>
-          <Avatar sx={{ width: 40, height: 40, background: 'var(--color-accent-grad)', fontWeight: 800 }}>{avatarLetter}</Avatar>
+      <div
+        style={{
+          margin: 12,
+          padding: 12,
+          borderRadius: 22,
+          border: '1px solid var(--sidebar-user-border)',
+          background: 'var(--sidebar-user-bg)',
+        }}
+      >
+        <div
+          onClick={(event) => setAnchorEl(event.currentTarget)}
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: 12,
+            cursor: 'pointer',
+            justifyContent: collapsed ? 'center' : 'flex-start',
+          }}
+        >
+          <Avatar
+            sx={{ width: 40, height: 40, background: 'var(--color-accent-grad)', fontWeight: 800 }}
+          >
+            {avatarLetter}
+          </Avatar>
           {!collapsed && (
             <div style={{ minWidth: 0 }}>
-              <div style={{ color: 'var(--sidebar-title)', fontWeight: 700, fontSize: 14, overflow: 'hidden', textOverflow: 'ellipsis' }}>{displayName}</div>
-              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>{user?.role ?? 'ADMIN'}</div>
+              <div
+                style={{
+                  color: 'var(--sidebar-title)',
+                  fontWeight: 700,
+                  fontSize: 14,
+                  overflow: 'hidden',
+                  textOverflow: 'ellipsis',
+                }}
+              >
+                {displayName}
+              </div>
+              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>
+                {user?.role ?? 'ADMIN'}
+              </div>
             </div>
           )}
         </div>

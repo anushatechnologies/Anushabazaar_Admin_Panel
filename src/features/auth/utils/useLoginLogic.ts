@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   useLoginMutation,
@@ -16,16 +16,16 @@ export const useLoginLogic = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
-  const [sendOtp, { isLoading: sendOtpLoading }] = useSendOtpMutation();
+  const [sendOtp] = useSendOtpMutation();
   const [verifyOtp, { isLoading: verifyOtpLoading }] = useVerifyOtpMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const onchangeHandler = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const onchangeHandler = (e: ChangeEvent<HTMLInputElement>) => {
     setLoginData({ ...loginData, [e.target.name]: e.target.value });
     setError('');
   };
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleLogin = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
 
@@ -33,7 +33,7 @@ export const useLoginLogic = () => {
       const result = await login(loginData).unwrap();
 
       console.log('✅ Login API Response:', result);
-      console.log('✅ Token:', result.token);
+      console.log('✅ Token:', result.accessToken || result.token);
       console.log('✅ User Info:', {
         id: result.id,
         email: result.email,
@@ -42,7 +42,8 @@ export const useLoginLogic = () => {
 
       dispatch(
         setCredentials({
-          token: result.token,
+          token: result.accessToken || result.token,
+          refreshToken: result.refreshToken,
           user: { id: result.id, email: result.email, role: result.role },
         }),
       );
@@ -70,7 +71,7 @@ export const useLoginLogic = () => {
 
   const handleLoginSuccess = async (otp: string) => {
     try {
-      const result = await verifyOtp({
+      await verifyOtp({
         email: loginData.email,
         otp,
         newPassword: loginData.password,
@@ -81,7 +82,8 @@ export const useLoginLogic = () => {
 
       dispatch(
         setCredentials({
-          token: loginResult.token,
+          token: loginResult.accessToken || loginResult.token,
+          refreshToken: loginResult.refreshToken,
           user: { id: loginResult.id, email: loginResult.email, role: loginResult.role },
         }),
       );
