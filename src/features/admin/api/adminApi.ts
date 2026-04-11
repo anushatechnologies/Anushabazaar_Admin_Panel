@@ -146,6 +146,15 @@ export interface FareSettings {
   };
 }
 
+export interface CheckoutSettings {
+  id?: number;
+  deliveryCharge: number;
+  platformFee: number;
+  onlinePaymentEnabled: boolean;
+  cashOnDeliveryEnabled: boolean;
+  updatedAt?: string;
+}
+
 // Banners
 export interface Banner {
   id: number;
@@ -463,6 +472,23 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['FareSettings'],
     }),
 
+    getCheckoutSettings: builder.query<{ success: boolean; settings: CheckoutSettings }, void>({
+      query: () => '/api/admin/checkout-settings',
+      providesTags: ['CheckoutSettings'],
+    }),
+
+    updateCheckoutSettings: builder.mutation<
+      { success: boolean; message: string; settings: CheckoutSettings },
+      Partial<CheckoutSettings>
+    >({
+      query: (settings) => ({
+        url: '/api/admin/checkout-settings',
+        method: 'PUT',
+        body: settings,
+      }),
+      invalidatesTags: ['CheckoutSettings'],
+    }),
+
     // SECTION J - Banners
     getAllBanners: builder.query<{ success: boolean; banners: Banner[] }, void>({
       query: () => '/api/admin/banners',
@@ -706,6 +732,8 @@ export const {
   useGenerateDeliveryOtpMutation,
   useGetFareSettingsQuery,
   useUpdateFareSettingsMutation,
+  useGetCheckoutSettingsQuery,
+  useUpdateCheckoutSettingsMutation,
   useGetAllBannersQuery,
   useCreateBannerMutation,
   useToggleBannerStatusMutation,

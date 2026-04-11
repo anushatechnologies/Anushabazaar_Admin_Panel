@@ -150,6 +150,7 @@ export const baseApiWithAuth = createApi({
     'Documents',
     'Customers',
     'Policies',
+    'CheckoutSettings',
   ],
   endpoints: () => ({}),
 });
