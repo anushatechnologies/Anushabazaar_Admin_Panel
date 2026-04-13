@@ -204,7 +204,7 @@ const AdminOrderDashboard: React.FC = () => {
 
   const handleAcceptOrder = async (orderId: number) => {
     try {
-      await acceptOrder({ orderId }).unwrap();
+      await acceptOrder(orderId).unwrap();
       toast.success('Order accepted successfully!');
       refetch();
     } catch (error: any) {
