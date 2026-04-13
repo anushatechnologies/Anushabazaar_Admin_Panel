@@ -7,10 +7,34 @@ import {
 import { logoutUser, setCredentials } from '@features/auth/authSlice';
 
 // ── Token refresh scheduler ──────────────────────────────────────────────────
-// Reads the exp claim from the stored JWT and schedules a refresh 30 min before
-// expiry.  Called once on app startup and again after every successful refresh.
+// Reads the exp claim from the stored JWT and schedules a refresh 10 minutes
+// before expiry. Called once on app startup and again after every successful
+// refresh. Cross-tab sync is handled via localStorage so multiple open tabs
+// share the same refreshed token instead of racing each other.
 let _refreshTimer: ReturnType<typeof setTimeout> | null = null;
 let _refreshPromise: Promise<boolean> | null = null;
+
+const CROSS_TAB_TOKEN_KEY = 'anusha_admin_tab_sync';
+
+// Listen for token refreshes done by other tabs and apply them immediately.
+if (typeof window !== 'undefined') {
+  window.addEventListener('storage', (e) => {
+    if (e.key !== CROSS_TAB_TOKEN_KEY || !e.newValue) return;
+    try {
+      const { accessToken, refreshToken } = JSON.parse(e.newValue);
+      if (accessToken) {
+        // Dynamically get the dispatch from the store to avoid circular imports.
+        const store = (window as any).__adminReduxStore;
+        if (store) {
+          const user = getStoredAuthUser();
+          store.dispatch(setCredentials({ token: accessToken, refreshToken, user }));
+        }
+      }
+    } catch {
+      // ignore malformed data
+    }
+  });
+}
 
 async function performAdminRefresh(dispatch: (action: any) => void) {
   if (_refreshPromise) return _refreshPromise;
@@ -32,7 +56,12 @@ async function performAdminRefresh(dispatch: (action: any) => void) {
       });
 
       if (!res.ok) {
-        throw new Error('refresh failed');
+        // Non-401 errors (502, network) should not force logout — backend may be
+        // briefly restarting. Only 401 means the refresh token is truly invalid.
+        if (res.status === 401) {
+          return false;
+        }
+        throw new Error(`refresh failed: ${res.status}`);
       }
 
       const data = await res.json();
@@ -46,8 +75,22 @@ async function performAdminRefresh(dispatch: (action: any) => void) {
 
       dispatch(setCredentials({ token: newToken, refreshToken: newRefreshToken, user }));
       scheduleTokenRefresh(newToken, dispatch);
+
+      // Broadcast new tokens to other open tabs so they don't race to refresh.
+      try {
+        localStorage.setItem(
+          CROSS_TAB_TOKEN_KEY,
+          JSON.stringify({ accessToken: newToken, refreshToken: newRefreshToken }),
+        );
+        // Clear after a short moment (just needed for the storage event to fire).
+        setTimeout(() => localStorage.removeItem(CROSS_TAB_TOKEN_KEY), 2000);
+      } catch {
+        // localStorage not available — ignore
+      }
+
       return true;
     } catch {
+      // Network error, server error, etc. — don't logout, just return false.
       return false;
     } finally {
       _refreshPromise = null;
@@ -66,7 +109,10 @@ function scheduleTokenRefresh(token: string, dispatch: (action: any) => void) {
     if (!payload?.exp) return;
 
     const expiresAt = payload.exp * 1000; // convert to ms
-    const refreshAt = expiresAt - 60 * 1000; // 60 seconds before expiry
+    // Refresh 10 minutes before expiry (or 5 min if token < 20 min total).
+    const totalMs = expiresAt - Date.now();
+    const bufferMs = Math.min(10 * 60 * 1000, totalMs * 0.25);
+    const refreshAt = expiresAt - bufferMs;
     const delay = Math.max(refreshAt - Date.now(), 0);
 
     _refreshTimer = setTimeout(async () => {
@@ -132,8 +178,10 @@ const baseQueryWithReauth = async (args: any, api: any, extraOptions: any) => {
         result = await rawBaseQuery(args, api, extraOptions);
       }
 
+      // Only force-logout when refresh token is also confirmed invalid (401).
+      // Do NOT logout on 502/503/network errors — backend may be restarting.
       if (result.error?.status === 401) {
-        console.warn('Session unauthorized (401) for:', fullUrl);
+        console.warn('Session expired — refresh token invalid for:', fullUrl);
         api.dispatch(logoutUser());
         window.location.replace('/login?expired=true');
       }

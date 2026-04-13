@@ -42,6 +42,12 @@ export const store = configureStore({
 // ✅ Persistor
 export const persistor = persistStore(store);
 
+// Expose store on window so the cross-tab token sync listener in baseApi.ts
+// can dispatch setCredentials when another tab refreshes the access token.
+if (typeof window !== 'undefined') {
+  (window as any).__adminReduxStore = store;
+}
+
 // ✅ Type helpers
 export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
