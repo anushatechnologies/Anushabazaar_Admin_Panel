@@ -1,10 +1,8 @@
 import { useMemo, useState } from 'react';
 import {
-  Alert,
   Box,
   Button,
   CardContent,
-  Chip,
   CircularProgress,
   Paper,
   Stack,
@@ -22,7 +20,11 @@ import {
   ShoppingCart as CustomerIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
-import { GlassCard, GlassPageHeader, GradientText } from '@components/glassmorphism/GlassComponents';
+import {
+  GlassCard,
+  GlassPageHeader,
+  GradientText,
+} from '@components/glassmorphism/GlassComponents';
 import { toast } from '../../../components/toast/ToastContainer';
 import { useAppTheme } from '@contexts/ThemeContext';
 import {
@@ -65,33 +67,21 @@ export default function NotificationManagement() {
       case 'phone':
         return {
           title: 'Send to Specific Phone Number',
-          description: 'Find the user by phone number and send to all registered devices.',
-          alertColor: 'info' as const,
-          alertText: 'Use the full phone number format, for example +919876543210.',
           buttonText: 'Send Notification',
         };
       case 'token':
         return {
           title: 'Send to Raw FCM Token',
-          description: 'Send directly to one device using its Firebase token.',
-          alertColor: 'warning' as const,
-          alertText: 'Use this only when you want to target one exact device.',
           buttonText: 'Send to Device',
         };
       case 'customers':
         return {
           title: 'Broadcast to All Customers',
-          description: 'Use this for promotions, campaigns, or customer-wide updates.',
-          alertColor: 'success' as const,
-          alertText: 'This will send to all customer app users.',
           buttonText: 'Broadcast to Customers',
         };
       default:
         return {
           title: 'Broadcast to All Delivery Partners',
-          description: 'Use this for delivery instructions, app updates, or urgent alerts.',
-          alertColor: 'warning' as const,
-          alertText: 'This will send to all delivery partner devices.',
           buttonText: 'Broadcast to Delivery',
         };
     }
@@ -191,28 +181,25 @@ export default function NotificationManagement() {
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
       <GlassPageHeader sx={{ mb: 3 }}>
-        <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} justifyContent="space-between" alignItems={{ xs: 'flex-start', md: 'center' }}>
+        <Stack
+          direction={{ xs: 'column', md: 'row' }}
+          spacing={2}
+          justifyContent="space-between"
+          alignItems={{ xs: 'flex-start', md: 'center' }}
+        >
           <Box>
             <Typography variant="h4" fontWeight={700} sx={{ mb: 0.5 }}>
               <GradientText>Notifications</GradientText>
             </Typography>
-            <Typography variant="body2" sx={{ color: currentTheme.textSecondary }}>
-              Send push notifications by phone number, device token, or full audience broadcast.
-            </Typography>
           </Box>
-          <Chip
-            label="Admin token required"
-            sx={{
-              background: currentTheme.chipBg,
-              color: currentTheme.accent,
-              fontWeight: 700,
-              border: `1px solid ${currentTheme.border}`,
-            }}
-          />
         </Stack>
       </GlassPageHeader>
 
-      <motion.div initial={{ opacity: 0, y: 18 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.35 }}>
+      <motion.div
+        initial={{ opacity: 0, y: 18 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35 }}
+      >
         <Paper
           elevation={0}
           sx={{
@@ -241,8 +228,18 @@ export default function NotificationManagement() {
           >
             <Tab value="phone" icon={<PersonIcon />} iconPosition="start" label="Phone Number" />
             <Tab value="token" icon={<DeviceIcon />} iconPosition="start" label="Direct Token" />
-            <Tab value="customers" icon={<CustomerIcon />} iconPosition="start" label="All Customers" />
-            <Tab value="delivery" icon={<DeliveryIcon />} iconPosition="start" label="All Delivery" />
+            <Tab
+              value="customers"
+              icon={<CustomerIcon />}
+              iconPosition="start"
+              label="All Customers"
+            />
+            <Tab
+              value="delivery"
+              icon={<DeliveryIcon />}
+              iconPosition="start"
+              label="All Delivery"
+            />
           </Tabs>
 
           <Box sx={{ p: { xs: 2, sm: 3 } }}>
@@ -251,13 +248,6 @@ export default function NotificationManagement() {
                 <Typography variant="h6" fontWeight={700} sx={{ mb: 0.75 }}>
                   {panelMeta.title}
                 </Typography>
-                <Typography variant="body2" sx={{ color: currentTheme.textSecondary, mb: 2 }}>
-                  {panelMeta.description}
-                </Typography>
-
-                <Alert severity={panelMeta.alertColor} sx={{ mb: 3, borderRadius: 2.5 }}>
-                  {panelMeta.alertText}
-                </Alert>
 
                 <Stack spacing={2.5}>
                   {renderTargetField()}
@@ -280,7 +270,11 @@ export default function NotificationManagement() {
                     minRows={4}
                   />
 
-                  <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5} justifyContent="flex-end">
+                  <Stack
+                    direction={{ xs: 'column', sm: 'row' }}
+                    spacing={1.5}
+                    justifyContent="flex-end"
+                  >
                     <Button variant="outlined" onClick={resetForm} disabled={loading}>
                       Clear
                     </Button>
@@ -288,10 +282,20 @@ export default function NotificationManagement() {
                       variant="contained"
                       onClick={handleSubmit}
                       disabled={loading}
-                      startIcon={loading ? <CircularProgress size={18} color="inherit" /> : activeTab === 'phone' || activeTab === 'token' ? <SendIcon /> : <BroadcastIcon />}
+                      startIcon={
+                        loading ? (
+                          <CircularProgress size={18} color="inherit" />
+                        ) : activeTab === 'phone' || activeTab === 'token' ? (
+                          <SendIcon />
+                        ) : (
+                          <BroadcastIcon />
+                        )
+                      }
                       sx={{
                         background: currentTheme.accentGradient,
-                        boxShadow: isDark ? `0 10px 24px ${currentTheme.glow}` : currentTheme.shadowSoft,
+                        boxShadow: isDark
+                          ? `0 10px 24px ${currentTheme.glow}`
+                          : currentTheme.shadowSoft,
                       }}
                     >
                       {panelMeta.buttonText}
@@ -300,42 +304,6 @@ export default function NotificationManagement() {
                 </Stack>
               </CardContent>
             </GlassCard>
-
-            <Stack spacing={1.5}>
-              <Typography variant="h6" fontWeight={700}>
-                <GradientText>Available Endpoints</GradientText>
-              </Typography>
-
-              {[
-                ['/api/admin/notifications/send', 'Send to a specific phone number'],
-                ['/api/admin/notifications/send-by-token', 'Send to one raw FCM token'],
-                ['/api/admin/notifications/send-to-customers', 'Broadcast to all customers'],
-                ['/api/admin/notifications/send-to-delivery', 'Broadcast to all delivery partners'],
-              ].map(([path, label]) => (
-                <GlassCard key={path}>
-                  <CardContent sx={{ py: 2.25 }}>
-                    <Stack direction={{ xs: 'column', md: 'row' }} spacing={1.5} alignItems={{ xs: 'flex-start', md: 'center' }}>
-                      <Chip
-                        label="POST"
-                        size="small"
-                        sx={{
-                          background: currentTheme.chipBg,
-                          color: currentTheme.accent,
-                          fontWeight: 700,
-                          border: `1px solid ${currentTheme.border}`,
-                        }}
-                      />
-                      <Typography variant="body2" fontFamily="monospace" sx={{ color: currentTheme.text }}>
-                        {path}
-                      </Typography>
-                      <Typography variant="body2" sx={{ color: currentTheme.textSecondary }}>
-                        {label}
-                      </Typography>
-                    </Stack>
-                  </CardContent>
-                </GlassCard>
-              ))}
-            </Stack>
           </Box>
         </Paper>
       </motion.div>

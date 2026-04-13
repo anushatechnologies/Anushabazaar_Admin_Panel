@@ -18,9 +18,12 @@ import EmptyState from '../../../components/empty-state/EmptyState';
 import { GlassPageHeader, GradientText } from '../../../components/glassmorphism/GlassComponents';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
 import { useNavigate } from 'react-router-dom';
+import { alpha } from '@mui/material/styles';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 
 export default function DeliveryDashboard() {
   const navigate = useNavigate();
+  const { isDark } = useAppTheme();
   const { data, isLoading, isError, error } = useGetDeliveryDashboardStatsQuery();
   const { handleError } = useErrorHandler();
 
@@ -176,11 +179,9 @@ export default function DeliveryDashboard() {
                 variant="contained"
                 onClick={() => navigate('/delivery/personnel')}
                 sx={{
-                  borderRadius: 999,
                   px: 2.5,
-                  textTransform: 'none',
-                  fontWeight: 700,
-                  background: 'linear-gradient(135deg, #2563eb 0%, #7c3aed 100%)',
+                  py: 1.2,
+                  minWidth: { xs: '100%', sm: 'auto' },
                 }}
               >
                 Open Delivery Persons
@@ -244,33 +245,43 @@ export default function DeliveryDashboard() {
                     onClick={() => navigate(action.path)}
                     sx={{
                       p: 3,
-                      borderRadius: 3,
-                      background:
-                        'linear-gradient(135deg, rgba(255,255,255,0.92) 0%, rgba(248,250,255,0.96) 100%)',
-                      backdropFilter: 'blur(10px)',
-                      border: '1px solid rgba(255, 255, 255, 0.45)',
+                      borderRadius: 4,
+                      background: isDark
+                        ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.88) 100%)'
+                        : 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(238,242,255,0.92) 100%)',
+                      backdropFilter: 'blur(14px)',
+                      border: `1px solid ${alpha(action.color, isDark ? 0.26 : 0.18)}`,
                       display: 'flex',
                       justifyContent: 'space-between',
                       alignItems: 'center',
                       cursor: 'pointer',
                       transition: 'all 0.3s ease',
                       '&:hover': {
-                        boxShadow: `0 4px 20px ${action.color}20`,
+                        boxShadow: `0 14px 28px ${alpha(action.color, isDark ? 0.18 : 0.14)}`,
+                        transform: 'translateY(-2px)',
                       },
                     }}
                   >
-                    <Typography variant="body1" fontWeight={500}>
-                      {action.label}
-                    </Typography>
+                    <Box>
+                      <Typography variant="body1" fontWeight={700}>
+                        {action.label}
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5 }}>
+                        {action.path === '/delivery/documents'
+                          ? 'Review the document queue'
+                          : 'Open the relevant operations list'}
+                      </Typography>
+                    </Box>
                     <Box
                       sx={{
                         px: 2,
-                        py: 0.5,
-                        borderRadius: 2,
-                        background: `${action.color}15`,
+                        py: 0.85,
+                        borderRadius: 999,
+                        background: alpha(action.color, isDark ? 0.18 : 0.14),
                         color: action.color,
                         fontWeight: 700,
                         fontSize: '0.875rem',
+                        border: `1px solid ${alpha(action.color, isDark ? 0.32 : 0.22)}`,
                       }}
                     >
                       {action.count}

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { Avatar, Chip, CircularProgress, Grid } from '@mui/material';
+import { Avatar, Button, Chip, CircularProgress, Grid, Typography } from '@mui/material';
+import { alpha } from '@mui/material/styles';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 import dayjs from 'dayjs';
@@ -19,6 +20,8 @@ import {
   useGetOrderAnalyticsQuery,
   useGetRecentOrdersQuery,
 } from '../api/dashboardApi';
+import { useAppTheme } from '../../../contexts/ThemeContext';
+import { GradientText } from '../../../components/glassmorphism/GlassComponents';
 
 const fmt = (value: number) =>
   new Intl.NumberFormat('en-IN', { maximumFractionDigits: 0 }).format(Number(value || 0));
@@ -32,6 +35,7 @@ const statCards = [
 
 export default function AdminDashboard() {
   const navigate = useNavigate();
+  const { currentTheme, isDark } = useAppTheme();
   const [period, setPeriod] = useState<'today' | 'week' | 'month'>('today');
 
   const { data: summary, isLoading: summaryLoading } = useGetDashboardSummaryQuery();
@@ -71,6 +75,12 @@ export default function AdminDashboard() {
   ];
 
   const formatCurrency = (value: number) => `Rs ${fmt(value)}`;
+  const heroBackground = isDark
+    ? 'linear-gradient(135deg, rgba(15,23,42,0.92) 0%, rgba(30,41,59,0.84) 100%)'
+    : 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(238,242,255,0.96) 100%)';
+  const sectionBackground = isDark
+    ? 'linear-gradient(180deg, rgba(15,23,42,0.92) 0%, rgba(11,17,32,0.86) 100%)'
+    : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,251,255,0.96) 100%)';
 
   return (
     <div style={{ display: 'grid', gap: 24 }}>
@@ -80,8 +90,8 @@ export default function AdminDashboard() {
           padding: 28,
           display: 'grid',
           gap: 24,
-          background:
-            'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(238,247,255,0.96) 100%)',
+          background: heroBackground,
+          borderRadius: 28,
         }}
       >
         <div
@@ -93,14 +103,14 @@ export default function AdminDashboard() {
             flexWrap: 'wrap',
           }}
         >
-          <div>
-            <div
+          <div style={{ minWidth: 0 }}>
+            <Typography
               className="panel-title"
-              style={{ fontSize: 34, fontWeight: 700, color: 'var(--color-text)' }}
+              sx={{ fontSize: { xs: 28, md: 34 }, fontWeight: 800 }}
             >
-              Admin control center
-            </div>
-            <div style={{ fontSize: 15, color: 'var(--color-text-muted)', marginTop: 6 }}>
+              <GradientText>Admin control center</GradientText>
+            </Typography>
+            <div style={{ fontSize: 15, color: 'var(--color-text-muted)', marginTop: 8 }}>
               Live operational overview for orders, customers, delivery, and revenue on{' '}
               {dayjs().format('DD MMMM YYYY')}.
             </div>
@@ -109,25 +119,19 @@ export default function AdminDashboard() {
               <Chip label={`Snapshot ${period}`} color="primary" size="small" variant="outlined" />
             </div>
           </div>
-          <button
+          <Button
             onClick={() => navigate('/admin/orders')}
-            style={{
-              border: 'none',
-              color: '#fff',
-              background: 'var(--color-accent-grad)',
-              borderRadius: 16,
-              padding: '14px 18px',
-              fontWeight: 800,
-              fontFamily: 'inherit',
-              display: 'flex',
-              alignItems: 'center',
-              gap: 10,
-              boxShadow: 'var(--shadow-md)',
-              cursor: 'pointer',
+            variant="contained"
+            endIcon={<ArrowRight size={16} />}
+            sx={{
+              px: 2.5,
+              py: 1.3,
+              borderRadius: 999,
+              minWidth: { xs: '100%', sm: 'auto' },
             }}
           >
-            Open order desk <ArrowRight size={16} />
-          </button>
+            Open order desk
+          </Button>
         </div>
 
         <Grid container spacing={2.5}>
@@ -151,8 +155,14 @@ export default function AdminDashboard() {
                     display: 'grid',
                     gap: 18,
                     minHeight: 160,
-                    border: `1px solid ${card.color}20`,
-                    boxShadow: `0 14px 30px ${card.color}10`,
+                    border: `1px solid ${alpha(card.color, isDark ? 0.26 : 0.16)}`,
+                    boxShadow: isDark
+                      ? `0 16px 30px ${alpha('#020617', 0.28)}`
+                      : `0 14px 30px ${alpha(card.color, 0.1)}`,
+                    background: isDark
+                      ? 'linear-gradient(180deg, rgba(30,41,59,0.94) 0%, rgba(15,23,42,0.9) 100%)'
+                      : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)',
+                    borderRadius: 24,
                   }}
                 >
                   <div
@@ -166,8 +176,8 @@ export default function AdminDashboard() {
                       style={{
                         width: 48,
                         height: 48,
-                        borderRadius: 16,
-                        background: `${card.color}20`,
+                        borderRadius: 18,
+                        background: alpha(card.color, isDark ? 0.22 : 0.16),
                         display: 'grid',
                         placeItems: 'center',
                       }}
@@ -214,8 +224,8 @@ export default function AdminDashboard() {
               display: 'grid',
               gap: 20,
               height: '100%',
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,251,255,0.96) 100%)',
+              background: sectionBackground,
+              borderRadius: 28,
             }}
           >
             <div
@@ -237,24 +247,25 @@ export default function AdminDashboard() {
               </div>
               <div style={{ display: 'flex', gap: 8 }}>
                 {(['today', 'week', 'month'] as const).map((item) => (
-                  <button
+                  <Button
                     key={item}
                     onClick={() => setPeriod(item)}
-                    style={{
-                      borderRadius: 999,
-                      padding: '10px 14px',
-                      border:
-                        period === item ? '1px solid transparent' : '1px solid var(--color-border)',
-                      background:
-                        period === item ? 'var(--color-accent-grad)' : 'var(--color-card)',
+                    variant={period === item ? 'contained' : 'outlined'}
+                    sx={{
+                      minWidth: 0,
+                      px: 2,
+                      py: 1,
                       color: period === item ? '#fff' : 'var(--color-text)',
-                      fontWeight: 700,
-                      fontFamily: 'inherit',
-                      cursor: 'pointer',
+                      background:
+                        period === item
+                          ? 'var(--color-accent-grad)'
+                          : isDark
+                            ? 'rgba(255,255,255,0.02)'
+                            : alpha(currentTheme.accent, 0.03),
                     }}
                   >
                     {item}
-                  </button>
+                  </Button>
                 ))}
               </div>
             </div>
@@ -272,9 +283,9 @@ export default function AdminDashboard() {
                         borderRadius: 18,
                         padding: 18,
                         border: '1px solid var(--color-border)',
-                        background: `${tone}10`,
+                        background: isDark ? alpha(tone, 0.14) : alpha(tone, 0.1),
                         minHeight: 124,
-                        boxShadow: `0 10px 24px ${tone}12`,
+                        boxShadow: `0 10px 24px ${alpha(tone, isDark ? 0.16 : 0.12)}`,
                       }}
                     >
                       <Icon size={18} color={tone} />
@@ -305,8 +316,8 @@ export default function AdminDashboard() {
               display: 'grid',
               gap: 18,
               height: '100%',
-              background:
-                'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(249,251,255,0.96) 100%)',
+              background: sectionBackground,
+              borderRadius: 28,
             }}
           >
             <div>
@@ -348,11 +359,16 @@ export default function AdminDashboard() {
                       borderRadius: 18,
                       padding: 14,
                       border: '1px solid var(--color-border)',
-                      background: 'var(--color-card)',
+                      background: isDark
+                        ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.84) 100%)'
+                        : 'var(--color-card)',
                       display: 'flex',
                       alignItems: 'center',
                       gap: 12,
                       cursor: 'pointer',
+                      boxShadow: isDark
+                        ? '0 12px 24px rgba(2,8,23,0.22)'
+                        : '0 10px 22px rgba(15,23,42,0.05)',
                     }}
                   >
                     <Avatar

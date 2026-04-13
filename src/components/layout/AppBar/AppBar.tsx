@@ -64,6 +64,7 @@ const TopNav: React.FC = () => {
                 height: 8,
                 borderRadius: 999,
                 background: 'var(--color-error)',
+                boxShadow: '0 0 0 4px rgba(248,250,252,0.08)',
               }}
             />
           </button>

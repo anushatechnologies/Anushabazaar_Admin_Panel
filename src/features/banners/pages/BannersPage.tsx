@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from 'react';
+import { useState, useMemo, useEffect, type ChangeEvent } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
@@ -18,8 +18,6 @@ import {
   Grid,
   FormControl,
   InputLabel,
-  OutlinedInput,
-  FormHelperText,
 } from '@mui/material';
 import {
   Add as AddIcon,
@@ -29,14 +27,22 @@ import {
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon,
   Close as CloseIcon,
-  CloudUpload as CloudUploadIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
   Image as ImageIcon,
   Videocam as VideocamIcon,
 } from '@mui/icons-material';
-import { useGetBannersQuery, useCreateBannerMutation, useToggleBannerStatusMutation, useDeleteBannerMutation, useUpdateBannerMutation, Banner } from '../api/bannerApi';
-import { GlassPageHeader, GradientText, GlassCard } from '../../../components/glassmorphism/GlassComponents';
+import {
+  useGetBannersQuery,
+  useCreateBannerMutation,
+  useToggleBannerStatusMutation,
+  useDeleteBannerMutation,
+  useUpdateBannerMutation,
+  Banner,
+} from '../api/bannerApi';
+import {
+  GlassPageHeader,
+  GradientText,
+  GlassCard,
+} from '../../../components/glassmorphism/GlassComponents';
 import { SkeletonPageHeader, SkeletonTable } from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
@@ -44,12 +50,9 @@ import { toast } from '../../../components/toast/ToastContainer';
 import ConfirmDialog from '../../../components/ConfirmDialog';
 import { useGetCategoriesQuery } from '../../category/components/api/categoryApi';
 import { useGetProductsQuery } from '../../products/api/productApi';
-import { 
-  MenuItem, 
-  Select, 
-  Autocomplete,
-  CircularProgress
-} from '@mui/material';
+import { MenuItem, Select, Autocomplete, CircularProgress } from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 
 interface BannerFormData {
   name: string;
@@ -62,6 +65,7 @@ interface BannerFormData {
 }
 
 export default function BannersPage() {
+  const { isDark } = useAppTheme();
   const { handleError } = useErrorHandler();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
@@ -85,18 +89,25 @@ export default function BannersPage() {
   const [createBanner, { isLoading: isCreating }] = useCreateBannerMutation();
   const [updateBanner, { isLoading: isUpdating }] = useUpdateBannerMutation();
   const [toggleStatus, { isLoading: isToggling }] = useToggleBannerStatusMutation();
-  const [deleteBanner, { isLoading: isDeleting }] = useDeleteBannerMutation();
+  const [deleteBanner] = useDeleteBannerMutation();
 
-  const banners = data?.banners || [];
+  const banners = useMemo(() => data?.banners ?? [], [data?.banners]);
 
   const filteredBanners = useMemo(() => {
-    return banners.filter((banner) => {
-      const matchesSearch = banner.name.toLowerCase().includes(search.toLowerCase()) ||
-        (banner.targetUrl && banner.targetUrl.toLowerCase().includes(search.toLowerCase()));
-      const matchesStatus = filterStatus === 'all' ? true :
-        filterStatus === 'active' ? banner.isActive : !banner.isActive;
-      return matchesSearch && matchesStatus;
-    }).sort((a, b) => a.displayOrder - b.displayOrder);
+    return banners
+      .filter((banner) => {
+        const matchesSearch =
+          banner.name.toLowerCase().includes(search.toLowerCase()) ||
+          (banner.targetUrl && banner.targetUrl.toLowerCase().includes(search.toLowerCase()));
+        const matchesStatus =
+          filterStatus === 'all'
+            ? true
+            : filterStatus === 'active'
+              ? banner.isActive
+              : !banner.isActive;
+        return matchesSearch && matchesStatus;
+      })
+      .sort((a, b) => a.displayOrder - b.displayOrder);
   }, [banners, search, filterStatus]);
 
   useEffect(() => {
@@ -144,7 +155,7 @@ export default function BannersPage() {
     setVideoPreview(null);
   };
 
-  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleImageChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData({ ...formData, image: file });
@@ -152,7 +163,7 @@ export default function BannersPage() {
     }
   };
 
-  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleVideoChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
       setFormData({ ...formData, video: file });
@@ -231,7 +242,15 @@ export default function BannersPage() {
         transition={{ duration: 0.5 }}
       >
         <GlassPageHeader>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+              gap: 2,
+            }}
+          >
             <Box>
               <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
                 <GradientText>Banner Management</GradientText>
@@ -245,11 +264,8 @@ export default function BannersPage() {
               startIcon={<AddIcon />}
               onClick={handleOpenCreate}
               sx={{
-                borderRadius: 3,
-                textTransform: 'none',
-                fontWeight: 600,
-                background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                px: 2.5,
+                py: 1.1,
               }}
             >
               Create Banner
@@ -270,12 +286,17 @@ export default function BannersPage() {
             gap: 2,
             flexWrap: 'wrap',
             mb: 3,
-            p: 2,
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            p: 2.25,
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.88) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(238,242,255,0.92) 100%)',
+            backdropFilter: 'blur(14px)',
+            borderRadius: 4,
+            border: `1px solid ${alpha('#4f46e5', isDark ? 0.24 : 0.12)}`,
             alignItems: 'center',
+            boxShadow: isDark
+              ? '0 18px 36px rgba(2,8,23,0.24)'
+              : '0 14px 28px rgba(79,70,229,0.08)',
           }}
         >
           <TextField
@@ -293,8 +314,8 @@ export default function BannersPage() {
               flex: 1,
               minWidth: 250,
               '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
-                background: 'white',
+                borderRadius: 999,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.88)',
               },
             }}
           />
@@ -307,9 +328,8 @@ export default function BannersPage() {
                 variant={filterStatus === status ? 'contained' : 'outlined'}
                 onClick={() => setFilterStatus(status)}
                 sx={{
-                  borderRadius: 2,
-                  textTransform: 'none',
-                  fontWeight: 600,
+                  borderRadius: 999,
+                  fontWeight: 700,
                   px: 2,
                 }}
               >
@@ -326,12 +346,14 @@ export default function BannersPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <GlassCard>
+        <GlassCard sx={{ p: { xs: 2, md: 3 } }}>
           {filteredBanners.length === 0 ? (
             <EmptyState
               type={search ? 'not-found' : 'empty'}
               title={search ? 'No banners found' : 'No banners yet'}
-              description={search ? `No results for "${search}"` : 'Create your first banner to get started'}
+              description={
+                search ? `No results for "${search}"` : 'Create your first banner to get started'
+              }
               actionLabel={!search ? 'Create Banner' : undefined}
               onAction={!search ? handleOpenCreate : undefined}
             />
@@ -348,10 +370,16 @@ export default function BannersPage() {
                     >
                       <Card
                         sx={{
-                          borderRadius: 3,
+                          borderRadius: 4,
                           overflow: 'hidden',
-                          boxShadow: '0 4px 20px rgba(0,0,0,0.08)',
+                          boxShadow: isDark
+                            ? '0 18px 36px rgba(2,8,23,0.26)'
+                            : '0 12px 28px rgba(15,23,42,0.08)',
                           position: 'relative',
+                          background: isDark
+                            ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.9) 100%)'
+                            : '#ffffff',
+                          border: `1px solid ${alpha('#4f46e5', isDark ? 0.2 : 0.08)}`,
                         }}
                       >
                         {/* Media Preview */}
@@ -391,7 +419,7 @@ export default function BannersPage() {
                               color: 'white',
                               px: 1,
                               py: 0.5,
-                              borderRadius: 1,
+                              borderRadius: 999,
                               fontWeight: 600,
                             }}
                           >
@@ -401,7 +429,7 @@ export default function BannersPage() {
 
                         {/* Content */}
                         <Box sx={{ p: 2 }}>
-                          <Typography variant="subtitle2" fontWeight={600} noWrap>
+                          <Typography variant="subtitle1" fontWeight={700} noWrap>
                             {banner.name}
                           </Typography>
                           {banner.targetUrl && (
@@ -422,7 +450,7 @@ export default function BannersPage() {
                                 size="small"
                                 variant="outlined"
                                 color="secondary"
-                                sx={{ borderRadius: 1, height: 20, fontSize: '0.65rem' }}
+                                sx={{ borderRadius: 999, height: 22, fontSize: '0.65rem' }}
                               />
                             </Box>
                           )}
@@ -436,9 +464,8 @@ export default function BannersPage() {
                               onClick={() => handleOpenEdit(banner)}
                               sx={{
                                 flex: 1,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontWeight: 600,
+                                borderRadius: 999,
+                                fontWeight: 700,
                               }}
                             >
                               Edit
@@ -447,14 +474,15 @@ export default function BannersPage() {
                               size="small"
                               variant="outlined"
                               color={banner.isActive ? 'warning' : 'success'}
-                              startIcon={banner.isActive ? <VisibilityOffIcon /> : <VisibilityIcon />}
+                              startIcon={
+                                banner.isActive ? <VisibilityOffIcon /> : <VisibilityIcon />
+                              }
                               onClick={() => handleToggleStatus(banner.id, banner.isActive)}
                               disabled={isToggling}
                               sx={{
                                 flex: 1,
-                                borderRadius: 2,
-                                textTransform: 'none',
-                                fontWeight: 600,
+                                borderRadius: 999,
+                                fontWeight: 700,
                               }}
                             >
                               {banner.isActive ? 'Hide' : 'Show'}
@@ -466,7 +494,7 @@ export default function BannersPage() {
                               sx={{
                                 border: '1px solid',
                                 borderColor: 'error.main',
-                                borderRadius: 2,
+                                borderRadius: 999,
                               }}
                             >
                               <DeleteIcon />
@@ -492,8 +520,11 @@ export default function BannersPage() {
         PaperProps={{
           sx: {
             borderRadius: 4,
-            background: 'rgba(255, 255, 255, 0.98)',
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(30,41,59,0.96) 0%, rgba(15,23,42,0.94) 100%)'
+              : 'rgba(255, 255, 255, 0.98)',
             backdropFilter: 'blur(20px)',
+            border: `1px solid ${alpha('#4f46e5', isDark ? 0.22 : 0.1)}`,
           },
         }}
       >
@@ -531,7 +562,9 @@ export default function BannersPage() {
               type="number"
               fullWidth
               value={formData.displayOrder}
-              onChange={(e) => setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 1 })}
+              onChange={(e) =>
+                setFormData({ ...formData, displayOrder: parseInt(e.target.value) || 1 })
+              }
               inputProps={{ min: 1 }}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
             />
@@ -544,7 +577,11 @@ export default function BannersPage() {
                 value={formData.actionType}
                 label="Action Type"
                 onChange={(e) => {
-                  setFormData({ ...formData, actionType: e.target.value as string, actionValue: '' });
+                  setFormData({
+                    ...formData,
+                    actionType: e.target.value as string,
+                    actionValue: '',
+                  });
                 }}
                 sx={{ borderRadius: 3 }}
               >
@@ -600,7 +637,11 @@ export default function BannersPage() {
                   borderWidth: 2,
                 }}
               >
-                {formData.image ? formData.image.name : imagePreview ? 'Change Image' : 'Upload Image'}
+                {formData.image
+                  ? formData.image.name
+                  : imagePreview
+                    ? 'Change Image'
+                    : 'Upload Image'}
                 <input type="file" accept="image/*" hidden onChange={handleImageChange} />
               </Button>
               {imagePreview && (
@@ -636,7 +677,11 @@ export default function BannersPage() {
                   borderWidth: 2,
                 }}
               >
-                {formData.video ? formData.video.name : videoPreview ? 'Change Video' : 'Upload Video'}
+                {formData.video
+                  ? formData.video.name
+                  : videoPreview
+                    ? 'Change Video'
+                    : 'Upload Video'}
                 <input type="file" accept="video/*" hidden onChange={handleVideoChange} />
               </Button>
               {videoPreview && (
@@ -659,22 +704,29 @@ export default function BannersPage() {
           <Button
             onClick={handleCloseModal}
             variant="outlined"
-            sx={{ borderRadius: 2, textTransform: 'none', fontWeight: 600 }}
+            sx={{ borderRadius: 999, fontWeight: 700 }}
           >
             Cancel
           </Button>
           <Button
             variant="contained"
             onClick={handleSubmit}
-            disabled={isCreating || isUpdating || !formData.name.trim() || (!editingBanner && !formData.image)}
+            disabled={
+              isCreating ||
+              isUpdating ||
+              !formData.name.trim() ||
+              (!editingBanner && !formData.image)
+            }
             sx={{
-              borderRadius: 2,
-              textTransform: 'none',
-              fontWeight: 600,
-              background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+              borderRadius: 999,
+              fontWeight: 700,
             }}
           >
-            {isCreating || isUpdating ? 'Saving...' : editingBanner ? 'Update Banner' : 'Create Banner'}
+            {isCreating || isUpdating
+              ? 'Saving...'
+              : editingBanner
+                ? 'Update Banner'
+                : 'Create Banner'}
           </Button>
         </DialogActions>
       </Dialog>
@@ -693,7 +745,13 @@ export default function BannersPage() {
 
 // --- INTERNAL SELECTORS FOR BannersPage ---
 
-function CategorySelectorInternal({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+function CategorySelectorInternal({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
   const { data, isLoading } = useGetCategoriesQuery();
   const categories = data || [];
 
@@ -728,7 +786,13 @@ function CategorySelectorInternal({ value, onChange }: { value: string; onChange
   );
 }
 
-function ProductSelectorInternal({ value, onChange }: { value: string; onChange: (val: string) => void }) {
+function ProductSelectorInternal({
+  value,
+  onChange,
+}: {
+  value: string;
+  onChange: (val: string) => void;
+}) {
   const { data, isLoading } = useGetProductsQuery({});
   const products = data || [];
 

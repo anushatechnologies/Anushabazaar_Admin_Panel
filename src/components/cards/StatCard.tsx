@@ -1,28 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  Chip,
-  keyframes,
-} from '@mui/material';
-
-const shimmer = keyframes`
-  0% { background-position: -200% 0; }
-  100% { background-position: 200% 0; }
-`;
-
-const float = keyframes`
-  0%, 100% { transform: translateY(0px); }
-  50% { transform: translateY(-5px); }
-`;
-
-const pulse = keyframes`
-  0%, 100% { transform: scale(1); opacity: 1; }
-  50% { transform: scale(1.05); opacity: 0.8; }
-`;
+import { Card, CardContent, Typography, Box, Chip } from '@mui/material';
+import { alpha, useTheme } from '@mui/material/styles';
 
 interface StatCardProps {
   title: string;
@@ -41,34 +20,28 @@ interface StatCardProps {
 
 const colorSchemes = {
   primary: {
-    gradient: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-    bgColor: 'rgba(102, 126, 234, 0.1)',
-    iconBg: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    gradient: 'linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%)',
+    tone: '#4f46e5',
   },
   success: {
-    gradient: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
-    bgColor: 'rgba(34, 197, 94, 0.1)',
-    iconBg: 'linear-gradient(135deg, #4ade80 0%, #22c55e 100%)',
+    gradient: 'linear-gradient(135deg, #34d399 0%, #10b981 100%)',
+    tone: '#10b981',
   },
   warning: {
     gradient: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
-    bgColor: 'rgba(245, 158, 11, 0.1)',
-    iconBg: 'linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%)',
+    tone: '#f59e0b',
   },
   error: {
     gradient: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)',
-    bgColor: 'rgba(239, 68, 68, 0.1)',
-    iconBg: 'linear-gradient(135deg, #f87171 0%, #ef4444 100%)',
+    tone: '#ef4444',
   },
   info: {
     gradient: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
-    bgColor: 'rgba(59, 130, 246, 0.1)',
-    iconBg: 'linear-gradient(135deg, #60a5fa 0%, #3b82f6 100%)',
+    tone: '#3b82f6',
   },
   secondary: {
-    gradient: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
-    bgColor: 'rgba(168, 85, 247, 0.1)',
-    iconBg: 'linear-gradient(135deg, #c084fc 0%, #a855f7 100%)',
+    gradient: 'linear-gradient(135deg, #a78bfa 0%, #7c3aed 100%)',
+    tone: '#7c3aed',
   },
 };
 
@@ -82,6 +55,8 @@ export const StatCard: React.FC<StatCardProps> = ({
   onClick,
   delay = 0,
 }) => {
+  const theme = useTheme();
+  const isDark = theme.palette.mode === 'dark';
   const scheme = colorSchemes[color];
 
   return (
@@ -96,17 +71,23 @@ export const StatCard: React.FC<StatCardProps> = ({
         onClick={onClick}
         sx={{
           height: '100%',
-          borderRadius: 4,
-          background: 'rgba(255, 255, 255, 0.95)',
+          borderRadius: 4.5,
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(30,41,59,0.94) 0%, rgba(15,23,42,0.9) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)',
           backdropFilter: 'blur(20px)',
-          border: '1px solid rgba(255, 255, 255, 0.3)',
-          boxShadow: `0 4px 20px ${scheme.bgColor}, 0 1px 3px rgba(0,0,0,0.1)`,
+          border: `1px solid ${alpha(scheme.tone, isDark ? 0.22 : 0.12)}`,
+          boxShadow: isDark
+            ? `0 18px 34px ${alpha('#020617', 0.34)}, inset 0 1px 0 rgba(255,255,255,0.03)`
+            : `0 14px 28px ${alpha(scheme.tone, 0.08)}`,
           cursor: onClick ? 'pointer' : 'default',
           position: 'relative',
           overflow: 'hidden',
           transition: 'all 0.3s ease',
           '&:hover': {
-            boxShadow: `0 12px 40px ${scheme.bgColor}, 0 4px 12px rgba(0,0,0,0.15)`,
+            boxShadow: isDark
+              ? `0 22px 42px ${alpha('#020617', 0.42)}`
+              : `0 18px 34px ${alpha(scheme.tone, 0.14)}`,
             transform: 'translateY(-4px)',
           },
           '&::before': {
@@ -118,10 +99,24 @@ export const StatCard: React.FC<StatCardProps> = ({
             height: 4,
             background: scheme.gradient,
           },
+          '&::after': {
+            content: '""',
+            position: 'absolute',
+            inset: 0,
+            background: `radial-gradient(circle at top right, ${alpha(scheme.tone, isDark ? 0.18 : 0.08)} 0%, transparent 32%)`,
+            pointerEvents: 'none',
+          },
         }}
       >
         <CardContent sx={{ p: 3, position: 'relative', zIndex: 1 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              mb: 2,
+            }}
+          >
             <Box>
               <Typography
                 variant="body2"
@@ -157,10 +152,9 @@ export const StatCard: React.FC<StatCardProps> = ({
                 width: 56,
                 height: 56,
                 borderRadius: 3,
-                background: scheme.iconBg,
-                animation: `${float} 3s ease-in-out infinite`,
-                boxShadow: `0 4px 15px ${scheme.bgColor}`,
-                color: 'white',
+                background: scheme.gradient,
+                boxShadow: `0 14px 26px ${alpha(scheme.tone, 0.28)}`,
+                color: '#ffffff',
                 '& svg': {
                   fontSize: 28,
                 },
@@ -188,8 +182,10 @@ export const StatCard: React.FC<StatCardProps> = ({
                 size="small"
                 label={`${trend.isPositive ? '+' : ''}${trend.value}%`}
                 sx={{
-                  backgroundColor: trend.isPositive ? 'rgba(34, 197, 94, 0.15)' : 'rgba(239, 68, 68, 0.15)',
-                  color: trend.isPositive ? '#16a34a' : '#dc2626',
+                  backgroundColor: trend.isPositive
+                    ? alpha('#10b981', 0.14)
+                    : alpha('#ef4444', 0.14),
+                  color: trend.isPositive ? '#10b981' : '#ef4444',
                   fontWeight: 600,
                   fontSize: '0.75rem',
                   height: 24,
@@ -249,17 +245,9 @@ export const AnimatedNumber: React.FC<{
   suffix?: string;
 }> = ({ value, duration = 1, prefix = '', suffix = '' }) => {
   return (
-    <motion.span
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-    >
+    <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }}>
       {prefix}
-      <motion.span
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ duration }}
-      >
+      <motion.span initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration }}>
         {value}
       </motion.span>
       {suffix}

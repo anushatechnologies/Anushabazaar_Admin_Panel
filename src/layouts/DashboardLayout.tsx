@@ -24,8 +24,8 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           position: 'absolute',
           inset: 0,
           background: isDark
-            ? 'radial-gradient(circle at top left, rgba(34,211,238,0.14) 0%, transparent 28%), radial-gradient(circle at bottom right, rgba(168,85,247,0.14) 0%, transparent 30%)'
-            : 'radial-gradient(circle at top left, rgba(37,99,235,0.1) 0%, transparent 24%), radial-gradient(circle at top right, rgba(20,184,166,0.12) 0%, transparent 28%)',
+            ? 'radial-gradient(circle at top left, rgba(99,102,241,0.18) 0%, transparent 30%), radial-gradient(circle at bottom right, rgba(124,58,237,0.16) 0%, transparent 32%)'
+            : 'radial-gradient(circle at top left, rgba(79,70,229,0.1) 0%, transparent 26%), radial-gradient(circle at top right, rgba(124,58,237,0.1) 0%, transparent 30%)',
           pointerEvents: 'none',
         }}
       />
@@ -43,11 +43,14 @@ const DashboardLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
           position: 'relative',
           zIndex: 1,
           background: 'var(--content-panel-bg)',
+          backdropFilter: 'blur(12px)',
         }}
       >
         <AppBar />
         <main style={{ flex: 1, overflowY: 'auto', overflowX: 'hidden' }}>
-          <div style={{ padding: '24px', maxWidth: 1600, width: '100%', margin: '0 auto' }}>{children}</div>
+          <div style={{ padding: '24px', maxWidth: 1600, width: '100%', margin: '0 auto' }}>
+            {children}
+          </div>
         </main>
       </div>
       <ToastContainer />

@@ -10,7 +10,6 @@ import {
   Chip,
   CircularProgress,
   Switch,
-  FormControlLabel,
   Divider,
   Alert,
   Paper,
@@ -202,7 +201,7 @@ export default function FareSettingsPage() {
     return (
       <Box sx={{ p: 4, display: 'flex', alignItems: 'center', gap: 2 }}>
         <CircularProgress size={24} />
-        <Typography>Loading fare settings…</Typography>
+        <Typography>Loading fare settings...</Typography>
       </Box>
     );
   }
@@ -211,32 +210,58 @@ export default function FareSettingsPage() {
     <Box sx={{ p: { xs: 2, md: 4 }, background: currentTheme.bg, minHeight: '100vh' }}>
       <motion.div initial={{ opacity: 0, y: -20 }} animate={{ opacity: 1, y: 0 }}>
         <GlassPageHeader>
-          <Box
-            sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 2,
-            }}
+          <Stack
+            direction={{ xs: 'column', md: 'row' }}
+            justifyContent="space-between"
+            alignItems={{ xs: 'flex-start', md: 'center' }}
+            gap={2}
           >
-            <Box>
+            <Box sx={{ minWidth: 0, flex: 1 }}>
               <Typography variant="h4" fontWeight={800}>
                 <GradientText>Delivery Fare Settings</GradientText>
               </Typography>
-              <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                Set fares per vehicle type. Rain toggle applies instantly to live deliveries.
+              <Typography color="text.secondary" sx={{ mt: 0.5, maxWidth: 720 }}>
+                Configure vehicle-based pricing and keep rain pricing under control from one place.
               </Typography>
             </Box>
-          </Box>
+            <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+              <Chip
+                label="Vehicle Based Pricing"
+                sx={{
+                  background: currentTheme.chipBg,
+                  color: currentTheme.accent,
+                  border: `1px solid ${currentTheme.border}`,
+                  fontWeight: 700,
+                }}
+              />
+              <Chip
+                label="Rain Toggle Live"
+                variant="outlined"
+                sx={{
+                  borderColor: currentTheme.border,
+                  color: currentTheme.text,
+                  fontWeight: 700,
+                }}
+              />
+            </Stack>
+          </Stack>
         </GlassPageHeader>
       </motion.div>
 
-      {/* Formula banner */}
-      <Alert icon={<InfoIcon />} severity="info" sx={{ mb: 3, borderRadius: 3, fontWeight: 500 }}>
-        <strong>Fare formula:</strong> Base Fare (₹25 for 0–2 km) + floor(km − 2) × Per-km Rate +
-        Rain Surcharge (if ON) + Loading + Unloading. Example: 9.7 km Bike = ₹25 + floor(7.7) × ₹7 =
-        ₹25 + ₹49 = <strong>₹74</strong>. With rain ₹30 → <strong>₹104</strong>.
+      <Alert
+        icon={<InfoIcon />}
+        severity="info"
+        sx={{
+          mb: 3,
+          borderRadius: 3,
+          fontWeight: 500,
+          background: currentTheme.chipBg,
+          color: currentTheme.text,
+          border: `1px solid ${currentTheme.border}`,
+        }}
+      >
+        Save changes per vehicle group. Rain mode affects the selected group immediately after
+        toggle.
       </Alert>
 
       <Stack spacing={4}>
@@ -300,7 +325,7 @@ function VehicleGroupCard({
 
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }}>
-      <GlassCard>
+      <GlassCard sx={{ p: { xs: 2.5, md: 3 } }}>
         {/* Group header */}
         <Box
           sx={{
@@ -357,43 +382,51 @@ function VehicleGroupCard({
             {isLightGroup ? (
               // Light group: show shared fare inputs + EV info
               <Stack spacing={3}>
-                <FareInputRow
-                  label="Flat base fare (0 → 2 km)"
-                  helperText="Charged for any delivery within 2 km"
-                  value={primaryRule?.baseFare ?? 25}
-                  onChange={(v) => {
-                    group.vehicles.forEach((vt) => onChange(vt, 'baseFare', v));
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 2,
                   }}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                />
-                <FareInputRow
-                  label="Base distance (km)"
-                  helperText="Distance covered by base fare (default 2 km)"
-                  value={primaryRule?.baseKm ?? 2}
-                  step={0.5}
-                  onChange={(v) => {
-                    group.vehicles.forEach((vt) => onChange(vt, 'baseKm', v));
-                  }}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                  unit="km"
-                />
-                <FareInputRow
-                  label="Per-km rate (after base)"
-                  helperText="Floor(extra km) × this rate added on top"
-                  value={primaryRule?.perKmRate ?? 7}
-                  onChange={(v) => {
-                    group.vehicles.forEach((vt) => onChange(vt, 'perKmRate', v));
-                  }}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                />
+                >
+                  <FareInputRow
+                    label="Base fare"
+                    helperText="Charged for delivery within the base distance."
+                    value={primaryRule?.baseFare ?? 25}
+                    onChange={(v) => {
+                      group.vehicles.forEach((vt) => onChange(vt, 'baseFare', v));
+                    }}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                  />
+                  <FareInputRow
+                    label="Base distance"
+                    helperText="Distance covered by the base fare."
+                    value={primaryRule?.baseKm ?? 2}
+                    step={0.5}
+                    onChange={(v) => {
+                      group.vehicles.forEach((vt) => onChange(vt, 'baseKm', v));
+                    }}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                    unit="km"
+                  />
+                  <FareInputRow
+                    label="Per-km rate"
+                    helperText="Applied to each full kilometer after the base distance."
+                    value={primaryRule?.perKmRate ?? 7}
+                    onChange={(v) => {
+                      group.vehicles.forEach((vt) => onChange(vt, 'perKmRate', v));
+                    }}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                  />
+                </Box>
                 {/* EV info banner */}
                 <Paper
                   sx={{
                     p: 2,
-                    borderRadius: 2,
+                    borderRadius: 3,
                     bgcolor: isDark ? 'rgba(34,197,94,0.08)' : 'rgba(34,197,94,0.06)',
                     border: '1px solid rgba(34,197,94,0.25)',
                     display: 'flex',
@@ -404,12 +437,11 @@ function VehicleGroupCard({
                   <ElectricBike sx={{ color: '#22c55e', mt: 0.2 }} />
                   <Box>
                     <Typography variant="subtitle2" fontWeight={700} color="#22c55e">
-                      Electric Bike (EV) — Document Exemptions
+                      Electric Bike (EV)
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      EV partners are <strong>not required</strong> to upload RC Book or Insurance.
-                      Aadhaar, PAN, Driving License, and Profile Photo are still required. Same fare
-                      applies as Bike and Scooty.
+                      RC Book and Insurance are not required for EV partners. Bike and Scooty
+                      pricing applies here too.
                     </Typography>
                   </Box>
                 </Paper>
@@ -417,43 +449,51 @@ function VehicleGroupCard({
             ) : (
               // AUTO / HEAVY: individual fare inputs
               <Stack spacing={3}>
-                <FareInputRow
-                  label="Flat base fare (0 → 2 km)"
-                  helperText="Charged for any delivery within 2 km"
-                  value={primaryRule?.baseFare ?? 30}
-                  onChange={(v) => onChange(group.vehicles[0], 'baseFare', v)}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                />
-                <FareInputRow
-                  label="Base distance (km)"
-                  helperText="Distance covered by base fare"
-                  value={primaryRule?.baseKm ?? 2}
-                  step={0.5}
-                  onChange={(v) => onChange(group.vehicles[0], 'baseKm', v)}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                  unit="km"
-                />
-                <FareInputRow
-                  label="Per-km rate (after base)"
-                  helperText="Floor(extra km) × this rate added on top"
-                  value={primaryRule?.perKmRate ?? 10}
-                  onChange={(v) => onChange(group.vehicles[0], 'perKmRate', v)}
-                  isDark={isDark}
-                  currentTheme={currentTheme}
-                />
-                {/* Loading / Unloading — AUTO and HEAVY only */}
+                <Box
+                  sx={{
+                    display: 'grid',
+                    gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
+                    gap: 2,
+                  }}
+                >
+                  <FareInputRow
+                    label="Base fare"
+                    helperText="Charged for delivery within the base distance."
+                    value={primaryRule?.baseFare ?? 30}
+                    onChange={(v) => onChange(group.vehicles[0], 'baseFare', v)}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                  />
+                  <FareInputRow
+                    label="Base distance"
+                    helperText="Distance covered by the base fare."
+                    value={primaryRule?.baseKm ?? 2}
+                    step={0.5}
+                    onChange={(v) => onChange(group.vehicles[0], 'baseKm', v)}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                    unit="km"
+                  />
+                  <FareInputRow
+                    label="Per-km rate"
+                    helperText="Applied to each full kilometer after the base distance."
+                    value={primaryRule?.perKmRate ?? 10}
+                    onChange={(v) => onChange(group.vehicles[0], 'perKmRate', v)}
+                    isDark={isDark}
+                    currentTheme={currentTheme}
+                  />
+                  {/* Loading / Unloading — AUTO and HEAVY only */}
+                </Box>
                 {group.hasLoadingFees && (
                   <>
                     <Divider sx={{ my: 1 }}>
-                      <Chip label="Loading & Unloading Charges" size="small" />
+                      <Chip label="Handling Charges" size="small" />
                     </Divider>
                     <Grid container spacing={2}>
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <FareInputRow
                           label="Loading charge"
-                          helperText="Added for every delivery (loading at store)"
+                          helperText="Added while loading at the store."
                           value={primaryRule?.loadingCharge ?? 0}
                           onChange={(v) => onChange(group.vehicles[0], 'loadingCharge', v)}
                           isDark={isDark}
@@ -463,7 +503,7 @@ function VehicleGroupCard({
                       <Grid size={{ xs: 12, sm: 6 }}>
                         <FareInputRow
                           label="Unloading charge"
-                          helperText="Added for every delivery (unloading at customer)"
+                          helperText="Added while unloading at the customer location."
                           value={primaryRule?.unloadingCharge ?? 0}
                           onChange={(v) => onChange(group.vehicles[0], 'unloadingCharge', v)}
                           isDark={isDark}
@@ -520,7 +560,7 @@ function VehicleGroupCard({
 
                 <FareInputRow
                   label="Surcharge amount"
-                  helperText="Added on top when rain is ON"
+                  helperText="Added on top of the base fare while rain mode is active."
                   value={primaryRule?.rainSurcharge ?? 0}
                   onChange={(v) => {
                     group.vehicles.forEach((vt) => onChange(vt, 'rainSurcharge', v));
@@ -529,23 +569,34 @@ function VehicleGroupCard({
                   currentTheme={currentTheme}
                 />
 
-                <Box sx={{ mt: 2.5 }}>
-                  <FormControlLabel
-                    control={
-                      <Switch
-                        checked={rainActive}
-                        onChange={(e) => onRainToggle(group.vehicles[0], e.target.checked)}
-                        sx={{
-                          '& .MuiSwitch-thumb': { bgcolor: rainActive ? '#3b82f6' : undefined },
-                          '& .MuiSwitch-track': { bgcolor: rainActive ? '#3b82f6' : undefined },
-                        }}
-                      />
-                    }
-                    label={
-                      <Typography variant="body2" fontWeight={700}>
-                        {rainActive ? 'Rain mode ON — live now' : 'Rain mode OFF'}
-                      </Typography>
-                    }
+                <Box
+                  sx={{
+                    mt: 2.5,
+                    p: 2,
+                    borderRadius: 2.5,
+                    background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.8)',
+                    border: `1px solid ${currentTheme.border}`,
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
+                    gap: 2,
+                  }}
+                >
+                  <Box>
+                    <Typography variant="body2" fontWeight={700}>
+                      {rainActive ? 'Rain mode is active' : 'Rain mode is off'}
+                    </Typography>
+                    <Typography variant="caption" color="text.secondary">
+                      Toggle live pricing for this vehicle group.
+                    </Typography>
+                  </Box>
+                  <Switch
+                    checked={rainActive}
+                    onChange={(e) => onRainToggle(group.vehicles[0], e.target.checked)}
+                    sx={{
+                      '& .MuiSwitch-thumb': { bgcolor: rainActive ? '#3b82f6' : undefined },
+                      '& .MuiSwitch-track': { bgcolor: rainActive ? '#3b82f6' : undefined },
+                    }}
                   />
                 </Box>
               </Paper>
@@ -617,7 +668,7 @@ function FarePreview({ rule, isDark, color }: { rule: FareRule; isDark: boolean;
       <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 2 }}>
         <CloudQueue sx={{ color, fontSize: 18 }} />
         <Typography variant="subtitle2" fontWeight={700}>
-          Live Preview
+          Fare Preview
         </Typography>
         {rule.rainActive && (
           <Chip
@@ -637,18 +688,20 @@ function FarePreview({ rule, isDark, color }: { rule: FareRule; isDark: boolean;
               {label}
             </Typography>
             <Typography variant="body2" fontWeight={700} sx={{ color }}>
-              ₹{calcFare(km)}
+              Rs {calcFare(km)}
             </Typography>
           </Box>
         ))}
       </Stack>
       <Divider sx={{ my: 1.5 }} />
-      <Typography variant="caption" color="text.secondary">
-        Formula: ₹{rule.baseFare} base + floor(km−{rule.baseKm})×₹{rule.perKmRate}/km
-        {rule.rainActive ? ` + ₹${rule.rainSurcharge} rain` : ''}
-        {rule.loadingCharge > 0 ? ` + ₹${rule.loadingCharge} load` : ''}
-        {rule.unloadingCharge > 0 ? ` + ₹${rule.unloadingCharge} unload` : ''}
-      </Typography>
+      <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+        <Chip size="small" variant="outlined" label={`Base Rs ${rule.baseFare}`} />
+        <Chip size="small" variant="outlined" label={`${rule.baseKm} km included`} />
+        <Chip size="small" variant="outlined" label={`Rs ${rule.perKmRate}/km`} />
+        {rule.rainActive ? (
+          <Chip size="small" variant="outlined" label={`Rain Rs ${rule.rainSurcharge}`} />
+        ) : null}
+      </Stack>
     </Paper>
   );
 }
@@ -678,7 +731,7 @@ function FareInputRow({
 }: FareInputRowProps) {
   return (
     <Box>
-      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.5 }}>
+      <Stack direction="row" alignItems="center" spacing={0.5} sx={{ mb: 0.75 }}>
         <Typography variant="caption" fontWeight={700} color="text.secondary">
           {label}
         </Typography>
@@ -691,13 +744,13 @@ function FareInputRow({
         type="number"
         size="small"
         value={value}
-        inputProps={{ step }}
+        inputProps={{ min: 0, step }}
         onChange={(e) => onChange(parseFloat(e.target.value) || 0)}
         InputProps={{
           startAdornment: !unit ? (
             <InputAdornment position="start">
               <Typography sx={{ color: 'text.secondary', fontWeight: 700, fontSize: 14 }}>
-                ₹
+                Rs
               </Typography>
             </InputAdornment>
           ) : undefined,
@@ -711,7 +764,7 @@ function FareInputRow({
         }}
         sx={{
           '& .MuiOutlinedInput-root': {
-            borderRadius: 2,
+            borderRadius: 2.5,
             bgcolor: isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.02)',
             color: currentTheme.text,
             '& fieldset': { borderColor: currentTheme.border },
@@ -720,9 +773,6 @@ function FareInputRow({
           },
         }}
       />
-      <Typography variant="caption" color="text.disabled" sx={{ mt: 0.3, display: 'block' }}>
-        {helperText}
-      </Typography>
     </Box>
   );
 }

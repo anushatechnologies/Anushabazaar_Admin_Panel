@@ -43,6 +43,8 @@ import {
   GlassCard,
 } from '../../../components/glassmorphism/GlassComponents';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
+import { alpha } from '@mui/material/styles';
+import { useAppTheme } from '../../../contexts/ThemeContext';
 import {
   useGetCustomersQuery,
   useUpdateCustomerStatusMutation,
@@ -50,6 +52,7 @@ import {
 } from '../../customers/api/customerApi';
 
 export default function Users() {
+  const { isDark } = useAppTheme();
   const [search, setSearch] = useState('');
   const [debouncedSearch, setDebouncedSearch] = useState('');
   const [filterActive, setFilterActive] = useState<string>('all');
@@ -201,11 +204,8 @@ export default function Users() {
                 startIcon={<DownloadIcon />}
                 onClick={downloadCSV}
                 sx={{
-                  borderRadius: 3,
-                  textTransform: 'none',
-                  fontWeight: 600,
-                  background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
-                  boxShadow: '0 4px 15px rgba(102, 126, 234, 0.3)',
+                  px: 2.5,
+                  py: 1.1,
                 }}
               >
                 Download CSV
@@ -227,11 +227,16 @@ export default function Users() {
             gap: 2,
             flexWrap: 'wrap',
             mb: 3,
-            p: 2,
-            background: 'rgba(255, 255, 255, 0.8)',
-            backdropFilter: 'blur(10px)',
-            borderRadius: 3,
-            border: '1px solid rgba(255, 255, 255, 0.3)',
+            p: 2.25,
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.88) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(238,242,255,0.92) 100%)',
+            backdropFilter: 'blur(14px)',
+            borderRadius: 4,
+            border: `1px solid ${alpha('#4f46e5', isDark ? 0.24 : 0.12)}`,
+            boxShadow: isDark
+              ? '0 18px 36px rgba(2,8,23,0.24)'
+              : '0 14px 28px rgba(79,70,229,0.08)',
           }}
         >
           <TextField
@@ -252,8 +257,8 @@ export default function Users() {
               flex: 1,
               minWidth: 250,
               '& .MuiOutlinedInput-root': {
-                borderRadius: 3,
-                background: 'white',
+                borderRadius: 999,
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.88)',
               },
             }}
           />
@@ -266,8 +271,8 @@ export default function Users() {
             }}
             sx={{
               minWidth: 150,
-              borderRadius: 3,
-              background: 'white',
+              borderRadius: 999,
+              background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.88)',
             }}
           >
             <MenuItem value="all">All Status</MenuItem>
@@ -283,7 +288,7 @@ export default function Users() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <GlassCard>
+        <GlassCard sx={{ p: { xs: 1.25, md: 1.5 } }}>
           <TableContainer component={Paper} sx={{ boxShadow: 'none', background: 'transparent' }}>
             <Table>
               <TableHead>
@@ -421,9 +426,14 @@ export default function Users() {
                                 right: 0,
                                 top: '100%',
                                 zIndex: 10,
-                                background: 'white',
-                                borderRadius: 2,
-                                boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
+                                background: isDark
+                                  ? 'linear-gradient(180deg, rgba(30,41,59,0.98) 0%, rgba(15,23,42,0.96) 100%)'
+                                  : 'rgba(255,255,255,0.98)',
+                                borderRadius: 3,
+                                boxShadow: isDark
+                                  ? '0 18px 36px rgba(2,8,23,0.34)'
+                                  : '0 10px 24px rgba(15,23,42,0.12)',
+                                border: `1px solid ${alpha('#4f46e5', isDark ? 0.22 : 0.1)}`,
                                 minWidth: 160,
                                 py: 1,
                               }}

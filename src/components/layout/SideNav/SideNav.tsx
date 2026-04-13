@@ -68,7 +68,7 @@ const SideNav = () => {
       <div
         style={{
           padding: collapsed ? '24px 18px 20px' : '24px 22px 20px',
-          borderBottom: '1px solid var(--color-border)',
+          borderBottom: '1px solid var(--color-sidebar-edge)',
         }}
       >
         <div
@@ -87,7 +87,7 @@ const SideNav = () => {
               background: 'var(--color-accent-grad)',
               display: 'grid',
               placeItems: 'center',
-              boxShadow: 'var(--shadow-sm)',
+              boxShadow: '0 14px 30px rgba(79,70,229,0.28)',
             }}
           >
             <img src={Logo} alt="Logo" style={{ width: 22, height: 22 }} />
@@ -118,11 +118,12 @@ const SideNav = () => {
           height: 30,
           borderRadius: 999,
           border: '1px solid var(--color-border)',
-          background: 'var(--color-card)',
+          background: 'rgba(255,255,255,0.08)',
           color: 'var(--color-text-muted)',
           display: 'grid',
           placeItems: 'center',
           cursor: 'pointer',
+          backdropFilter: 'blur(12px)',
         }}
       >
         {collapsed ? <ChevronRight size={14} /> : <ChevronLeft size={14} />}
@@ -170,9 +171,9 @@ const SideNav = () => {
                           color: isActive ? 'var(--nav-active-text)' : 'var(--nav-text)',
                           background: isActive ? 'var(--nav-active-bg)' : 'transparent',
                           border: isActive
-                            ? '1px solid var(--color-border)'
+                            ? '1px solid var(--color-sidebar-edge)'
                             : '1px solid transparent',
-                          boxShadow: isActive ? 'var(--shadow-sm)' : 'none',
+                          boxShadow: isActive ? '0 18px 28px rgba(79,70,229,0.18)' : 'none',
                           transition: 'all 0.18s ease',
                         }}
                         onMouseEnter={(event) => {
@@ -205,10 +206,12 @@ const SideNav = () => {
       <div
         style={{
           margin: 12,
-          padding: 12,
+          padding: 14,
           borderRadius: 22,
           border: '1px solid var(--sidebar-user-border)',
-          background: 'var(--sidebar-user-bg)',
+          background:
+            'linear-gradient(180deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.04) 100%)',
+          backdropFilter: 'blur(14px)',
         }}
       >
         <div
