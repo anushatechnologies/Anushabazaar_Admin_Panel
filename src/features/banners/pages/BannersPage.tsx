@@ -15,12 +15,12 @@ import {
   DialogTitle,
   DialogContent,
   DialogActions,
-  Grid,
   FormControl,
   InputLabel,
 } from '@mui/material';
 import {
   Add as AddIcon,
+  ArrowOutward as ArrowOutwardIcon,
   Search as SearchIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -40,6 +40,7 @@ import {
 } from '../api/bannerApi';
 import {
   GlassPageHeader,
+  GlassBadge,
   GradientText,
   GlassCard,
 } from '../../../components/glassmorphism/GlassComponents';
@@ -51,7 +52,7 @@ import ConfirmDialog from '../../../components/ConfirmDialog';
 import { useGetCategoriesQuery } from '../../category/components/api/categoryApi';
 import { useGetProductsQuery } from '../../products/api/productApi';
 import { MenuItem, Select, Autocomplete, CircularProgress } from '@mui/material';
-import { alpha } from '@mui/material/styles';
+import { alpha, useTheme } from '@mui/material/styles';
 import { useAppTheme } from '../../../contexts/ThemeContext';
 
 interface BannerFormData {
@@ -65,6 +66,7 @@ interface BannerFormData {
 }
 
 export default function BannersPage() {
+  const theme = useTheme();
   const { isDark } = useAppTheme();
   const { handleError } = useErrorHandler();
   const [search, setSearch] = useState('');
@@ -109,6 +111,16 @@ export default function BannersPage() {
       })
       .sort((a, b) => a.displayOrder - b.displayOrder);
   }, [banners, search, filterStatus]);
+
+  const activeCount = useMemo(() => banners.filter((banner) => banner.isActive).length, [banners]);
+  const videoCount = useMemo(
+    () => banners.filter((banner) => Boolean(banner.videoUrl)).length,
+    [banners],
+  );
+  const linkedCount = useMemo(
+    () => banners.filter((banner) => banner.actionType && banner.actionType !== 'NONE').length,
+    [banners],
+  );
 
   useEffect(() => {
     if (isError && error) {
@@ -224,6 +236,14 @@ export default function BannersPage() {
     }
   };
 
+  const getActionChipLabel = (banner: Banner) => {
+    if (!banner.actionType || banner.actionType === 'NONE') {
+      return 'No action';
+    }
+
+    return banner.actionValue ? `${banner.actionType}: ${banner.actionValue}` : banner.actionType;
+  };
+
   if (isLoading) {
     return (
       <Box sx={{ p: 4 }}>
@@ -234,42 +254,141 @@ export default function BannersPage() {
   }
 
   return (
-    <Box sx={{ p: { xs: 2, sm: 3, md: 4 } }}>
+    <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, display: 'grid', gap: { xs: 2.5, lg: 3 } }}>
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <GlassPageHeader>
+        <GlassPageHeader
+          sx={{
+            p: { xs: 2.5, md: 3.25 },
+            background: isDark
+              ? 'linear-gradient(180deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.88) 100%)'
+              : 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(245,247,255,0.98) 55%, rgba(238,242,255,0.96) 100%)',
+            border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.24 : 0.12)}`,
+            boxShadow: isDark
+              ? '0 24px 48px rgba(2,6,23,0.34)'
+              : '0 22px 40px rgba(79,70,229,0.10)',
+          }}
+        >
           <Box
             sx={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              flexWrap: 'wrap',
-              gap: 2,
+              display: 'grid',
+              gap: 3,
+              gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.4fr) minmax(320px, 0.92fr)' },
+              alignItems: 'start',
             }}
           >
-            <Box>
-              <Typography variant="h4" sx={{ fontWeight: 700, mb: 0.5 }}>
-                <GradientText>Banner Management</GradientText>
+            <Box sx={{ display: 'grid', gap: 2 }}>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1.2}
+                useFlexGap
+                flexWrap="wrap"
+              >
+                <GlassBadge statusColor={theme.palette.primary.main}>
+                  {filteredBanners.length} visible in current filter
+                </GlassBadge>
+                <GlassBadge statusColor={theme.palette.success.main}>
+                  {activeCount} active creatives
+                </GlassBadge>
+                <GlassBadge statusColor={theme.palette.info.main}>
+                  {videoCount} video banners
+                </GlassBadge>
+              </Stack>
+              <Typography
+                variant="h3"
+                sx={{
+                  fontWeight: 800,
+                  lineHeight: 1.05,
+                  fontSize: { xs: '2rem', md: '2.5rem' },
+                  maxWidth: 760,
+                }}
+              >
+                <GradientText>
+                  Banner management with cleaner spacing and stronger balance
+                </GradientText>
               </Typography>
-              <Typography color="text.secondary">
+              <Typography
+                color="text.secondary"
+                sx={{
+                  mt: 1,
+                  maxWidth: 720,
+                  fontSize: { xs: '0.95rem', md: '1rem' },
+                  lineHeight: 1.7,
+                  display: 'none',
+                }}
+              >
                 {filteredBanners.length} banners • Manage your app banners
               </Typography>
             </Box>
-            <Button
-              variant="contained"
-              startIcon={<AddIcon />}
-              onClick={handleOpenCreate}
+            <Typography
+              color="text.secondary"
               sx={{
-                px: 2.5,
-                py: 1.1,
+                maxWidth: 720,
+                fontSize: { xs: '0.95rem', md: '1rem' },
+                lineHeight: 1.7,
               }}
             >
-              Create Banner
-            </Button>
+              The banner library now fills the page more naturally, so even a small number of
+              creatives still looks polished instead of leaving awkward empty space.
+            </Typography>
+            <Box sx={{ display: 'grid', gap: 1.5 }}>
+              <Button
+                variant="contained"
+                startIcon={<AddIcon />}
+                endIcon={<ArrowOutwardIcon />}
+                onClick={handleOpenCreate}
+                sx={{
+                  px: 2.75,
+                  py: 1.1,
+                  borderRadius: 999,
+                  minWidth: { xs: '100%', sm: 210 },
+                  fontWeight: 700,
+                }}
+              >
+                Create Banner
+              </Button>
+
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 1.25,
+                  gridTemplateColumns: {
+                    xs: 'repeat(2, minmax(0, 1fr))',
+                    xl: 'repeat(2, minmax(0, 1fr))',
+                  },
+                }}
+              >
+                {[
+                  { label: 'Total', value: banners.length, tone: theme.palette.primary.main },
+                  { label: 'Active', value: activeCount, tone: theme.palette.success.main },
+                  { label: 'Linked', value: linkedCount, tone: theme.palette.info.main },
+                  { label: 'Video', value: videoCount, tone: theme.palette.warning.main },
+                ].map((item) => (
+                  <Box
+                    key={item.label}
+                    sx={{
+                      p: 1.6,
+                      borderRadius: 3,
+                      border: `1px solid ${alpha(item.tone, isDark ? 0.24 : 0.16)}`,
+                      background: isDark
+                        ? `linear-gradient(180deg, ${alpha(item.tone, 0.12)} 0%, rgba(15,23,42,0.72) 100%)`
+                        : `linear-gradient(180deg, rgba(255,255,255,0.92) 0%, ${alpha(item.tone, 0.08)} 100%)`,
+                    }}
+                  >
+                    <Typography variant="caption" color="text.secondary">
+                      {item.label}
+                    </Typography>
+                    <Typography variant="h5" sx={{ mt: 0.4, fontWeight: 800, color: item.tone }}>
+                      {item.value}
+                    </Typography>
+                  </Box>
+                ))}
+              </Box>
+            </Box>
           </Box>
         </GlassPageHeader>
       </motion.div>
@@ -282,10 +401,9 @@ export default function BannersPage() {
       >
         <Box
           sx={{
-            display: 'flex',
+            display: 'grid',
             gap: 2,
-            flexWrap: 'wrap',
-            mb: 3,
+            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) auto' },
             p: 2.25,
             background: isDark
               ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.88) 100%)'
@@ -300,7 +418,7 @@ export default function BannersPage() {
           }}
         >
           <TextField
-            placeholder="Search banners..."
+            placeholder="Search banners by name or link..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             InputProps={{
@@ -311,16 +429,17 @@ export default function BannersPage() {
               ),
             }}
             sx={{
-              flex: 1,
               minWidth: 250,
               '& .MuiOutlinedInput-root': {
                 borderRadius: 999,
-                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.88)',
+                background: isDark ? 'rgba(255,255,255,0.03)' : 'rgba(255,255,255,0.90)',
               },
             }}
           />
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <Box
+            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { lg: 'flex-end' } }}
+          >
             {(['all', 'active', 'inactive'] as const).map((status) => (
               <Button
                 key={status}
@@ -346,7 +465,7 @@ export default function BannersPage() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.2 }}
       >
-        <GlassCard sx={{ p: { xs: 2, md: 3 } }}>
+        <GlassCard sx={{ p: { xs: 2, md: 3 }, display: 'grid', gap: 2.5 }}>
           {filteredBanners.length === 0 ? (
             <EmptyState
               type={search ? 'not-found' : 'empty'}
@@ -358,155 +477,218 @@ export default function BannersPage() {
               onAction={!search ? handleOpenCreate : undefined}
             />
           ) : (
-            <Grid container spacing={3}>
-              <AnimatePresence mode="popLayout">
-                {filteredBanners.map((banner, index) => (
-                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={banner.id}>
-                    <motion.div
-                      initial={{ opacity: 0, scale: 0.9 }}
-                      animate={{ opacity: 1, scale: 1 }}
-                      exit={{ opacity: 0, scale: 0.9 }}
-                      transition={{ duration: 0.3, delay: index * 0.05 }}
-                    >
-                      <Card
-                        sx={{
-                          borderRadius: 4,
-                          overflow: 'hidden',
-                          boxShadow: isDark
-                            ? '0 18px 36px rgba(2,8,23,0.26)'
-                            : '0 12px 28px rgba(15,23,42,0.08)',
-                          position: 'relative',
-                          background: isDark
-                            ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.9) 100%)'
-                            : '#ffffff',
-                          border: `1px solid ${alpha('#4f46e5', isDark ? 0.2 : 0.08)}`,
-                        }}
-                      >
-                        {/* Media Preview */}
-                        <Box sx={{ position: 'relative', height: 180 }}>
-                          <CardMedia
-                            component={banner.videoUrl ? 'video' : 'img'}
-                            src={banner.videoUrl || banner.imageUrl}
-                            alt={banner.name}
-                            sx={{
-                              width: '100%',
-                              height: '100%',
-                              objectFit: 'cover',
-                            }}
-                            controls={!!banner.videoUrl}
-                          />
-                          <Chip
-                            label={banner.isActive ? 'Active' : 'Inactive'}
-                            size="small"
-                            sx={{
-                              position: 'absolute',
-                              top: 12,
-                              right: 12,
-                              background: banner.isActive
-                                ? 'rgba(34, 197, 94, 0.9)'
-                                : 'rgba(156, 163, 175, 0.9)',
-                              color: 'white',
-                              fontWeight: 600,
-                            }}
-                          />
-                          <Typography
-                            variant="caption"
-                            sx={{
-                              position: 'absolute',
-                              bottom: 12,
-                              left: 12,
-                              background: 'rgba(0,0,0,0.6)',
-                              color: 'white',
-                              px: 1,
-                              py: 0.5,
-                              borderRadius: 999,
-                              fontWeight: 600,
-                            }}
-                          >
-                            Order: {banner.displayOrder}
-                          </Typography>
-                        </Box>
+            <>
+              <Box
+                sx={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  flexWrap: 'wrap',
+                  gap: 1.5,
+                }}
+              >
+                <Box>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    Creative Library
+                  </Typography>
+                  <Typography color="text.secondary" sx={{ mt: 0.4 }}>
+                    Showing {filteredBanners.length} of {banners.length} banners
+                  </Typography>
+                </Box>
+                <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
+                  <GlassBadge statusColor={theme.palette.success.main}>
+                    {activeCount} active
+                  </GlassBadge>
+                  <GlassBadge statusColor={theme.palette.info.main}>
+                    {linkedCount} linked
+                  </GlassBadge>
+                  <GlassBadge statusColor={theme.palette.warning.main}>
+                    {videoCount} video
+                  </GlassBadge>
+                </Stack>
+              </Box>
 
-                        {/* Content */}
-                        <Box sx={{ p: 2 }}>
-                          <Typography variant="subtitle1" fontWeight={700} noWrap>
-                            {banner.name}
-                          </Typography>
-                          {banner.targetUrl && (
+              <Box
+                sx={{
+                  display: 'grid',
+                  gap: 2.5,
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                }}
+              >
+                <AnimatePresence mode="popLayout">
+                  {filteredBanners.map((banner, index) => (
+                    <Box key={banner.id}>
+                      <motion.div
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, scale: 0.9 }}
+                        transition={{ duration: 0.3, delay: index * 0.05 }}
+                        style={{ height: '100%' }}
+                      >
+                        <Card
+                          sx={{
+                            height: '100%',
+                            display: 'flex',
+                            flexDirection: 'column',
+                            borderRadius: 4.5,
+                            overflow: 'hidden',
+                            boxShadow: isDark
+                              ? '0 18px 36px rgba(2,8,23,0.26)'
+                              : '0 12px 28px rgba(15,23,42,0.08)',
+                            position: 'relative',
+                            background: isDark
+                              ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.9) 100%)'
+                              : 'linear-gradient(180deg, rgba(255,255,255,0.98) 0%, rgba(248,250,252,0.98) 100%)',
+                            border: `1px solid ${alpha(
+                              banner.isActive ? theme.palette.primary.main : '#4f46e5',
+                              isDark ? 0.2 : 0.08,
+                            )}`,
+                          }}
+                        >
+                          {/* Media Preview */}
+                          <Box sx={{ position: 'relative', aspectRatio: '16 / 10' }}>
+                            <CardMedia
+                              component={banner.videoUrl ? 'video' : 'img'}
+                              src={banner.videoUrl || banner.imageUrl}
+                              alt={banner.name}
+                              sx={{
+                                width: '100%',
+                                height: '100%',
+                                objectFit: 'cover',
+                                backgroundColor: isDark ? 'rgba(15,23,42,0.75)' : '#f8fafc',
+                              }}
+                              controls={!!banner.videoUrl}
+                            />
+                            <Chip
+                              label={banner.videoUrl ? 'Video' : 'Image'}
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: 12,
+                                left: 12,
+                                background: 'rgba(15,23,42,0.68)',
+                                color: 'white',
+                                fontWeight: 700,
+                              }}
+                            />
+                            <Chip
+                              label={banner.isActive ? 'Active' : 'Inactive'}
+                              size="small"
+                              sx={{
+                                position: 'absolute',
+                                top: 12,
+                                right: 12,
+                                background: banner.isActive
+                                  ? 'rgba(34, 197, 94, 0.9)'
+                                  : 'rgba(156, 163, 175, 0.9)',
+                                color: 'white',
+                                fontWeight: 600,
+                              }}
+                            />
                             <Typography
                               variant="caption"
-                              color="primary"
-                              sx={{ display: 'block', mt: 0.5 }}
+                              sx={{
+                                position: 'absolute',
+                                bottom: 12,
+                                left: 12,
+                                background: 'rgba(0,0,0,0.6)',
+                                color: 'white',
+                                px: 1,
+                                py: 0.5,
+                                borderRadius: 999,
+                                fontWeight: 600,
+                              }}
+                            >
+                              Order: {banner.displayOrder}
+                            </Typography>
+                          </Box>
+
+                          {/* Content */}
+                          <Box sx={{ p: 2.25, display: 'grid', gap: 1.5, flex: 1 }}>
+                            <Typography variant="subtitle1" fontWeight={800} noWrap>
+                              {banner.name}
+                            </Typography>
+                            <Typography
+                              variant="body2"
+                              color={banner.targetUrl ? 'primary' : 'text.secondary'}
+                              sx={{ display: 'block', mt: -0.5 }}
                               noWrap
                             >
-                              {banner.targetUrl}
+                              {banner.targetUrl || 'No target URL provided'}
                             </Typography>
-                          )}
 
-                          {banner.actionType && banner.actionType !== 'NONE' && (
-                            <Box sx={{ mt: 1 }}>
+                            <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
                               <Chip
-                                label={`${banner.actionType}: ${banner.actionValue || 'N/A'}`}
+                                label={getActionChipLabel(banner)}
                                 size="small"
                                 variant="outlined"
                                 color="secondary"
-                                sx={{ borderRadius: 999, height: 22, fontSize: '0.65rem' }}
+                                sx={{ borderRadius: 999, height: 24, maxWidth: '100%' }}
                               />
-                            </Box>
-                          )}
+                            </Stack>
 
-                          {/* Actions */}
-                          <Stack direction="row" spacing={1} sx={{ mt: 2 }}>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              startIcon={<EditIcon />}
-                              onClick={() => handleOpenEdit(banner)}
+                            {/* Actions */}
+                            <Box
                               sx={{
-                                flex: 1,
-                                borderRadius: 999,
-                                fontWeight: 700,
+                                mt: 'auto',
+                                display: 'grid',
+                                gap: 1,
+                                gridTemplateColumns: 'repeat(2, minmax(0, 1fr)) auto',
                               }}
                             >
-                              Edit
-                            </Button>
-                            <Button
-                              size="small"
-                              variant="outlined"
-                              color={banner.isActive ? 'warning' : 'success'}
-                              startIcon={
-                                banner.isActive ? <VisibilityOffIcon /> : <VisibilityIcon />
-                              }
-                              onClick={() => handleToggleStatus(banner.id, banner.isActive)}
-                              disabled={isToggling}
-                              sx={{
-                                flex: 1,
-                                borderRadius: 999,
-                                fontWeight: 700,
-                              }}
-                            >
-                              {banner.isActive ? 'Hide' : 'Show'}
-                            </Button>
-                            <IconButton
-                              size="small"
-                              color="error"
-                              onClick={() => setDeleteId(banner.id)}
-                              sx={{
-                                border: '1px solid',
-                                borderColor: 'error.main',
-                                borderRadius: 999,
-                              }}
-                            >
-                              <DeleteIcon />
-                            </IconButton>
-                          </Stack>
-                        </Box>
-                      </Card>
-                    </motion.div>
-                  </Grid>
-                ))}
-              </AnimatePresence>
-            </Grid>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                startIcon={<EditIcon />}
+                                onClick={() => handleOpenEdit(banner)}
+                                sx={{
+                                  borderRadius: 999,
+                                  fontWeight: 700,
+                                  minHeight: 40,
+                                }}
+                              >
+                                Edit
+                              </Button>
+                              <Button
+                                size="small"
+                                variant="outlined"
+                                color={banner.isActive ? 'warning' : 'success'}
+                                startIcon={
+                                  banner.isActive ? <VisibilityOffIcon /> : <VisibilityIcon />
+                                }
+                                onClick={() => handleToggleStatus(banner.id, banner.isActive)}
+                                disabled={isToggling}
+                                sx={{
+                                  borderRadius: 999,
+                                  fontWeight: 700,
+                                  minHeight: 40,
+                                }}
+                              >
+                                {banner.isActive ? 'Hide' : 'Show'}
+                              </Button>
+                              <IconButton
+                                size="small"
+                                color="error"
+                                onClick={() => setDeleteId(banner.id)}
+                                sx={{
+                                  border: '1px solid',
+                                  borderColor: 'error.main',
+                                  borderRadius: 999,
+                                  minHeight: 40,
+                                  minWidth: 40,
+                                }}
+                              >
+                                <DeleteIcon />
+                              </IconButton>
+                            </Box>
+                          </Box>
+                        </Card>
+                      </motion.div>
+                    </Box>
+                  ))}
+                </AnimatePresence>
+              </Box>
+            </>
           )}
         </GlassCard>
       </motion.div>

@@ -1,219 +1,149 @@
-import React, { useState } from 'react';
-import { useAppTheme, ThemeMode } from '@contexts/ThemeContext';
-import { Sun, Moon, Monitor, Check } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React from 'react';
+import { motion } from 'framer-motion';
+import { useAppTheme } from '@contexts/ThemeContext';
+import { Moon, Sun } from 'lucide-react';
 
-const OPTIONS: {
-  key: ThemeMode;
-  label: string;
-  desc: string;
-  icon: React.ReactNode;
-  preview: string;
-}[] = [
+const OPTIONS = [
   {
-    key: 'light',
+    key: 'light' as const,
     label: 'Light',
-    desc: 'Airy + Indigo',
-    icon: <Sun size={14} />,
-    preview: 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 100%)',
+    icon: Sun,
+    iconColor: '#f59e0b',
+    activeBackground:
+      'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(254,243,199,0.92) 100%)',
+    iconBackground: 'linear-gradient(135deg, #fff7ed 0%, #fde68a 100%)',
+    activeText: '#b45309',
   },
   {
-    key: 'dark',
+    key: 'dark' as const,
     label: 'Dark',
-    desc: 'Slate + Indigo',
-    icon: <Moon size={14} />,
-    preview: 'linear-gradient(135deg, #0b1120 0%, #4f46e5 100%)',
-  },
-  {
-    key: 'system',
-    label: 'System',
-    desc: 'Follow device',
-    icon: <Monitor size={14} />,
-    preview: 'linear-gradient(135deg, #f8fafc 0%, #e0e7ff 50%, #0b1120 100%)',
+    icon: Moon,
+    iconColor: '#c4b5fd',
+    activeBackground: 'linear-gradient(135deg, rgba(30,41,59,0.98) 0%, rgba(49,46,129,0.92) 100%)',
+    iconBackground: 'linear-gradient(135deg, #312e81 0%, #0f172a 100%)',
+    activeText: '#eef2ff',
   },
 ];
 
 const ThemeSwitcher: React.FC = () => {
-  const { theme, setTheme, effectiveMode } = useAppTheme();
-  const [open, setOpen] = useState(false);
-
-  const current = OPTIONS.find((o) => o.key === theme) ?? OPTIONS[0];
-  const triggerLabel =
-    theme === 'system' ? `System (${effectiveMode === 'dark' ? 'Dark' : 'Light'})` : current.label;
-
-  const IconMap: Record<ThemeMode, React.ReactNode> = {
-    light: <Sun size={14} />,
-    dark: <Moon size={14} />,
-    system: <Monitor size={14} />,
-  };
+  const { setTheme, effectiveMode, isDark } = useAppTheme();
 
   return (
-    <div style={{ position: 'relative' }}>
-      {/* Trigger */}
-      <button
-        onClick={() => setOpen((o) => !o)}
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'flex-end',
+      }}
+    >
+      <div
         style={{
-          display: 'flex',
-          alignItems: 'center',
+          position: 'relative',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(2, minmax(0, 1fr))',
           gap: 6,
-          padding: '7px 14px',
-          borderRadius: 14,
-          border: '1px solid var(--color-border)',
-          background:
-            'linear-gradient(180deg, rgba(255,255,255,0.1) 0%, rgba(255,255,255,0.02) 100%)',
-          backdropFilter: 'blur(12px)',
-          cursor: 'pointer',
-          color: 'var(--color-text)',
-          fontSize: 13,
-          fontWeight: 600,
-          fontFamily: 'inherit',
-          transition: 'all 0.2s ease',
-          height: 40,
-          boxShadow: 'var(--shadow-sm)',
-        }}
-        onMouseEnter={(e) => {
-          const el = e.currentTarget;
-          el.style.borderColor = 'var(--color-accent)';
-          el.style.color = 'var(--color-accent)';
-        }}
-        onMouseLeave={(e) => {
-          const el = e.currentTarget;
-          el.style.borderColor = 'var(--color-border)';
-          el.style.color = 'var(--color-text)';
+          padding: 4,
+          minWidth: 192,
+          borderRadius: 18,
+          border: isDark ? '1px solid rgba(129,140,248,0.22)' : '1px solid rgba(148,163,184,0.18)',
+          background: isDark
+            ? 'linear-gradient(180deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.86) 100%)'
+            : 'linear-gradient(180deg, rgba(255,255,255,0.94) 0%, rgba(248,250,252,0.92) 100%)',
+          boxShadow: isDark ? '0 18px 36px rgba(2,6,23,0.34)' : '0 14px 28px rgba(15,23,42,0.08)',
+          backdropFilter: 'blur(18px)',
+          WebkitBackdropFilter: 'blur(18px)',
         }}
       >
-        {/* Color swatch preview  */}
-        <div
-          style={{
-            width: 14,
-            height: 14,
-            borderRadius: 4,
-            background: current.preview,
-            border: '1px solid var(--color-border-strong)',
-            flexShrink: 0,
-          }}
-        />
-        <span style={{ display: 'flex', alignItems: 'center' }}>{IconMap[theme]}</span>
-        <span>{triggerLabel}</span>
-      </button>
+        {OPTIONS.map((option) => {
+          const Icon = option.icon;
+          const active = effectiveMode === option.key;
 
-      {/* Backdrop */}
-      {open && (
-        <div onClick={() => setOpen(false)} style={{ position: 'fixed', inset: 0, zIndex: 998 }} />
-      )}
-
-      {/* Dropdown */}
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            initial={{ opacity: 0, scale: 0.95, y: -8 }}
-            animate={{ opacity: 1, scale: 1, y: 0 }}
-            exit={{ opacity: 0, scale: 0.95, y: -8 }}
-            transition={{ duration: 0.15, ease: [0.4, 0, 0.2, 1] }}
-            style={{
-              position: 'absolute',
-              top: 'calc(100% + 10px)',
-              right: 0,
-              zIndex: 999,
-              width: 228,
-              background: 'var(--color-card)',
-              border: '1px solid var(--color-border)',
-              borderRadius: 12,
-              boxShadow: 'var(--shadow-lg)',
-              overflow: 'hidden',
-              padding: 6,
-            }}
-          >
-            <div
+          return (
+            <button
+              key={option.key}
+              type="button"
+              onClick={() => setTheme(option.key)}
+              aria-pressed={active}
               style={{
-                padding: '4px 10px 8px',
-                fontSize: 10.5,
-                fontWeight: 700,
-                textTransform: 'uppercase',
-                letterSpacing: '0.08em',
-                color: 'var(--color-text-muted)',
+                position: 'relative',
+                zIndex: 1,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 8,
+                minWidth: 0,
+                height: 40,
+                padding: '0 14px',
+                border: 'none',
+                borderRadius: 14,
+                background: 'transparent',
+                color: active
+                  ? option.activeText
+                  : isDark
+                    ? 'rgba(226,232,240,0.8)'
+                    : 'rgba(71,85,105,0.92)',
+                fontSize: 13,
+                fontWeight: active ? 700 : 600,
+                fontFamily: 'inherit',
+                cursor: 'pointer',
+                transition: 'transform 0.18s ease, color 0.18s ease',
+              }}
+              onMouseEnter={(event) => {
+                event.currentTarget.style.transform = 'translateY(-1px)';
+              }}
+              onMouseLeave={(event) => {
+                event.currentTarget.style.transform = 'translateY(0)';
               }}
             >
-              Appearance
-            </div>
-
-            {OPTIONS.map((opt) => {
-              const selected = theme === opt.key;
-              return (
-                <div
-                  key={opt.key}
-                  onClick={() => {
-                    setTheme(opt.key);
-                    setOpen(false);
-                  }}
+              {active && (
+                <motion.span
+                  layoutId="theme-switch-highlight"
+                  transition={{ type: 'spring', stiffness: 320, damping: 28 }}
                   style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: 10,
-                    padding: '8px 10px',
-                    borderRadius: 8,
-                    cursor: 'pointer',
-                    background: selected ? 'var(--color-accent-soft)' : 'transparent',
-                    transition: 'background 0.15s ease',
+                    position: 'absolute',
+                    inset: 0,
+                    borderRadius: 14,
+                    background: option.activeBackground,
+                    boxShadow:
+                      option.key === 'dark'
+                        ? '0 10px 22px rgba(15,23,42,0.32)'
+                        : '0 10px 22px rgba(245,158,11,0.18)',
                   }}
-                  onMouseEnter={(e) => {
-                    if (!selected)
-                      (e.currentTarget as HTMLDivElement).style.background = 'var(--nav-hover-bg)';
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!selected)
-                      (e.currentTarget as HTMLDivElement).style.background = 'transparent';
-                  }}
-                >
-                  {/* Preview swatch */}
-                  <div
-                    style={{
-                      width: 32,
-                      height: 32,
-                      borderRadius: 8,
-                      flexShrink: 0,
-                      background: opt.preview,
-                      border: selected
-                        ? `2px solid var(--color-accent)`
-                        : '1px solid var(--color-border-strong)',
-                      boxShadow: selected ? `0 0 0 3px var(--color-accent-soft)` : 'none',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      color:
-                        opt.key === 'dark'
-                          ? '#a5b4fc'
-                          : opt.key === 'system'
-                            ? '#d97706'
-                            : '#6366f1',
-                      fontSize: 12,
-                    }}
-                  >
-                    {opt.icon}
-                  </div>
+                />
+              )}
 
-                  <div style={{ flex: 1 }}>
-                    <div
-                      style={{
-                        fontSize: 13,
-                        fontWeight: selected ? 700 : 500,
-                        color: selected ? 'var(--color-accent)' : 'var(--color-text)',
-                      }}
-                    >
-                      {opt.label}
-                    </div>
-                    <div style={{ fontSize: 11, color: 'var(--color-text-muted)' }}>{opt.desc}</div>
-                  </div>
+              <span
+                style={{
+                  position: 'relative',
+                  zIndex: 1,
+                  width: 22,
+                  height: 22,
+                  borderRadius: 999,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  background: active
+                    ? option.iconBackground
+                    : isDark
+                      ? 'rgba(255,255,255,0.08)'
+                      : 'rgba(148,163,184,0.14)',
+                  color: active ? option.iconColor : isDark ? '#cbd5e1' : '#475569',
+                  boxShadow: active
+                    ? option.key === 'dark'
+                      ? 'inset 0 1px 0 rgba(255,255,255,0.18), 0 6px 14px rgba(15,23,42,0.24)'
+                      : 'inset 0 1px 0 rgba(255,255,255,0.75), 0 6px 14px rgba(245,158,11,0.18)'
+                    : 'none',
+                  flexShrink: 0,
+                }}
+              >
+                <Icon size={14} strokeWidth={2.2} />
+              </span>
 
-                  {selected && (
-                    <Check size={13} style={{ color: 'var(--color-accent)', flexShrink: 0 }} />
-                  )}
-                </div>
-              );
-            })}
-          </motion.div>
-        )}
-      </AnimatePresence>
+              <span style={{ position: 'relative', zIndex: 1 }}>{option.label}</span>
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 };

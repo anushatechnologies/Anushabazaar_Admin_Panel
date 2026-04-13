@@ -111,10 +111,14 @@ interface ThemeContextType {
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
+const getPreferredMode = (): 'light' | 'dark' =>
+  window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
+
 export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [theme, setThemeState] = useState<ThemeMode>(() => {
     const saved = localStorage.getItem('app-theme') as ThemeMode | null;
-    return saved && ['light', 'dark', 'system'].includes(saved) ? saved : 'system';
+    if (saved === 'light' || saved === 'dark') return saved;
+    return getPreferredMode();
   });
 
   const [systemIsDark, setSystemIsDark] = useState(
@@ -443,8 +447,9 @@ export const ThemeProvider: React.FC<{ children: ReactNode }> = ({ children }) =
   }, [currentTheme, effectiveMode, theme]);
 
   const setTheme = (nextTheme: ThemeMode) => {
-    setThemeState(nextTheme);
-    localStorage.setItem('app-theme', nextTheme);
+    const normalizedTheme = nextTheme === 'system' ? getPreferredMode() : nextTheme;
+    setThemeState(normalizedTheme);
+    localStorage.setItem('app-theme', normalizedTheme);
   };
 
   return (
