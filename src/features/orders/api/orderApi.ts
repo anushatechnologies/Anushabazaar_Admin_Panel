@@ -4,7 +4,6 @@ import {
   AdminOrderSummaryDto,
   AdminOrderDetailDto,
   AcceptOrderResponse,
-  AcceptOrderRequest,
   RejectOrderResponse,
   RejectOrderRequest,
   AssignDeliveryResponse,
@@ -45,11 +44,10 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'AdminOrders', id }],
     }),
 
-    acceptOrder: builder.mutation<AcceptOrderResponse, AcceptOrderRequest>({
-      query: (requestData) => ({
-        url: `/api/admin/orders/${requestData.orderId}/accept`,
+    acceptOrder: builder.mutation<AcceptOrderResponse, number>({
+      query: (orderId) => ({
+        url: `/api/admin/orders/${orderId}/accept`,
         method: 'POST',
-        body: requestData,
       }),
       invalidatesTags: ['AdminOrders'],
     }),

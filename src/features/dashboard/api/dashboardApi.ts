@@ -1,57 +1,102 @@
 import { baseApiWithAuth } from '@api/baseApi';
 
-export interface DashboardStats {
+// Full shape returned by /api/admin/dashboard/summary
+export interface DashboardSummary {
+  // Orders
   totalOrders: number;
+  todayOrders: number;
+  weekOrders: number;
+  monthOrders: number;
+
+  // Cancelled
+  cancelledTotal: number;
+  cancelledToday: number;
+  cancelledWeek: number;
+  cancelledMonth: number;
+
+  // Delivered
+  deliveredTotal: number;
+  deliveredToday: number;
+  deliveredWeek: number;
+  deliveredMonth: number;
+
+  // Income
+  totalIncome: number;
+  todayIncome: number;
+  weekIncome: number;
+  monthIncome: number;
+  razorpayIncome: number;
+  codIncome: number;
+
+  // Users
   activeUsers: number;
-  todayRevenue: number;
   newCustomers: number;
+
+  // Delivery personnel
+  totalDeliveryPersons: number;
+  approvedDeliveryPersons: number;
+  onlineDeliveryPersons: number;
+  pendingApprovals: number;
+
+  // Delivery orders
+  deliveryOrdersTotal: number;
+  deliveryOrdersActive: number;
+  deliveryOrdersCompleted: number;
 }
 
+// Shape returned by /api/admin/dashboard/analytics?period=...
 export interface OrderAnalytics {
-  pending: number;
+  placed: number;
   confirmed: number;
-  processing: number;
-  shipped: number;
+  assigned: number;
   delivered: number;
   cancelled: number;
-  returned?: number;
-  failed?: number;
-}
-
-export interface SimpleAnalytics {
+  rejected: number;
+  processing: number;
   total: number;
-  successOrders: number;
-}
-
-export interface DashboardSummaryResponse {
-  success: boolean;
-  summary: Partial<DashboardStats>;
 }
 
 export const dashboardApi = baseApiWithAuth.injectEndpoints({
+  overrideExisting: false,
   endpoints: (builder) => ({
-    getDashboardSummary: builder.query<DashboardStats | DashboardSummaryResponse, void>({
+    getDashboardSummary: builder.query<DashboardSummary, void>({
       query: () => '/api/admin/dashboard/summary',
       providesTags: ['Dashboard'],
+      transformResponse: (raw: any) => {
+        // Handle both { summary: {...} } and flat response shapes
+        const s = raw?.summary ?? raw ?? {};
+        return s as DashboardSummary;
+      },
     }),
 
-    getAdminPanelDashboardSummary: builder.query<any, void>({
-      query: () => '/api/delivery-admin/dashboard',
-      providesTags: ['Dashboard'],
-    }),
-
-    getActiveUsers: builder.query<{ count: number }, void>({
-      query: () => '/api/admin/dashboard/active-users',
-      providesTags: ['Dashboard'],
-    }),
-
-    getRecentOrders: builder.query<any, void>({
+    getRecentOrders: builder.query<any[], void>({
       query: () => '/api/admin/dashboard/recent-orders',
       providesTags: ['Dashboard', 'AdminOrders' as any],
+      transformResponse: (raw: any) => {
+        if (Array.isArray(raw)) return raw;
+        if (Array.isArray(raw?.orders)) return raw.orders;
+        return [];
+      },
     }),
 
-    getOrderAnalytics: builder.query<OrderAnalytics | SimpleAnalytics, string>({
+    getOrderAnalytics: builder.query<OrderAnalytics, string>({
       query: (period = 'today') => `/api/admin/dashboard/analytics?period=${period}`,
+      providesTags: ['Dashboard'],
+      transformResponse: (raw: any): OrderAnalytics => ({
+        placed: raw?.placed ?? 0,
+        confirmed: raw?.confirmed ?? 0,
+        assigned: raw?.assigned ?? 0,
+        delivered: raw?.delivered ?? 0,
+        cancelled: raw?.cancelled ?? 0,
+        rejected: raw?.rejected ?? 0,
+        processing: raw?.processing ?? 0,
+        total: raw?.total ?? 0,
+      }),
+    }),
+
+    // Kept for backward compat if other pages import it
+    getActiveUsers: builder.query<{ count: number }, void>({
+      query: () => '/api/admin/dashboard/active-users',
       providesTags: ['Dashboard'],
     }),
   }),
@@ -59,8 +104,7 @@ export const dashboardApi = baseApiWithAuth.injectEndpoints({
 
 export const {
   useGetDashboardSummaryQuery,
-  useGetAdminPanelDashboardSummaryQuery,
-  useGetActiveUsersQuery,
   useGetRecentOrdersQuery,
   useGetOrderAnalyticsQuery,
+  useGetActiveUsersQuery,
 } = dashboardApi;

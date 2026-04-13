@@ -56,14 +56,28 @@ import {
 import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/deliveryApi';
 import { AdminOrderSummaryDto, CustomerAddressDto } from '../types/index';
 
-type VehicleType = 'BIKE' | 'SCOOTY' | 'EV' | 'AUTO' | 'HEAVY';
+type VehicleType = 'BIKE' | 'AUTO' | 'HEAVY';
 
-const VEHICLE_OPTIONS: { value: VehicleType; label: string; emoji: string }[] = [
-  { value: 'BIKE', label: 'Bike', emoji: '🏍️' },
-  { value: 'SCOOTY', label: 'Scooty', emoji: '🛵' },
-  { value: 'EV', label: 'EV', emoji: '⚡' },
-  { value: 'AUTO', label: 'Auto', emoji: '🛺' },
-  { value: 'HEAVY', label: 'Heavy', emoji: '🚚' },
+/**
+ * Three broadcast groups:
+ *  BIKE  → notifies Bike + Scooty + EV riders
+ *  AUTO  → notifies Auto riders only
+ *  HEAVY → notifies Heavy vehicle riders only
+ */
+const VEHICLE_OPTIONS: { value: VehicleType; label: string; emoji: string; subtitle: string }[] = [
+  {
+    value: 'BIKE',
+    label: 'Bike / Scooty / EV',
+    emoji: '🏍️',
+    subtitle: 'Notifies all bike, scooty & EV riders',
+  },
+  { value: 'AUTO', label: 'Auto', emoji: '🛺', subtitle: 'Notifies auto riders only' },
+  {
+    value: 'HEAVY',
+    label: 'Heavy Vehicle',
+    emoji: '🚚',
+    subtitle: 'Notifies heavy vehicle riders only',
+  },
 ];
 import dayjs from 'dayjs';
 import { toast } from '@components/toast/ToastContainer';
@@ -141,7 +155,7 @@ const AdminOrderDashboard: React.FC = () => {
       return;
     }
 
-    const currentIds = new Set(ordersList.map((order) => order.id));
+    const currentIds = new Set<number>(ordersList.map((order: any) => order.id as number));
 
     if (!hasInitializedRealtimeRef.current) {
       knownOrderIdsRef.current = currentIds;
@@ -150,8 +164,8 @@ const AdminOrderDashboard: React.FC = () => {
     }
 
     const newOrders = ordersList
-      .filter((order) => !knownOrderIdsRef.current.has(order.id))
-      .sort((a, b) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
+      .filter((order: any) => !knownOrderIdsRef.current.has(order.id))
+      .sort((a: any, b: any) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
 
     if (newOrders.length > 0) {
       const latestOrder = newOrders[0];
@@ -804,18 +818,40 @@ const AdminOrderDashboard: React.FC = () => {
                   gets the order.
                 </Typography>
                 <Typography variant="subtitle2" fontWeight={700}>
-                  Select Vehicle Type:
+                  Select Vehicle Category:
                 </Typography>
-                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                <Stack spacing={1}>
                   {VEHICLE_OPTIONS.map((opt) => (
-                    <Chip
+                    <Paper
                       key={opt.value}
-                      label={`${opt.emoji} ${opt.label}`}
+                      variant="outlined"
                       onClick={() => setSelectedVehicleType(opt.value)}
-                      color={selectedVehicleType === opt.value ? 'primary' : 'default'}
-                      variant={selectedVehicleType === opt.value ? 'filled' : 'outlined'}
-                      sx={{ fontWeight: 700, fontSize: 14, py: 2.5, px: 1 }}
-                    />
+                      sx={{
+                        p: 1.5,
+                        borderRadius: 2,
+                        cursor: 'pointer',
+                        borderColor: selectedVehicleType === opt.value ? 'primary.main' : 'divider',
+                        bgcolor:
+                          selectedVehicleType === opt.value ? 'primary.main' + '15' : 'transparent',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1.5,
+                        transition: 'all 0.15s',
+                      }}
+                    >
+                      <Typography fontSize={26}>{opt.emoji}</Typography>
+                      <Box flex={1}>
+                        <Typography variant="body2" fontWeight={700}>
+                          {opt.label}
+                        </Typography>
+                        <Typography variant="caption" color="text.secondary">
+                          {opt.subtitle}
+                        </Typography>
+                      </Box>
+                      {selectedVehicleType === opt.value && (
+                        <Chip label="Selected" size="small" color="primary" sx={{ ml: 'auto' }} />
+                      )}
+                    </Paper>
                   ))}
                 </Stack>
                 {broadcastResult && (
