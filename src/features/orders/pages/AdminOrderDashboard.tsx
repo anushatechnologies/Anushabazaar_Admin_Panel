@@ -91,11 +91,13 @@ const AdminOrderDashboard: React.FC = () => {
     },
   );
 
+  const [sendingOtpOrderId, setSendingOtpOrderId] = useState<number | null>(null);
+
   const [acceptOrder] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [assignDelivery, { isLoading: isAssigning }] = useAssignDeliveryMutation();
   const [generateOtp] = useGenerateDeliveryOtpMutation();
-  const [sendStoreOtp] = useSendStorePickupOtpMutation();
+  const [sendStoreOtp, { isLoading: isSendingStoreOtp }] = useSendStorePickupOtpMutation();
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
@@ -229,11 +231,15 @@ const AdminOrderDashboard: React.FC = () => {
   };
 
   const handleSendStoreOtp = async (orderId: number) => {
+    if (sendingOtpOrderId === orderId) return; // prevent double-click
+    setSendingOtpOrderId(orderId);
     try {
       await sendStoreOtp(orderId).unwrap();
       toast.success('Pickup OTP sent to store via WhatsApp!');
     } catch (error: any) {
       toast.error(error.data?.message || 'Failed to send store OTP');
+    } finally {
+      setSendingOtpOrderId(null);
     }
   };
 
@@ -441,8 +447,9 @@ const AdminOrderDashboard: React.FC = () => {
                                 size="small"
                                 startIcon={<SendIcon fontSize="small" />}
                                 onClick={() => handleSendStoreOtp(order.id)}
+                                disabled={sendingOtpOrderId === order.id}
                               >
-                                Store OTP
+                                {sendingOtpOrderId === order.id ? 'Sending…' : 'Store OTP'}
                               </Button>
                             </Stack>
                           )}
@@ -538,14 +545,19 @@ const AdminOrderDashboard: React.FC = () => {
                             <Chip size="small" label={group.storePhone} variant="outlined" />
                           )}
                         </Stack>
-                        <Button
-                          size="small"
-                          variant="outlined"
-                          startIcon={<SendIcon fontSize="small" />}
-                          onClick={() => handleSendStoreOtp(orderDetail.id)}
-                        >
-                          Send OTP
-                        </Button>
+                        {['confirmed', 'assigned'].includes(
+                          (orderDetail.orderStatus ?? '').toLowerCase(),
+                        ) && (
+                          <Button
+                            size="small"
+                            variant="outlined"
+                            startIcon={<SendIcon fontSize="small" />}
+                            onClick={() => handleSendStoreOtp(orderDetail.id)}
+                            disabled={sendingOtpOrderId === orderDetail.id || isSendingStoreOtp}
+                          >
+                            {sendingOtpOrderId === orderDetail.id ? 'Sending…' : 'Send OTP'}
+                          </Button>
+                        )}
                       </Box>
                       <TableContainer>
                         <Table size="small">
