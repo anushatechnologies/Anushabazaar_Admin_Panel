@@ -110,6 +110,25 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
         method: 'POST',
       }),
     }),
+
+    // Broadcast order to all riders of a vehicle type (first-come-first-serve)
+    broadcastOrder: builder.mutation<
+      {
+        success: boolean;
+        broadcastId: number;
+        vehicleType: string;
+        expiresAt: string;
+        message: string;
+      },
+      { orderId: number; vehicleType: string }
+    >({
+      query: ({ orderId, vehicleType }) => ({
+        url: `/api/admin/orders/${orderId}/broadcast`,
+        method: 'POST',
+        body: { vehicleType },
+      }),
+      invalidatesTags: ['AdminOrders'],
+    }),
   }),
   overrideExisting: false,
 });
@@ -128,4 +147,5 @@ export const {
   useAdminStoreAcceptMutation,
   useGenerateDeliveryOtpMutation,
   useSendStorePickupOtpMutation,
+  useBroadcastOrderMutation,
 } = orderApi;

@@ -27,6 +27,9 @@ import {
   ListItemAvatar,
   ListItemText,
   Grid,
+  ToggleButton,
+  ToggleButtonGroup,
+  Alert,
 } from '@mui/material';
 import {
   LocalShipping as LocalShippingIcon,
@@ -38,6 +41,7 @@ import {
   Close as CloseIcon,
   Store as StoreIcon,
   Send as SendIcon,
+  CellTower as BroadcastIcon,
 } from '@mui/icons-material';
 import {
   useGetAdminOrdersQuery,
@@ -47,9 +51,20 @@ import {
   useAssignDeliveryMutation,
   useGenerateDeliveryOtpMutation,
   useSendStorePickupOtpMutation,
+  useBroadcastOrderMutation,
 } from '../api/orderApi';
 import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/deliveryApi';
 import { AdminOrderSummaryDto, CustomerAddressDto } from '../types/index';
+
+type VehicleType = 'BIKE' | 'SCOOTY' | 'EV' | 'AUTO' | 'HEAVY';
+
+const VEHICLE_OPTIONS: { value: VehicleType; label: string; emoji: string }[] = [
+  { value: 'BIKE', label: 'Bike', emoji: '🏍️' },
+  { value: 'SCOOTY', label: 'Scooty', emoji: '🛵' },
+  { value: 'EV', label: 'EV', emoji: '⚡' },
+  { value: 'AUTO', label: 'Auto', emoji: '🛺' },
+  { value: 'HEAVY', label: 'Heavy', emoji: '🚚' },
+];
 import dayjs from 'dayjs';
 import { toast } from '@components/toast/ToastContainer';
 import { useNavigate } from 'react-router-dom';
@@ -72,6 +87,13 @@ const AdminOrderDashboard: React.FC = () => {
   const [rejectReason, setRejectReason] = useState('');
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
+  // Broadcast (vehicle-type FCFS) state
+  const [assignMode, setAssignMode] = useState<'broadcast' | 'manual'>('broadcast');
+  const [selectedVehicleType, setSelectedVehicleType] = useState<VehicleType>('BIKE');
+  const [broadcastResult, setBroadcastResult] = useState<{
+    broadcastId: number;
+    expiresAt: string;
+  } | null>(null);
 
   const {
     data: orders,
@@ -98,6 +120,7 @@ const AdminOrderDashboard: React.FC = () => {
   const [assignDelivery, { isLoading: isAssigning }] = useAssignDeliveryMutation();
   const [generateOtp] = useGenerateDeliveryOtpMutation();
   const [sendStoreOtp, { isLoading: isSendingStoreOtp }] = useSendStorePickupOtpMutation();
+  const [broadcastOrder, { isLoading: isBroadcasting }] = useBroadcastOrderMutation();
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
@@ -212,13 +235,37 @@ const AdminOrderDashboard: React.FC = () => {
           estimatedDeliveryTime: dayjs().add(1, 'hour').toISOString(),
         }).unwrap();
         toast.success('Order assigned successfully!');
-        setAssignDialogOpen(false);
-        setSelectedDeliveryPerson(null);
+        closeAssignDialog();
         refetch();
       } catch (error) {
         toast.error('Failed to assign delivery');
       }
     }
+  };
+
+  const handleBroadcastOrder = async () => {
+    if (!selectedOrderId) return;
+    try {
+      const res = await broadcastOrder({
+        orderId: selectedOrderId,
+        vehicleType: selectedVehicleType,
+      }).unwrap();
+      setBroadcastResult({ broadcastId: res.broadcastId, expiresAt: res.expiresAt });
+      toast.success(
+        `Broadcast sent to all ${selectedVehicleType} riders! First to accept gets the order.`,
+      );
+      refetch();
+    } catch (error: any) {
+      toast.error(error.data?.message || 'Failed to broadcast order');
+    }
+  };
+
+  const closeAssignDialog = () => {
+    setAssignDialogOpen(false);
+    setSelectedDeliveryPerson(null);
+    setBroadcastResult(null);
+    setAssignMode('broadcast');
+    setSelectedVehicleType('BIKE');
   };
 
   const handleGenerateOtp = async (orderId: number) => {
@@ -377,6 +424,20 @@ const AdminOrderDashboard: React.FC = () => {
                         <Typography variant="caption" color="text.secondary">
                           {order.customerPhone}
                         </Typography>
+                        {(order as any).storeNames?.length > 0 && (
+                          <Stack direction="row" spacing={0.5} mt={0.5} flexWrap="wrap">
+                            {(order as any).storeNames.map((s: string) => (
+                              <Chip
+                                key={s}
+                                label={s}
+                                size="small"
+                                icon={<StoreIcon sx={{ fontSize: 12 }} />}
+                                variant="outlined"
+                                sx={{ fontSize: 10 }}
+                              />
+                            ))}
+                          </Stack>
+                        )}
                       </TableCell>
                       <TableCell>
                         <Typography fontWeight={800} color={currentTheme.accent}>
@@ -572,7 +633,27 @@ const AdminOrderDashboard: React.FC = () => {
                             {group.items.map((item: any, i: number) => (
                               <TableRow key={i}>
                                 <TableCell>
-                                  {item.productName} ({item.variantName})
+                                  <Stack direction="row" spacing={1.5} alignItems="center">
+                                    {item.imageUrl && (
+                                      <Avatar
+                                        src={item.imageUrl}
+                                        variant="rounded"
+                                        sx={{
+                                          width: 40,
+                                          height: 40,
+                                          border: `1px solid ${currentTheme.border}`,
+                                        }}
+                                      />
+                                    )}
+                                    <Box>
+                                      <Typography variant="body2" fontWeight={600}>
+                                        {item.productName}
+                                      </Typography>
+                                      <Typography variant="caption" color="text.secondary">
+                                        {item.variantName}
+                                      </Typography>
+                                    </Box>
+                                  </Stack>
                                 </TableCell>
                                 <TableCell align="center">{item.quantity}</TableCell>
                                 <TableCell align="right">₹{item.totalPrice.toFixed(2)}</TableCell>
@@ -609,7 +690,27 @@ const AdminOrderDashboard: React.FC = () => {
                           {orderDetail.items?.map((item: any, i: number) => (
                             <TableRow key={i}>
                               <TableCell>
-                                {item.productName} ({item.variantName})
+                                <Stack direction="row" spacing={1.5} alignItems="center">
+                                  {item.imageUrl && (
+                                    <Avatar
+                                      src={item.imageUrl}
+                                      variant="rounded"
+                                      sx={{
+                                        width: 40,
+                                        height: 40,
+                                        border: `1px solid ${currentTheme.border}`,
+                                      }}
+                                    />
+                                  )}
+                                  <Box>
+                                    <Typography variant="body2" fontWeight={600}>
+                                      {item.productName}
+                                    </Typography>
+                                    <Typography variant="caption" color="text.secondary">
+                                      {item.variantName}
+                                    </Typography>
+                                  </Box>
+                                </Stack>
                               </TableCell>
                               <TableCell align="center">{item.quantity}</TableCell>
                               <TableCell align="right">₹{item.totalPrice.toFixed(2)}</TableCell>
@@ -665,50 +766,124 @@ const AdminOrderDashboard: React.FC = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog
-        open={assignDialogOpen}
-        onClose={() => setAssignDialogOpen(false)}
-        fullWidth
-        maxWidth="xs"
-      >
-        <DialogTitle>Assign Delivery Partner</DialogTitle>
+      {/* Assign / Broadcast Dialog */}
+      <Dialog open={assignDialogOpen} onClose={closeAssignDialog} fullWidth maxWidth="sm">
+        <DialogTitle
+          sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+        >
+          Assign Delivery Partner
+          <IconButton onClick={closeAssignDialog}>
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
         <DialogContent>
-          {isLoadingPersonnel ? (
-            <CircularProgress />
-          ) : availablePersonnel?.availableDeliveryPersons?.length ? (
-            <Stack spacing={2}>
-              {availablePersonnel.availableDeliveryPersons.map((p) => (
-                <ListItemButton
-                  key={p.id}
-                  selected={selectedDeliveryPerson === p.id}
-                  onClick={() => setSelectedDeliveryPerson(p.id)}
-                  sx={{ borderRadius: 4 }}
-                >
-                  <ListItemAvatar>
-                    <Avatar sx={{ bgcolor: currentTheme.accent }}>
-                      <PersonIcon />
-                    </Avatar>
-                  </ListItemAvatar>
-                  <ListItemText
-                    primary={`${p.firstName} ${p.lastName}`}
-                    secondary={p.phoneNumber}
-                  />
-                </ListItemButton>
-              ))}
-            </Stack>
-          ) : (
-            <Typography color="error">No riders online</Typography>
-          )}
+          {/* Mode selector */}
+          <Stack spacing={2}>
+            <ToggleButtonGroup
+              value={assignMode}
+              exclusive
+              onChange={(_, v) => {
+                if (v) setAssignMode(v);
+              }}
+              fullWidth
+              size="small"
+              sx={{ mb: 1 }}
+            >
+              <ToggleButton value="broadcast" sx={{ gap: 1 }}>
+                <BroadcastIcon fontSize="small" /> Broadcast (First-Come-First-Serve)
+              </ToggleButton>
+              <ToggleButton value="manual" sx={{ gap: 1 }}>
+                <PersonIcon fontSize="small" /> Manual Select
+              </ToggleButton>
+            </ToggleButtonGroup>
+
+            {assignMode === 'broadcast' ? (
+              <Stack spacing={2}>
+                <Typography variant="body2" color="text.secondary">
+                  Broadcast to all online riders of the chosen vehicle type. First rider to accept
+                  gets the order.
+                </Typography>
+                <Typography variant="subtitle2" fontWeight={700}>
+                  Select Vehicle Type:
+                </Typography>
+                <Stack direction="row" spacing={1} flexWrap="wrap" useFlexGap>
+                  {VEHICLE_OPTIONS.map((opt) => (
+                    <Chip
+                      key={opt.value}
+                      label={`${opt.emoji} ${opt.label}`}
+                      onClick={() => setSelectedVehicleType(opt.value)}
+                      color={selectedVehicleType === opt.value ? 'primary' : 'default'}
+                      variant={selectedVehicleType === opt.value ? 'filled' : 'outlined'}
+                      sx={{ fontWeight: 700, fontSize: 14, py: 2.5, px: 1 }}
+                    />
+                  ))}
+                </Stack>
+                {broadcastResult && (
+                  <Alert severity="success" icon={<BroadcastIcon />}>
+                    Broadcast sent! Expires at {dayjs(broadcastResult.expiresAt).format('hh:mm A')}.
+                    Waiting for a rider to accept...
+                  </Alert>
+                )}
+              </Stack>
+            ) : (
+              <Stack spacing={1}>
+                <Typography variant="body2" color="text.secondary">
+                  Manually assign to a specific available rider.
+                </Typography>
+                {isLoadingPersonnel ? (
+                  <CircularProgress size={28} />
+                ) : availablePersonnel?.availableDeliveryPersons?.length ? (
+                  availablePersonnel.availableDeliveryPersons.map((p) => (
+                    <ListItemButton
+                      key={p.id}
+                      selected={selectedDeliveryPerson === p.id}
+                      onClick={() => setSelectedDeliveryPerson(p.id)}
+                      sx={{ borderRadius: 3 }}
+                    >
+                      <ListItemAvatar>
+                        <Avatar sx={{ bgcolor: currentTheme.accent }}>
+                          <PersonIcon />
+                        </Avatar>
+                      </ListItemAvatar>
+                      <ListItemText
+                        primary={`${p.firstName} ${p.lastName} — ${p.vehicleType}`}
+                        secondary={p.phoneNumber}
+                      />
+                    </ListItemButton>
+                  ))
+                ) : (
+                  <Alert severity="warning">No riders are currently online.</Alert>
+                )}
+              </Stack>
+            )}
+          </Stack>
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setAssignDialogOpen(false)}>Cancel</Button>
-          <Button
-            variant="contained"
-            disabled={!selectedDeliveryPerson || isAssigning}
-            onClick={handleConfirmAssignDelivery}
-          >
-            Assign
-          </Button>
+          <Button onClick={closeAssignDialog}>Cancel</Button>
+          {assignMode === 'broadcast' ? (
+            <Button
+              variant="contained"
+              startIcon={
+                isBroadcasting ? <CircularProgress size={16} color="inherit" /> : <BroadcastIcon />
+              }
+              disabled={isBroadcasting}
+              onClick={handleBroadcastOrder}
+              color="secondary"
+            >
+              {isBroadcasting ? 'Broadcasting…' : `Broadcast to ${selectedVehicleType} Riders`}
+            </Button>
+          ) : (
+            <Button
+              variant="contained"
+              disabled={!selectedDeliveryPerson || isAssigning}
+              onClick={handleConfirmAssignDelivery}
+              startIcon={
+                isAssigning ? <CircularProgress size={16} color="inherit" /> : <LocalShippingIcon />
+              }
+            >
+              {isAssigning ? 'Assigning…' : 'Assign'}
+            </Button>
+          )}
         </DialogActions>
       </Dialog>
     </Box>

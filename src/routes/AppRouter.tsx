@@ -25,6 +25,7 @@ const NotificationManagement = lazy(
   () => import('@features/notifications/pages/NotificationManagement'),
 );
 const StoreType = lazy(() => import('@features/store_type/pages/Store_type'));
+const StoreDashboard = lazy(() => import('@features/store_type/pages/StoreDashboard'));
 const Settings = lazy(() => import('@features/settings/pages/settings'));
 const Users = lazy(() => import('@features/users/pages/users'));
 // const Logs = lazy(() => import("@features/logs/pages/Logs")); // Blocked by .gitignore
@@ -83,6 +84,7 @@ const AppRouter: React.FC = () => {
               <Route path="/terms&conditions" element={<TermsConditions />} />
               <Route path="/notifications" element={<NotificationManagement />} />
               <Route path="/store-type" element={<StoreType />} />
+              <Route path="/store-dashboard" element={<StoreDashboard />} />
 
               <Route path="/categories" element={<CategoryList />} />
               <Route path="/subcategories" element={<SubCategoryList />} />

@@ -631,6 +631,22 @@ export const adminApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Stores'],
     }),
 
+    // SECTION N2 - Store Dashboard (analytics)
+    getStoreDashboard: builder.query<any[], void>({
+      query: () => '/api/admin/stores/dashboard',
+      providesTags: ['Stores'],
+    }),
+
+    getStoreOrders: builder.query<any[], number>({
+      query: (storeId) => `/api/admin/stores/${storeId}/orders`,
+      providesTags: (result, error, id) => [{ type: 'Stores', id }],
+    }),
+
+    getStoreIncome: builder.query<any, number>({
+      query: (storeId) => `/api/admin/stores/${storeId}/income`,
+      providesTags: (result, error, id) => [{ type: 'Stores', id }],
+    }),
+
     // SECTION O - Payout Management
     getAllPayouts: builder.query<any[], void>({
       query: () => '/api/payouts',
@@ -749,6 +765,10 @@ export const {
   useCreateStoreAltMutation,
   useUpdateStoreAltMutation,
   useDeleteStoreAltMutation,
+  // Store Dashboard
+  useGetStoreDashboardQuery,
+  useGetStoreOrdersQuery,
+  useGetStoreIncomeQuery,
   // Payout Management
   useGetAllPayoutsQuery,
   useGetPendingPayoutsQuery,

@@ -2,6 +2,7 @@ import {
   Dashboard,
   Payment,
   Store,
+  Storefront,
   Category,
   Inventory2,
   Policy,
@@ -77,7 +78,10 @@ export const RouteLinks: RouteLinkGroup[] = [
   // ---------------- STORE ----------------
   {
     section: 'Store',
-    links: [{ name: 'Store Types', path: '/store-type', Icon: Store }],
+    links: [
+      { name: 'Store List', path: '/store-type', Icon: Store },
+      { name: 'Store Dashboard', path: '/store-dashboard', Icon: Storefront },
+    ],
   },
 
   // ---------------- DELIVERY ----------------
