@@ -102,6 +102,14 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
         method: 'POST',
       }),
     }),
+
+    // Send pickup OTP to store via WhatsApp (admin-triggered)
+    sendStorePickupOtp: builder.mutation<{ success: boolean; message: string }, number>({
+      query: (orderId) => ({
+        url: `/api/admin/orders/${orderId}/send-store-otp`,
+        method: 'POST',
+      }),
+    }),
   }),
   overrideExisting: false,
 });
@@ -119,4 +127,5 @@ export const {
   useAssignDeliveryMutation,
   useAdminStoreAcceptMutation,
   useGenerateDeliveryOtpMutation,
+  useSendStorePickupOtpMutation,
 } = orderApi;

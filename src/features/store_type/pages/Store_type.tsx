@@ -227,8 +227,30 @@ export default function StoreTypePage() {
             {
               header: 'Location',
               key: 'address',
-              render: (item: StoreType) =>
-                item.address ? `${item.address}${item.city ? ', ' + item.city : ''}` : 'Not added',
+              render: (item: StoreType) => (
+                <div className="space-y-1">
+                  <div>
+                    {item.address
+                      ? `${item.address}${item.city ? ', ' + item.city : ''}`
+                      : 'Not added'}
+                  </div>
+                  {item.latitude && item.longitude ? (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                      style={{ backgroundColor: 'rgba(22,163,74,0.12)', color: '#16a34a' }}
+                    >
+                      📍 GPS set
+                    </span>
+                  ) : (
+                    <span
+                      className="inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-semibold"
+                      style={{ backgroundColor: 'rgba(234,179,8,0.12)', color: '#b45309' }}
+                    >
+                      ⚠ No GPS
+                    </span>
+                  )}
+                </div>
+              ),
             },
             {
               header: 'Order',

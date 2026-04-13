@@ -24,6 +24,8 @@ export default function AddStoreType({ initialData, onSave, onClose }: Props) {
   const [packageCost, setPackageCost] = useState(initialData?.packageCost || '');
   const [rating, setRating] = useState<number | ''>(initialData?.rating ?? '');
   const [preferredOrder, setPreferredOrder] = useState(initialData?.preferredOrder ?? 0);
+  const [latitude, setLatitude] = useState<number | ''>(initialData?.latitude ?? '');
+  const [longitude, setLongitude] = useState<number | ''>(initialData?.longitude ?? '');
   const [imagePreview, setImagePreview] = useState<string | undefined>(initialData?.imageUrl);
   const [imageFile, setImageFile] = useState<File | null>(null);
 
@@ -58,6 +60,8 @@ export default function AddStoreType({ initialData, onSave, onClose }: Props) {
         packageCost: packageCost.trim() || undefined,
         rating: rating !== '' ? Number(rating) : undefined,
         preferredOrder: Number(preferredOrder),
+        latitude: latitude !== '' ? Number(latitude) : undefined,
+        longitude: longitude !== '' ? Number(longitude) : undefined,
       },
       imageFile || undefined,
     );
@@ -151,6 +155,32 @@ export default function AddStoreType({ initialData, onSave, onClose }: Props) {
                   placeholder="500001"
                   value={pincode}
                   onChange={(e) => setPincode(e.target.value)}
+                  className={inputClass}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium opacity-75">Latitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="17.3850"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value === '' ? '' : Number(e.target.value))}
+                  className={inputClass}
+                  style={inputStyle}
+                />
+              </div>
+              <div>
+                <label className="mb-2 block text-sm font-medium opacity-75">Longitude</label>
+                <input
+                  type="number"
+                  step="any"
+                  placeholder="78.4867"
+                  value={longitude}
+                  onChange={(e) =>
+                    setLongitude(e.target.value === '' ? '' : Number(e.target.value))
+                  }
                   className={inputClass}
                   style={inputStyle}
                 />

@@ -22,6 +22,8 @@ export interface StoreType {
   packageCost?: string;
   rating?: number;
   preferredOrder?: number;
+  latitude?: number;
+  longitude?: number;
   createdAt?: string;
   updatedAt?: string;
   // store1Id used by frontend store-type linking (not a backend field in Store entity)
@@ -44,6 +46,8 @@ export interface StoreRequest {
   packageCost?: string;
   rating?: number;
   preferredOrder?: number;
+  latitude?: number;
+  longitude?: number;
 }
 
 export const storeTypeApi = baseApiWithAuth.injectEndpoints({

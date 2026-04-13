@@ -36,6 +36,8 @@ import {
   Schedule as TimeIcon,
   VpnKey as OtpIcon,
   Close as CloseIcon,
+  Store as StoreIcon,
+  Send as SendIcon,
 } from '@mui/icons-material';
 import {
   useGetAdminOrdersQuery,
@@ -44,6 +46,7 @@ import {
   useRejectOrderMutation,
   useAssignDeliveryMutation,
   useGenerateDeliveryOtpMutation,
+  useSendStorePickupOtpMutation,
 } from '../api/orderApi';
 import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/deliveryApi';
 import { AdminOrderSummaryDto, CustomerAddressDto } from '../types/index';
@@ -92,6 +95,7 @@ const AdminOrderDashboard: React.FC = () => {
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [assignDelivery, { isLoading: isAssigning }] = useAssignDeliveryMutation();
   const [generateOtp] = useGenerateDeliveryOtpMutation();
+  const [sendStoreOtp] = useSendStorePickupOtpMutation();
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
@@ -147,7 +151,6 @@ const AdminOrderDashboard: React.FC = () => {
 
   const filteredOrders = useMemo(() => {
     const toSt = (st?: string) => (st ?? '').toLowerCase();
-
     if (activeTab === 0) return ordersList;
     if (activeTab === 1)
       return ordersList.filter((o: AdminOrderSummaryDto) => toSt(o.orderStatus) === 'placed');
@@ -155,16 +158,22 @@ const AdminOrderDashboard: React.FC = () => {
       return ordersList.filter((o: AdminOrderSummaryDto) => toSt(o.orderStatus) === 'confirmed');
     if (activeTab === 3)
       return ordersList.filter((o: AdminOrderSummaryDto) => toSt(o.orderStatus) === 'assigned');
+    if (activeTab === 4)
+      return ordersList.filter((o: AdminOrderSummaryDto) => toSt(o.orderStatus) === 'delivered');
+    if (activeTab === 5)
+      return ordersList.filter((o: AdminOrderSummaryDto) =>
+        ['cancelled', 'rejected'].includes(toSt(o.orderStatus)),
+      );
     return ordersList;
   }, [ordersList, activeTab]);
 
   const getStatusColor = (status: string) => {
     const s = status?.toLowerCase() || '';
     if (s === 'placed') return '#f59e0b';
-    if (s === 'confirmed') return '#10b981';
+    if (s === 'confirmed') return '#8b5cf6';
     if (s === 'assigned') return '#3b82f6';
     if (s === 'delivered') return '#059669';
-    if (s === 'cancelled') return '#ef4444';
+    if (s === 'cancelled' || s === 'rejected') return '#ef4444';
     return '#6b7280';
   };
 
@@ -216,6 +225,15 @@ const AdminOrderDashboard: React.FC = () => {
       toast.success(`New Delivery OTP: ${res.deliveryOtp}`, 6000);
     } catch (error: any) {
       toast.error('Failed to generate OTP');
+    }
+  };
+
+  const handleSendStoreOtp = async (orderId: number) => {
+    try {
+      await sendStoreOtp(orderId).unwrap();
+      toast.success('Pickup OTP sent to store via WhatsApp!');
+    } catch (error: any) {
+      toast.error(error.data?.message || 'Failed to send store OTP');
     }
   };
 
@@ -275,11 +293,28 @@ const AdminOrderDashboard: React.FC = () => {
           backdropFilter: 'blur(10px)',
         }}
       >
-        <Tabs value={activeTab} onChange={(_, v) => setActiveTab(v)}>
-          <Tab label="All Orders" />
-          <Tab label="New (Pending)" />
-          <Tab label="To Assign" />
-          <Tab label="Ongoing" />
+        <Tabs
+          value={activeTab}
+          onChange={(_, v) => setActiveTab(v)}
+          variant="scrollable"
+          scrollButtons="auto"
+        >
+          <Tab label={`All (${ordersList.length})`} />
+          <Tab
+            label={`New Orders (${ordersList.filter((o: AdminOrderSummaryDto) => (o.orderStatus ?? '').toLowerCase() === 'placed').length})`}
+          />
+          <Tab
+            label={`Assign Rider (${ordersList.filter((o: AdminOrderSummaryDto) => (o.orderStatus ?? '').toLowerCase() === 'confirmed').length})`}
+          />
+          <Tab
+            label={`In Progress (${ordersList.filter((o: AdminOrderSummaryDto) => (o.orderStatus ?? '').toLowerCase() === 'assigned').length})`}
+          />
+          <Tab
+            label={`Delivered (${ordersList.filter((o: AdminOrderSummaryDto) => (o.orderStatus ?? '').toLowerCase() === 'delivered').length})`}
+          />
+          <Tab
+            label={`Cancelled (${ordersList.filter((o: AdminOrderSummaryDto) => ['cancelled', 'rejected'].includes((o.orderStatus ?? '').toLowerCase())).length})`}
+          />
         </Tabs>
       </Paper>
 
@@ -389,26 +424,37 @@ const AdminOrderDashboard: React.FC = () => {
                             </>
                           )}
                           {(order.orderStatus ?? '').toLowerCase() === 'confirmed' && (
-                            <Button
-                              variant="contained"
-                              size="small"
-                              onClick={() => {
-                                setSelectedOrderId(order.id);
-                                setAssignDialogOpen(true);
-                              }}
-                              startIcon={<LocalShippingIcon />}
-                            >
-                              Assign
-                            </Button>
+                            <Stack direction="row" spacing={1}>
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => {
+                                  setSelectedOrderId(order.id);
+                                  setAssignDialogOpen(true);
+                                }}
+                                startIcon={<LocalShippingIcon />}
+                              >
+                                Assign Rider
+                              </Button>
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<SendIcon fontSize="small" />}
+                                onClick={() => handleSendStoreOtp(order.id)}
+                              >
+                                Store OTP
+                              </Button>
+                            </Stack>
                           )}
                           {(order.orderStatus ?? '').toLowerCase() === 'assigned' && (
-                            <IconButton
+                            <Button
+                              variant="outlined"
                               size="small"
-                              color="secondary"
+                              startIcon={<OtpIcon fontSize="small" />}
                               onClick={() => handleGenerateOtp(order.id)}
                             >
-                              <OtpIcon fontSize="small" />
-                            </IconButton>
+                              Delivery OTP
+                            </Button>
                           )}
                         </Stack>
                       </TableCell>
@@ -471,38 +517,110 @@ const AdminOrderDashboard: React.FC = () => {
                     <Typography variant="body1">{formatAddress(orderDetail.address)}</Typography>
                   </Paper>
                 </Grid>
-                <Grid size={12}>
-                  <Typography variant="overline" color="text.secondary">
-                    Items
-                  </Typography>
-                  <TableContainer>
-                    <Table size="small">
-                      <TableHead>
-                        <TableRow>
-                          <TableCell>Item</TableCell>
-                          <TableCell align="center">Qty</TableCell>
-                          <TableCell align="right">Total</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {orderDetail.items?.map((item: any, i: number) => (
-                          <TableRow key={i}>
-                            <TableCell>
-                              {item.productName} ({item.variantName})
-                            </TableCell>
-                            <TableCell align="center">{item.quantity}</TableCell>
-                            <TableCell align="right">₹{item.totalPrice.toFixed(2)}</TableCell>
+                {/* Store groups — show which store fulfils which items */}
+                {orderDetail.storeGroups && orderDetail.storeGroups.length > 0 ? (
+                  orderDetail.storeGroups.map((group: any) => (
+                    <Grid size={12} key={group.storeId}>
+                      <Box
+                        sx={{
+                          display: 'flex',
+                          alignItems: 'center',
+                          justifyContent: 'space-between',
+                          mb: 1,
+                        }}
+                      >
+                        <Stack direction="row" spacing={1} alignItems="center">
+                          <StoreIcon fontSize="small" color="primary" />
+                          <Typography variant="subtitle2" fontWeight={800}>
+                            {group.storeName}
+                          </Typography>
+                          {group.storePhone && (
+                            <Chip size="small" label={group.storePhone} variant="outlined" />
+                          )}
+                        </Stack>
+                        <Button
+                          size="small"
+                          variant="outlined"
+                          startIcon={<SendIcon fontSize="small" />}
+                          onClick={() => handleSendStoreOtp(orderDetail.id)}
+                        >
+                          Send OTP
+                        </Button>
+                      </Box>
+                      <TableContainer>
+                        <Table size="small">
+                          <TableHead>
+                            <TableRow>
+                              <TableCell>Item</TableCell>
+                              <TableCell align="center">Qty</TableCell>
+                              <TableCell align="right">Total</TableCell>
+                            </TableRow>
+                          </TableHead>
+                          <TableBody>
+                            {group.items.map((item: any, i: number) => (
+                              <TableRow key={i}>
+                                <TableCell>
+                                  {item.productName} ({item.variantName})
+                                </TableCell>
+                                <TableCell align="center">{item.quantity}</TableCell>
+                                <TableCell align="right">₹{item.totalPrice.toFixed(2)}</TableCell>
+                              </TableRow>
+                            ))}
+                            <TableRow>
+                              <TableCell colSpan={2} align="right" sx={{ fontWeight: 700 }}>
+                                Store Subtotal
+                              </TableCell>
+                              <TableCell align="right" sx={{ fontWeight: 700 }}>
+                                ₹{group.subtotal.toFixed(2)}
+                              </TableCell>
+                            </TableRow>
+                          </TableBody>
+                        </Table>
+                      </TableContainer>
+                    </Grid>
+                  ))
+                ) : (
+                  <Grid size={12}>
+                    <Typography variant="overline" color="text.secondary">
+                      Items
+                    </Typography>
+                    <TableContainer>
+                      <Table size="small">
+                        <TableHead>
+                          <TableRow>
+                            <TableCell>Item</TableCell>
+                            <TableCell align="center">Qty</TableCell>
+                            <TableCell align="right">Total</TableCell>
                           </TableRow>
-                        ))}
-                        <TableRow>
-                          <TableCell colSpan={2} align="right">
-                            Grand Total
-                          </TableCell>
-                          <TableCell align="right">₹{orderDetail.grandTotal?.toFixed(2)}</TableCell>
-                        </TableRow>
-                      </TableBody>
-                    </Table>
-                  </TableContainer>
+                        </TableHead>
+                        <TableBody>
+                          {orderDetail.items?.map((item: any, i: number) => (
+                            <TableRow key={i}>
+                              <TableCell>
+                                {item.productName} ({item.variantName})
+                              </TableCell>
+                              <TableCell align="center">{item.quantity}</TableCell>
+                              <TableCell align="right">₹{item.totalPrice.toFixed(2)}</TableCell>
+                            </TableRow>
+                          ))}
+                        </TableBody>
+                      </Table>
+                    </TableContainer>
+                  </Grid>
+                )}
+                <Grid size={12}>
+                  <Box
+                    sx={{
+                      display: 'flex',
+                      justifyContent: 'flex-end',
+                      pt: 1,
+                      borderTop: `1px solid ${currentTheme.border}`,
+                    }}
+                  >
+                    <Typography variant="h6" fontWeight={800}>
+                      Grand Total: ₹{orderDetail.grandTotal?.toFixed(2)}
+                    </Typography>
+                  </Box>
                 </Grid>
               </Grid>
             )
