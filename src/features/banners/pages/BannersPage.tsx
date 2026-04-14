@@ -61,6 +61,7 @@ interface BannerFormData {
   actionType: string;
   actionValue: string;
   displayOrder: number;
+  targetApp: 'CUSTOMER' | 'DELIVERY' | 'BOTH';
   image: File | null;
   video: File | null;
 }
@@ -71,6 +72,7 @@ export default function BannersPage() {
   const { handleError } = useErrorHandler();
   const [search, setSearch] = useState('');
   const [filterStatus, setFilterStatus] = useState<'all' | 'active' | 'inactive'>('all');
+  const [filterApp, setFilterApp] = useState<'all' | 'CUSTOMER' | 'DELIVERY' | 'BOTH'>('all');
   const [modalOpen, setModalOpen] = useState(false);
   const [editingBanner, setEditingBanner] = useState<Banner | null>(null);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -83,6 +85,7 @@ export default function BannersPage() {
     actionType: 'NONE',
     actionValue: '',
     displayOrder: 1,
+    targetApp: 'CUSTOMER',
     image: null,
     video: null,
   });
@@ -107,10 +110,12 @@ export default function BannersPage() {
             : filterStatus === 'active'
               ? banner.isActive
               : !banner.isActive;
-        return matchesSearch && matchesStatus;
+        const matchesApp =
+          filterApp === 'all' ? true : (banner.targetApp || 'CUSTOMER') === filterApp;
+        return matchesSearch && matchesStatus && matchesApp;
       })
       .sort((a, b) => a.displayOrder - b.displayOrder);
-  }, [banners, search, filterStatus]);
+  }, [banners, search, filterStatus, filterApp]);
 
   const activeCount = useMemo(() => banners.filter((banner) => banner.isActive).length, [banners]);
   const videoCount = useMemo(
@@ -136,6 +141,7 @@ export default function BannersPage() {
       actionType: 'NONE',
       actionValue: '',
       displayOrder: banners.length + 1,
+      targetApp: 'CUSTOMER',
       image: null,
       video: null,
     });
@@ -152,6 +158,7 @@ export default function BannersPage() {
       actionType: banner.actionType || 'NONE',
       actionValue: banner.actionValue || '',
       displayOrder: banner.displayOrder,
+      targetApp: (banner.targetApp as 'CUSTOMER' | 'DELIVERY' | 'BOTH') || 'CUSTOMER',
       image: null,
       video: null,
     });
@@ -199,6 +206,7 @@ export default function BannersPage() {
     submitFormData.append('actionType', formData.actionType);
     submitFormData.append('actionValue', formData.actionValue);
     submitFormData.append('displayOrder', String(formData.displayOrder));
+    submitFormData.append('targetApp', formData.targetApp);
     if (formData.image) submitFormData.append('image', formData.image);
     if (formData.video) submitFormData.append('video', formData.video);
 
@@ -411,7 +419,7 @@ export default function BannersPage() {
             backdropFilter: 'blur(14px)',
             borderRadius: 4,
             border: `1px solid ${alpha('#4f46e5', isDark ? 0.24 : 0.12)}`,
-            alignItems: 'center',
+            alignItems: 'start',
             boxShadow: isDark
               ? '0 18px 36px rgba(2,8,23,0.24)'
               : '0 14px 28px rgba(79,70,229,0.08)',
@@ -438,23 +446,60 @@ export default function BannersPage() {
           />
 
           <Box
-            sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { lg: 'flex-end' } }}
+            sx={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 1,
+              alignItems: { lg: 'flex-end' },
+            }}
           >
-            {(['all', 'active', 'inactive'] as const).map((status) => (
-              <Button
-                key={status}
-                size="small"
-                variant={filterStatus === status ? 'contained' : 'outlined'}
-                onClick={() => setFilterStatus(status)}
-                sx={{
-                  borderRadius: 999,
-                  fontWeight: 700,
-                  px: 2,
-                }}
-              >
-                {status.charAt(0).toUpperCase() + status.slice(1)}
-              </Button>
-            ))}
+            {/* Status filter */}
+            <Box
+              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { lg: 'flex-end' } }}
+            >
+              {(['all', 'active', 'inactive'] as const).map((status) => (
+                <Button
+                  key={status}
+                  size="small"
+                  variant={filterStatus === status ? 'contained' : 'outlined'}
+                  onClick={() => setFilterStatus(status)}
+                  sx={{ borderRadius: 999, fontWeight: 700, px: 2 }}
+                >
+                  {status.charAt(0).toUpperCase() + status.slice(1)}
+                </Button>
+              ))}
+            </Box>
+
+            {/* Target App filter */}
+            <Box
+              sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { lg: 'flex-end' } }}
+            >
+              {(
+                [
+                  { value: 'all', label: 'All Apps', color: '#6366f1' },
+                  { value: 'CUSTOMER', label: '🛍️ Customer', color: '#b45309' },
+                  { value: 'DELIVERY', label: '🛵 Delivery', color: '#059669' },
+                  { value: 'BOTH', label: '📱 Both', color: '#4f46e5' },
+                ] as const
+              ).map(({ value, label, color }) => (
+                <Button
+                  key={value}
+                  size="small"
+                  variant={filterApp === value ? 'contained' : 'outlined'}
+                  onClick={() => setFilterApp(value)}
+                  sx={{
+                    borderRadius: 999,
+                    fontWeight: 700,
+                    px: 2,
+                    ...(filterApp === value
+                      ? { background: color, '&:hover': { background: color } }
+                      : { color, borderColor: color }),
+                  }}
+                >
+                  {label}
+                </Button>
+              ))}
+            </Box>
           </Box>
         </Box>
       </motion.div>
@@ -625,6 +670,33 @@ export default function BannersPage() {
                                 color="secondary"
                                 sx={{ borderRadius: 999, height: 24, maxWidth: '100%' }}
                               />
+                              <Chip
+                                label={
+                                  banner.targetApp === 'DELIVERY'
+                                    ? '🛵 Delivery App'
+                                    : banner.targetApp === 'BOTH'
+                                      ? '📱 Both Apps'
+                                      : '🛍️ Customer App'
+                                }
+                                size="small"
+                                sx={{
+                                  borderRadius: 999,
+                                  height: 24,
+                                  fontWeight: 700,
+                                  background:
+                                    banner.targetApp === 'DELIVERY'
+                                      ? 'rgba(16,185,129,0.12)'
+                                      : banner.targetApp === 'BOTH'
+                                        ? 'rgba(99,102,241,0.12)'
+                                        : 'rgba(245,158,11,0.12)',
+                                  color:
+                                    banner.targetApp === 'DELIVERY'
+                                      ? '#059669'
+                                      : banner.targetApp === 'BOTH'
+                                        ? '#4f46e5'
+                                        : '#b45309',
+                                }}
+                              />
                             </Stack>
 
                             {/* Actions */}
@@ -750,6 +822,27 @@ export default function BannersPage() {
               inputProps={{ min: 1 }}
               sx={{ '& .MuiOutlinedInput-root': { borderRadius: 3 } }}
             />
+
+            {/* Target App Selector */}
+            <FormControl fullWidth>
+              <InputLabel id="target-app-label">Target App *</InputLabel>
+              <Select
+                labelId="target-app-label"
+                value={formData.targetApp}
+                label="Target App *"
+                onChange={(e) =>
+                  setFormData({
+                    ...formData,
+                    targetApp: e.target.value as 'CUSTOMER' | 'DELIVERY' | 'BOTH',
+                  })
+                }
+                sx={{ borderRadius: 3 }}
+              >
+                <MenuItem value="CUSTOMER">🛍️ Customer App only</MenuItem>
+                <MenuItem value="DELIVERY">🛵 Delivery Partner App only</MenuItem>
+                <MenuItem value="BOTH">📱 Both Apps</MenuItem>
+              </Select>
+            </FormControl>
 
             {/* Action Type Selector */}
             <FormControl fullWidth sx={{ mb: 2 }}>

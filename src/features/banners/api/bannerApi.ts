@@ -1,5 +1,7 @@
 import { baseApiWithAuth } from '@api/baseApi';
 
+export type BannerTargetApp = 'CUSTOMER' | 'DELIVERY' | 'BOTH';
+
 export interface Banner {
   id: number;
   name: string;
@@ -7,6 +9,7 @@ export interface Banner {
   actionType: string | null;
   actionValue: string | null;
   displayOrder: number;
+  targetApp: BannerTargetApp;
   imageUrl: string;
   videoUrl: string | null;
   isActive: boolean;
