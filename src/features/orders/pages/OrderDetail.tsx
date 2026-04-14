@@ -112,7 +112,7 @@ const OrderDetail: React.FC = () => {
 
   const handleAccept = async () => {
     try {
-      await acceptOrder({ orderId: Number(orderId) }).unwrap();
+      await acceptOrder(Number(orderId)).unwrap();
       toast.success('Order accepted successfully');
       refetch();
     } catch (error: any) {
