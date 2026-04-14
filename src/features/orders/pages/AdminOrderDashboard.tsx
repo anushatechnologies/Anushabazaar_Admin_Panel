@@ -132,7 +132,7 @@ const AdminOrderDashboard: React.FC = () => {
   const [acceptOrder] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [assignDelivery, { isLoading: isAssigning }] = useAssignDeliveryMutation();
-  const [generateOtp] = useGenerateDeliveryOtpMutation();
+  const [generateOtp, { isLoading: isGeneratingOtp }] = useGenerateDeliveryOtpMutation();
   const [sendStoreOtp, { isLoading: isSendingStoreOtp }] = useSendStorePickupOtpMutation();
   const [broadcastOrder, { isLoading: isBroadcasting }] = useBroadcastOrderMutation();
 
@@ -534,8 +534,9 @@ const AdminOrderDashboard: React.FC = () => {
                               size="small"
                               startIcon={<OtpIcon fontSize="small" />}
                               onClick={() => handleGenerateOtp(order.id)}
+                              disabled={isGeneratingOtp}
                             >
-                              Delivery OTP
+                              {isGeneratingOtp ? 'Generating…' : 'Delivery OTP'}
                             </Button>
                           )}
                         </Stack>
@@ -735,6 +736,26 @@ const AdminOrderDashboard: React.FC = () => {
                     </TableContainer>
                   </Grid>
                 )}
+                <Grid size={12}>
+                  <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mb: 2 }}>
+                    {(orderDetail.orderStatus ?? '').toLowerCase() === 'assigned' && (
+                      <Button
+                        variant="outlined"
+                        startIcon={
+                          isGeneratingOtp ? (
+                            <CircularProgress size={16} color="inherit" />
+                          ) : (
+                            <OtpIcon />
+                          )
+                        }
+                        onClick={() => handleGenerateOtp(orderDetail.id)}
+                        disabled={isGeneratingOtp}
+                      >
+                        {isGeneratingOtp ? 'Generating…' : 'Generate Delivery OTP'}
+                      </Button>
+                    )}
+                  </Stack>
+                </Grid>
                 <Grid size={12}>
                   <Box
                     sx={{
