@@ -710,6 +710,61 @@ const AdminOrderDashboard: React.FC = () => {
                   </Grid>
                 )}
 
+                {/* Store Acceptance Status */}
+                {orderDetail.storeStatus && (
+                  <Grid size={12}>
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                        p: 2,
+                        borderRadius: 2,
+                        bgcolor:
+                          orderDetail.storeStatus === 'STORE_ACCEPTED' ||
+                          orderDetail.storeStatus === 'PICKUP_OTP_GENERATED' ||
+                          orderDetail.storeStatus === 'PICKED_UP' ||
+                          orderDetail.storeStatus === 'DELIVERED'
+                            ? '#e8f5e9'
+                            : orderDetail.storeStatus === 'STORE_REJECTED'
+                              ? '#ffebee'
+                              : '#fff8e1',
+                      }}
+                    >
+                      <Typography fontSize={28}>
+                        {orderDetail.storeStatus === 'STORE_ACCEPTED' ||
+                        orderDetail.storeStatus === 'PICKUP_OTP_GENERATED' ||
+                        orderDetail.storeStatus === 'PICKED_UP' ||
+                        orderDetail.storeStatus === 'DELIVERED'
+                          ? '✅'
+                          : orderDetail.storeStatus === 'STORE_REJECTED'
+                            ? '❌'
+                            : '⏳'}
+                      </Typography>
+                      <Box>
+                        <Typography variant="subtitle2" fontWeight={800}>
+                          Store Response
+                        </Typography>
+                        <Typography variant="body2" color="text.secondary">
+                          {orderDetail.storeStatus === 'STORE_ACCEPTED'
+                            ? 'Store accepted the order'
+                            : orderDetail.storeStatus === 'PICKUP_OTP_GENERATED'
+                              ? 'Store accepted — OTP sent to store'
+                              : orderDetail.storeStatus === 'STORE_REJECTED'
+                                ? 'Store rejected the order'
+                                : orderDetail.storeStatus === 'STORE_NOTIFIED'
+                                  ? 'Waiting for store response...'
+                                  : orderDetail.storeStatus === 'PICKED_UP'
+                                    ? 'Rider picked up from store'
+                                    : orderDetail.storeStatus === 'DELIVERED'
+                                      ? 'Order delivered'
+                                      : orderDetail.storeStatus.replace(/_/g, ' ')}
+                        </Typography>
+                      </Box>
+                    </Box>
+                  </Grid>
+                )}
+
                 {/* Store groups — show which store fulfils which items */}
                 {orderDetail.storeGroups && orderDetail.storeGroups.length > 0 ? (
                   orderDetail.storeGroups.map((group: any) => (

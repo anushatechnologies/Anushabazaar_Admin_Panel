@@ -98,6 +98,8 @@ export interface AdminOrderDetailDto {
   orderStatus: string;
   paymentStatus: string;
   placedAt: string;
+  /** Store acceptance: STORE_NOTIFIED | STORE_ACCEPTED | STORE_REJECTED | PICKUP_OTP_GENERATED */
+  storeStatus?: string;
   /** Assigned rider info — null until ASSIGNED */
   deliveryPersonName?: string;
   deliveryPersonPhone?: string;
