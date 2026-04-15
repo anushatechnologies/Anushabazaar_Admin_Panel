@@ -439,8 +439,22 @@ const AdminOrderDashboard: React.FC = () => {
                           {order.customerPhone}
                         </Typography>
                         {(order as any).storeNames?.length > 0 && (
-                          <Stack direction="row" spacing={0.5} mt={0.5} flexWrap="wrap">
-                            {(order as any).storeNames.map((s: string) => (
+                          <Stack
+                            direction="row"
+                            spacing={0.5}
+                            mt={0.5}
+                            flexWrap="wrap"
+                            alignItems="center"
+                          >
+                            {(order as any).storeCount > 1 && (
+                              <Chip
+                                size="small"
+                                label={`${(order as any).storeCount} stores`}
+                                color="warning"
+                                sx={{ fontSize: 10, fontWeight: 800 }}
+                              />
+                            )}
+                            {(order as any).storeNames.slice(0, 2).map((s: string) => (
                               <Chip
                                 key={s}
                                 label={s}
@@ -450,6 +464,14 @@ const AdminOrderDashboard: React.FC = () => {
                                 sx={{ fontSize: 10 }}
                               />
                             ))}
+                            {(order as any).storeNames.length > 2 && (
+                              <Chip
+                                size="small"
+                                label={`+${(order as any).storeNames.length - 2}`}
+                                variant="outlined"
+                                sx={{ fontSize: 10 }}
+                              />
+                            )}
                           </Stack>
                         )}
                       </TableCell>
@@ -600,6 +622,94 @@ const AdminOrderDashboard: React.FC = () => {
                     <Typography variant="body1">{formatAddress(orderDetail.address)}</Typography>
                   </Paper>
                 </Grid>
+
+                {/* Rider details — shown after assignment */}
+                {orderDetail.deliveryPersonName && (
+                  <Grid size={12}>
+                    <Paper
+                      variant="outlined"
+                      sx={{ p: 2, borderRadius: 3, bgcolor: 'action.hover' }}
+                    >
+                      <Stack direction="row" spacing={2} alignItems="center">
+                        <PersonIcon color="primary" />
+                        <Box flex={1}>
+                          <Typography variant="subtitle2" fontWeight={800}>
+                            Rider: {orderDetail.deliveryPersonName}
+                          </Typography>
+                          <Typography variant="caption" color="text.secondary">
+                            {orderDetail.deliveryPersonPhone}
+                            {orderDetail.deliveryPersonVehicle
+                              ? ` · ${orderDetail.deliveryPersonVehicle}`
+                              : ''}
+                            {orderDetail.deliveryPersonRating
+                              ? ` · ⭐ ${orderDetail.deliveryPersonRating}`
+                              : ''}
+                          </Typography>
+                        </Box>
+                        {orderDetail.estimatedDeliveryTime && (
+                          <Chip
+                            size="small"
+                            icon={<TimeIcon />}
+                            label={`ETA: ${dayjs(orderDetail.estimatedDeliveryTime).format('hh:mm A')}`}
+                            color="primary"
+                            variant="outlined"
+                          />
+                        )}
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {/* Pricing breakdown */}
+                {(orderDetail as any).subtotal != null && (
+                  <Grid size={12}>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+                      <Typography variant="overline" color="text.secondary" display="block" mb={1}>
+                        Pricing Breakdown
+                      </Typography>
+                      <Stack spacing={0.5}>
+                        {[
+                          { label: 'Subtotal', value: (orderDetail as any).subtotal },
+                          { label: 'Delivery', value: (orderDetail as any).deliveryCharge },
+                          { label: 'Platform Fee', value: (orderDetail as any).platformFee },
+                          { label: 'Discount', value: -((orderDetail as any).discount ?? 0) },
+                        ].map(
+                          ({ label, value }) =>
+                            value != null && (
+                              <Box key={label} display="flex" justifyContent="space-between">
+                                <Typography variant="body2" color="text.secondary">
+                                  {label}
+                                </Typography>
+                                <Typography
+                                  variant="body2"
+                                  fontWeight={600}
+                                  color={label === 'Discount' ? 'success.main' : 'text.primary'}
+                                >
+                                  {label === 'Discount' && value < 0 ? '−' : ''}₹
+                                  {Math.abs(value).toFixed(2)}
+                                </Typography>
+                              </Box>
+                            ),
+                        )}
+                        <Box
+                          display="flex"
+                          justifyContent="space-between"
+                          pt={0.5}
+                          borderTop="1px solid"
+                          sx={{ borderColor: 'divider' }}
+                        >
+                          <Typography variant="subtitle2" fontWeight={800}>
+                            Grand Total
+                          </Typography>
+                          <Typography variant="subtitle2" fontWeight={800} color="primary">
+                            ₹{orderDetail.grandTotal?.toFixed(2)}
+                          </Typography>
+                        </Box>
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                )}
+
                 {/* Store groups — show which store fulfils which items */}
                 {orderDetail.storeGroups && orderDetail.storeGroups.length > 0 ? (
                   orderDetail.storeGroups.map((group: any) => (
@@ -619,6 +729,18 @@ const AdminOrderDashboard: React.FC = () => {
                           </Typography>
                           {group.storePhone && (
                             <Chip size="small" label={group.storePhone} variant="outlined" />
+                          )}
+                          {group.status && (
+                            <Chip
+                              size="small"
+                              label={group.status.replace(/_/g, ' ')}
+                              sx={{
+                                bgcolor: `${getStatusColor(group.status)}15`,
+                                color: getStatusColor(group.status),
+                                fontWeight: 700,
+                                fontSize: 10,
+                              }}
+                            />
                           )}
                         </Stack>
                         {['confirmed', 'assigned'].includes(

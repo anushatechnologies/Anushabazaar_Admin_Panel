@@ -1,5 +1,7 @@
 // Enhanced order types with delivery info
 export interface OrderItemDto {
+  id?: number;
+  productId?: number;
   variantId: number;
   productName: string;
   variantName: string;
@@ -7,6 +9,8 @@ export interface OrderItemDto {
   quantity: number;
   unitPrice: number;
   totalPrice: number;
+  imageUrl?: string;
+  storeName?: string;
 }
 
 export interface CustomerAddressDto {
@@ -35,14 +39,22 @@ export interface OrderResponse {
   id: number;
   orderNumber: string;
   grandTotal: number;
+  subtotal?: number;
+  deliveryCharge?: number;
+  platformFee?: number;
+  discount?: number;
   orderStatus: string;
+  status?: string;
   paymentStatus: string;
   placedAt: string;
+  createdAt?: string;
   items: OrderItemDto[];
+  storeGroups?: StoreGroupDto[];
   customer?: CustomerInfoDto;
   deliveryPersonId?: number;
   estimatedDeliveryTime?: string;
   paymentMethod: string;
+  address?: CustomerAddressDto;
 }
 
 export interface PlaceOrderRequest {
@@ -60,6 +72,14 @@ export interface AdminOrderSummaryDto {
   orderStatus: string;
   paymentStatus: string;
   placedAt: string;
+  /** Populated when order spans multiple stores */
+  storeNames?: string[];
+  storeIds?: number[];
+  subtotal?: number;
+  deliveryCharge?: number;
+  platformFee?: number;
+  discount?: number;
+  paymentMethod?: string;
 }
 
 export interface AdminOrderDetailDto {
@@ -69,11 +89,21 @@ export interface AdminOrderDetailDto {
   customerPhone: string;
   customerEmail?: string;
   address: CustomerAddressDto;
+  subtotal?: number;
+  deliveryCharge?: number;
+  platformFee?: number;
+  discount?: number;
   grandTotal: number;
+  paymentMethod: string;
   orderStatus: string;
   paymentStatus: string;
-  paymentMethod: string;
   placedAt: string;
+  /** Assigned rider info — null until ASSIGNED */
+  deliveryPersonName?: string;
+  deliveryPersonPhone?: string;
+  deliveryPersonVehicle?: string;
+  deliveryPersonRating?: number;
+  estimatedDeliveryTime?: string;
   items: OrderItemDto[];
   storeGroups?: StoreGroupDto[];
   deliveryHistory?: DeliveryHistoryDto[];
@@ -83,6 +113,8 @@ export interface StoreGroupDto {
   storeId: number;
   storeName: string;
   storePhone?: string;
+  /** Current sub-order status: PENDING | STORE_NOTIFIED | PICKED_UP | DELIVERED | etc. */
+  status?: string;
   subtotal: number;
   items: OrderItemDto[];
 }
