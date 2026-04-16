@@ -26,7 +26,7 @@ const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConf
 export const firebaseAuth = getAuth(firebaseApp);
 
 const buildPasswordResetSettings = (): ActionCodeSettings => ({
-  url: `${window.location.origin}/reset-password`,
+  url: `${window.location.origin}/login`,
   handleCodeInApp: false,
 });
 

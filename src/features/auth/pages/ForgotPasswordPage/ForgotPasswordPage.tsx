@@ -45,8 +45,12 @@ const ForgotPasswordPage: React.FC = () => {
                   Reset link sent to <strong>{emailSentTo}</strong>
                 </Alert>
                 <Typography variant="body1" color="text.secondary" mb={3}>
-                  Open the Firebase reset email, set your new password, and you will be signed back
-                  into the admin panel from the reset screen.
+                  Open the Firebase reset email, set your new password on the Firebase page, then
+                  come back and log in with the same new password.
+                </Typography>
+                <Typography variant="body2" color="text.secondary" mb={3}>
+                  If you do not see the mail in 1 to 2 minutes, check Spam, Promotions, and All Mail
+                  folders for the Firebase reset email.
                 </Typography>
                 <Typography
                   variant="body2"

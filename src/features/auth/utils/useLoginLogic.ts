@@ -1,9 +1,11 @@
 import { useState, type ChangeEvent, type FormEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useLoginMutation } from '@features/auth/api/authApi';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { useFirebaseLoginMutation, useLoginMutation } from '@features/auth/api/authApi';
 import { useAppDispatch } from '@app/hooks';
 import { setCredentials } from '@features/auth/authSlice';
 import { showSnackbar } from '@components/snackbarUtils';
+import { firebaseAuth } from '@/lib/firebase';
 
 export const useLoginLogic = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -11,6 +13,7 @@ export const useLoginLogic = () => {
   const [showPassword, setShowPassword] = useState(false);
 
   const [login, { isLoading: isLoginLoading }] = useLoginMutation();
+  const [firebaseLogin, { isLoading: isFirebaseLoginLoading }] = useFirebaseLoginMutation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
@@ -24,7 +27,35 @@ export const useLoginLogic = () => {
     setError('');
 
     try {
-      const result = await login(loginData).unwrap();
+      let result: any;
+
+      try {
+        result = await login(loginData).unwrap();
+      } catch (localError: any) {
+        try {
+          const credential = await signInWithEmailAndPassword(
+            firebaseAuth,
+            loginData.email,
+            loginData.password,
+          );
+          const idToken = await credential.user.getIdToken();
+          result = await firebaseLogin({ idToken }).unwrap();
+        } catch (firebaseError: any) {
+          const localMessage =
+            localError?.data?.message || localError?.message || 'Bad credentials';
+          const firebaseCode = firebaseError?.code || '';
+          const firebaseMessage =
+            firebaseCode === 'auth/invalid-credential' ||
+            firebaseCode === 'auth/wrong-password' ||
+            firebaseCode === 'auth/user-not-found'
+              ? 'Bad credentials'
+              : firebaseCode === 'auth/too-many-requests'
+                ? 'Too many attempts. Please try again later.'
+                : firebaseError?.data?.message || firebaseError?.message || localMessage;
+
+          throw new Error(firebaseMessage || localMessage);
+        }
+      }
 
       dispatch(
         setCredentials({
@@ -48,7 +79,7 @@ export const useLoginLogic = () => {
         navigate('/');
       }
     } catch (err: any) {
-      setError(err?.data?.message || 'Login failed');
+      setError(err?.data?.message || err?.message || 'Login failed');
     }
   };
 
@@ -58,7 +89,7 @@ export const useLoginLogic = () => {
     loginData,
     error,
     showPassword,
-    isLoginLoading,
+    isLoginLoading: isLoginLoading || isFirebaseLoginLoading,
     onchangeHandler,
     handleLogin,
     isLoginDisabled,

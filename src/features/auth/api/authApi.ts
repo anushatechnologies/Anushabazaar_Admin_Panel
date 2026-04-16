@@ -24,6 +24,14 @@ export const authApi = createApi({
       }),
     }),
 
+    firebaseLogin: builder.mutation<any, { idToken: string }>({
+      query: (body) => ({
+        url: '/api/auth/adminpanel/firebase-login',
+        method: 'POST',
+        body,
+      }),
+    }),
+
     preparePasswordReset: builder.mutation<any, { email: string }>({
       query: (body) => ({
         url: '/api/auth/adminpanel/prepare-password-reset',
@@ -55,6 +63,7 @@ export const authApi = createApi({
 
 export const {
   useLoginMutation,
+  useFirebaseLoginMutation,
   usePreparePasswordResetMutation,
   useSyncFirebasePasswordMutation,
   useChangePasswordMutation,
