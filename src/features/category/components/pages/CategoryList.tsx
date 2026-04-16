@@ -130,7 +130,7 @@ export default function CategoryList() {
     } catch (err: any) {
       const status = err?.status;
       if (status === 403) {
-        toast.error('Access denied (403). Please login with a ROLE_ADMIN account.');
+        toast.error('Access denied (403). Please login with an admin or super admin account.');
       } else if (status === 401) {
         toast.error('Session expired. Please login again.');
       } else {

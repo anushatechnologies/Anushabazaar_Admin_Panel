@@ -47,7 +47,13 @@ const SideNav = () => {
   };
 
   const avatarLetter = user?.email?.[0]?.toUpperCase() ?? 'A';
-  const displayName = user?.email?.split('@')[0] ?? 'Admin';
+  const displayName = user?.name?.trim() || user?.email?.split('@')[0] || 'Admin';
+  const roleLabel =
+    user?.role === 'ROLE_SUPER_ADMIN'
+      ? 'Super Admin'
+      : user?.role === 'ROLE_ADMIN' || user?.role === 'ADMIN'
+        ? 'Admin'
+        : (user?.role ?? 'Admin');
 
   return (
     <motion.aside
@@ -242,9 +248,7 @@ const SideNav = () => {
               >
                 {displayName}
               </div>
-              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>
-                {user?.role ?? 'ADMIN'}
-              </div>
+              <div style={{ color: 'var(--sidebar-subtitle)', fontSize: 12 }}>{roleLabel}</div>
             </div>
           )}
         </div>

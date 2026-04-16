@@ -233,6 +233,7 @@ export const baseApiWithAuth = createApi({
     'Customers',
     'Policies',
     'CheckoutSettings',
+    'AdminUsers',
   ],
   endpoints: () => ({}),
 });

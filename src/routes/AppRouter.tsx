@@ -4,12 +4,12 @@ import ProtectedRoute from './ProtectedRoute';
 import PublicRoute from './PublicRoute';
 import WithAuthLayout from '@layouts/WithAuthLayout';
 import WithoutAuthLayout from '@layouts/WithoutAuthLayout';
-import RegisterPage from '@features/auth/pages/RegisterPage/RegisterPage';
 import { Toaster } from 'react-hot-toast';
 // Import catalog components directly (can also be lazy if preferred)
 import CategoryList from '@features/category/components/pages/CategoryList';
 import SubCategoryList from '@features/category/components/subcategories/SubCategoryList';
 import ProductList from '@features/products/pages/ProductList';
+import { SUPER_ADMIN_ROLES } from '@routes/utils';
 
 // Lazy load all other pages
 const DashboardPage = lazy(() => import('@features/dashboard/pages/dashboard'));
@@ -48,6 +48,17 @@ const CouponsPage = lazy(() => import('@features/marketing/pages/Coupons'));
 // Logs
 const UserLogsPage = lazy(() => import('@features/activity_logs/pages/UserLogs'));
 
+// Auth extras
+const ChangePasswordPage = lazy(
+  () => import('@features/auth/pages/ChangePasswordPage/ChangePasswordPage'),
+);
+const ResetPasswordPage = lazy(
+  () => import('@features/auth/pages/ResetPasswordPage/ResetPasswordPage'),
+);
+
+// Admin management (super admin only)
+const AdminManagementPage = lazy(() => import('@features/admin/pages/AdminManagementPage'));
+
 // Orders
 const AdminOrderDashboard = lazy(() => import('@features/orders/pages/AdminOrderDashboard'));
 const OrderDetail = lazy(() => import('@features/orders/pages/OrderDetail'));
@@ -70,9 +81,14 @@ const AppRouter: React.FC = () => {
           <Route element={<PublicRoute />}>
             <Route element={<WithoutAuthLayout />}>
               <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+              <Route path="/reset-password" element={<ResetPasswordPage />} />
             </Route>
+          </Route>
+
+          {/* First-login forced password change — needs to be logged in but no layout nav */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/change-password" element={<ChangePasswordPage />} />
           </Route>
 
           {/* Protected Routes */}
@@ -125,6 +141,12 @@ const AppRouter: React.FC = () => {
 
               {/* Logs */}
               <Route path="/logs/user-logs" element={<UserLogsPage />} />
+            </Route>
+          </Route>
+
+          <Route element={<ProtectedRoute allowedRoles={SUPER_ADMIN_ROLES} />}>
+            <Route element={<WithAuthLayout />}>
+              <Route path="/admin-access" element={<AdminManagementPage />} />
             </Route>
           </Route>
 

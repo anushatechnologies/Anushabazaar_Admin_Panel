@@ -33,7 +33,7 @@ const ForgotPasswordForm: React.FC<Props> = ({ onSubmit, onBack, isLoading }) =>
           Forgot Password?
         </Typography>
         <Typography variant="body2" sx={{ color: 'text.secondary' }}>
-          Enter your registered email address to receive an OTP code to reset your password.
+          Enter your registered email address and we will send a Firebase reset link.
         </Typography>
       </Box>
 
@@ -72,7 +72,7 @@ const ForgotPasswordForm: React.FC<Props> = ({ onSubmit, onBack, isLoading }) =>
             fontWeight: 600,
           }}
         >
-          {isLoading ? 'Sending OTP...' : 'Send OTP Code'}
+          {isLoading ? 'Sending Reset Link...' : 'Send Reset Link'}
         </Button>
 
         <Box sx={{ textAlign: 'center', mt: 2 }}>

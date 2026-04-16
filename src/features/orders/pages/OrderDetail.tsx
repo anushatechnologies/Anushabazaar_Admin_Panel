@@ -78,7 +78,8 @@ const OrderDetail: React.FC = () => {
   const navigate = useNavigate();
   const { currentTheme } = useAppTheme();
   const userRole = useSelector((state: RootState) => state.auth.user?.role);
-  const isAdmin = userRole === 'ADMIN' || userRole === 'ROLE_ADMIN';
+  const isAdmin =
+    userRole === 'ADMIN' || userRole === 'ROLE_ADMIN' || userRole === 'ROLE_SUPER_ADMIN';
 
   // API Hooks
   const {

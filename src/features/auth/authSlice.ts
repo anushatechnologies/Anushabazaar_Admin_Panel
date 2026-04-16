@@ -7,10 +7,18 @@ import {
   saveAuthSession,
 } from '@features/auth/authCookies';
 
+export interface AuthUser {
+  id: number;
+  email: string;
+  role: string;
+  name?: string;
+  mustChangePassword?: boolean;
+}
+
 interface AuthState {
   token: string | null;
   refreshToken: string | null;
-  user: { id: number; email: string; role: string } | null;
+  user: AuthUser | null;
   isLoggedIn: boolean;
 }
 
@@ -33,7 +41,7 @@ const authSlice = createSlice({
       action: PayloadAction<{
         token: string;
         refreshToken?: string | null;
-        user: AuthState['user'];
+        user: AuthUser | null;
       }>,
     ) => {
       state.token = action.payload.token;
@@ -46,6 +54,16 @@ const authSlice = createSlice({
         user: action.payload.user,
       });
     },
+    clearMustChangePassword: (state) => {
+      if (state.user) {
+        state.user = { ...state.user, mustChangePassword: false };
+        saveAuthSession({
+          token: state.token!,
+          refreshToken: state.refreshToken,
+          user: state.user,
+        });
+      }
+    },
     logoutUser: (state) => {
       state.token = null;
       state.refreshToken = null;
@@ -56,5 +74,5 @@ const authSlice = createSlice({
   },
 });
 
-export const { setCredentials, logoutUser } = authSlice.actions;
+export const { setCredentials, clearMustChangePassword, logoutUser } = authSlice.actions;
 export default authSlice.reducer;

@@ -2,6 +2,8 @@ export interface StoredAuthUser {
   id: number;
   email: string;
   role: string;
+  name?: string;
+  mustChangePassword?: boolean;
 }
 
 const ACCESS_TOKEN_COOKIE = 'anusha_admin_token';
