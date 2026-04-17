@@ -11,6 +11,7 @@ import {
   People,
   Description,
   AdminPanelSettings,
+  Leaderboard,
 } from '@mui/icons-material';
 
 import LocalAtmIcon from '@mui/icons-material/LocalAtm';
@@ -38,7 +39,15 @@ export const RouteLinks: RouteLinkGroup[] = [
   // ---------------- DASHBOARD ----------------
   {
     section: 'Dashboard',
-    links: [{ name: 'Dashboard', path: '/', Icon: Dashboard, roles: ADMIN_PANEL_ROLES }],
+    links: [
+      { name: 'Dashboard', path: '/', Icon: Dashboard, roles: ADMIN_PANEL_ROLES },
+      {
+        name: 'Product Performance',
+        path: '/dashboard/product-performance',
+        Icon: Leaderboard,
+        roles: ADMIN_PANEL_ROLES,
+      },
+    ],
   },
 
   // ---------------- ORDERS ----------------

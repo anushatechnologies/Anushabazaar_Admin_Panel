@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Box,
@@ -81,7 +81,6 @@ const VEHICLE_OPTIONS: { value: VehicleType; label: string; emoji: string; subti
 ];
 import dayjs from 'dayjs';
 import { toast } from '@components/toast/ToastContainer';
-import { useNavigate } from 'react-router-dom';
 import {
   GlassCard,
   GlassPageHeader,
@@ -93,7 +92,6 @@ import EmptyState from '../../../components/empty-state/EmptyState';
 
 const AdminOrderDashboard: React.FC = () => {
   const { currentTheme } = useAppTheme();
-  const navigate = useNavigate();
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
@@ -138,8 +136,6 @@ const AdminOrderDashboard: React.FC = () => {
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
-  const knownOrderIdsRef = useRef<Set<number>>(new Set());
-  const hasInitializedRealtimeRef = useRef(false);
 
   const ordersList = useMemo(() => {
     const raw: any = orders;
@@ -149,44 +145,6 @@ const AdminOrderDashboard: React.FC = () => {
     if (Array.isArray(raw.orders)) return raw.orders;
     return [];
   }, [orders]);
-
-  useEffect(() => {
-    if (typeof orders === 'undefined') {
-      return;
-    }
-
-    const currentIds = new Set<number>(ordersList.map((order: any) => order.id as number));
-
-    if (!hasInitializedRealtimeRef.current) {
-      knownOrderIdsRef.current = currentIds;
-      hasInitializedRealtimeRef.current = true;
-      return;
-    }
-
-    const newOrders = ordersList
-      .filter((order: any) => !knownOrderIdsRef.current.has(order.id))
-      .sort((a: any, b: any) => new Date(b.placedAt).getTime() - new Date(a.placedAt).getTime());
-
-    if (newOrders.length > 0) {
-      const latestOrder = newOrders[0];
-      const countLabel =
-        newOrders.length === 1
-          ? `New order received: ${latestOrder.orderNumber}`
-          : `${newOrders.length} new orders received`;
-
-      toast.custom({
-        type: 'success',
-        message: countLabel,
-        duration: 7000,
-        action: {
-          label: 'Open order',
-          onClick: () => navigate(`/admin/orders/${latestOrder.id}`),
-        },
-      });
-    }
-
-    knownOrderIdsRef.current = currentIds;
-  }, [navigate, orders, ordersList]);
 
   const filteredOrders = useMemo(() => {
     const toSt = (st?: string) => (st ?? '').toLowerCase();

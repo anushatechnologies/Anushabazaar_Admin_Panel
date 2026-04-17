@@ -113,8 +113,7 @@ const ResetPasswordPage: React.FC = () => {
           Set Your Admin Password
         </Typography>
         <Typography variant="body2" color="text.secondary" mb={3}>
-          Finish the Firebase reset flow and we will sync the new password back into the admin
-          panel.
+          Finish the reset flow and we will sync the new password back into the admin panel.
         </Typography>
 
         {isVerifying ? (

@@ -56,6 +56,32 @@ export interface OrderAnalytics {
   total: number;
 }
 
+export interface ProductPerformanceItem {
+  rank: number;
+  productId: number;
+  productName: string;
+  imageUrl?: string | null;
+  storeName?: string | null;
+  unitsSold: number;
+  revenue: number;
+  orderCount: number;
+}
+
+export interface ProductPerformanceSummary {
+  productsCount: number;
+  unitsSold: number;
+  productRevenue: number;
+  deliveredOrders: number;
+}
+
+export interface ProductPerformanceResponse {
+  period: string;
+  from: string;
+  to: string;
+  summary: ProductPerformanceSummary;
+  topProducts: ProductPerformanceItem[];
+}
+
 export const dashboardApi = baseApiWithAuth.injectEndpoints({
   overrideExisting: false,
   endpoints: (builder) => ({
@@ -94,6 +120,34 @@ export const dashboardApi = baseApiWithAuth.injectEndpoints({
       }),
     }),
 
+    getProductPerformance: builder.query<ProductPerformanceResponse, string>({
+      query: (period = 'today') => `/api/admin/dashboard/product-performance?period=${period}`,
+      providesTags: ['Dashboard'],
+      transformResponse: (raw: any): ProductPerformanceResponse => ({
+        period: raw?.period ?? 'today',
+        from: raw?.from ?? '',
+        to: raw?.to ?? '',
+        summary: {
+          productsCount: raw?.summary?.productsCount ?? 0,
+          unitsSold: raw?.summary?.unitsSold ?? 0,
+          productRevenue: raw?.summary?.productRevenue ?? 0,
+          deliveredOrders: raw?.summary?.deliveredOrders ?? 0,
+        },
+        topProducts: Array.isArray(raw?.topProducts)
+          ? raw.topProducts.map((item: any) => ({
+              rank: Number(item?.rank ?? 0),
+              productId: Number(item?.productId ?? 0),
+              productName: item?.productName ?? 'Unknown Product',
+              imageUrl: item?.imageUrl ?? null,
+              storeName: item?.storeName ?? '',
+              unitsSold: Number(item?.unitsSold ?? 0),
+              revenue: Number(item?.revenue ?? 0),
+              orderCount: Number(item?.orderCount ?? 0),
+            }))
+          : [],
+      }),
+    }),
+
     // Kept for backward compat if other pages import it
     getActiveUsers: builder.query<{ count: number }, void>({
       query: () => '/api/admin/dashboard/active-users',
@@ -106,5 +160,6 @@ export const {
   useGetDashboardSummaryQuery,
   useGetRecentOrdersQuery,
   useGetOrderAnalyticsQuery,
+  useGetProductPerformanceQuery,
   useGetActiveUsersQuery,
 } = dashboardApi;

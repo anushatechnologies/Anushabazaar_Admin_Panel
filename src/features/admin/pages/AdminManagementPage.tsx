@@ -21,17 +21,24 @@ import {
   Tooltip,
   IconButton,
 } from '@mui/material';
-import { PersonAdd, LockReset, ToggleOn, ToggleOff, AdminPanelSettings } from '@mui/icons-material';
+import {
+  PersonAdd,
+  LockReset,
+  ToggleOn,
+  ToggleOff,
+  AdminPanelSettings,
+  VpnKey,
+} from '@mui/icons-material';
 import { showSnackbar } from '@components/snackbarUtils';
 import {
   useListAdminsQuery,
   useCreateAdminMutation,
   useToggleAdminStatusMutation,
   useResetAdminPasswordMutation,
+  useSetAdminAccessCodeMutation,
   type AdminUser,
 } from '@features/admin/api/adminManagementApi';
 import { useAppSelector } from '@app/hooks';
-import { sendAdminPasswordResetEmail } from '@/lib/firebase';
 
 const AdminManagementPage: React.FC = () => {
   const currentUser = useAppSelector((state) => state.auth.user);
@@ -47,10 +54,15 @@ const AdminManagementPage: React.FC = () => {
   const [createAdmin, { isLoading: isCreating }] = useCreateAdminMutation();
   const [toggleStatus] = useToggleAdminStatusMutation();
   const [resetPassword] = useResetAdminPasswordMutation();
+  const [setAdminAccessCode, { isLoading: isSavingAccessCode }] = useSetAdminAccessCodeMutation();
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [form, setForm] = useState({ email: '', name: '' });
   const [formError, setFormError] = useState('');
+  const [accessCodeDialogOpen, setAccessCodeDialogOpen] = useState(false);
+  const [selectedAdmin, setSelectedAdmin] = useState<AdminUser | null>(null);
+  const [accessCode, setAccessCode] = useState('');
+  const [accessCodeError, setAccessCodeError] = useState('');
 
   const handleCreateSubmit = async () => {
     setFormError('');
@@ -60,10 +72,9 @@ const AdminManagementPage: React.FC = () => {
     }
 
     try {
-      const created = await createAdmin(form).unwrap();
-      await sendAdminPasswordResetEmail(created.email);
+      await createAdmin(form).unwrap();
       showSnackbar({
-        message: 'Admin created. Firebase setup link sent to their email.',
+        message: 'Admin created. Setup email sent to their inbox.',
         severity: 'success',
       });
       setDialogOpen(false);
@@ -100,13 +111,46 @@ const AdminManagementPage: React.FC = () => {
 
     try {
       await resetPassword(admin.id).unwrap();
-      await sendAdminPasswordResetEmail(admin.email);
-      showSnackbar({ message: 'Firebase reset link sent to admin email.', severity: 'success' });
+      showSnackbar({ message: 'Password reset email sent to admin inbox.', severity: 'success' });
     } catch (err: any) {
       showSnackbar({
         message: err?.data?.message || err?.message || 'Failed to reset password.',
         severity: 'error',
       });
+    }
+  };
+
+  const openAccessCodeDialog = (admin: AdminUser) => {
+    setSelectedAdmin(admin);
+    setAccessCode('');
+    setAccessCodeError('');
+    setAccessCodeDialogOpen(true);
+  };
+
+  const handleAccessCodeSubmit = async () => {
+    if (!selectedAdmin) {
+      return;
+    }
+
+    if (!/^\d{6}$/.test(accessCode)) {
+      setAccessCodeError('Access code must be exactly 6 digits.');
+      return;
+    }
+
+    try {
+      const updated = await setAdminAccessCode({
+        id: selectedAdmin.id,
+        code: accessCode,
+      }).unwrap();
+      showSnackbar({
+        message: `Access code saved for ${updated.email}.`,
+        severity: 'success',
+      });
+      setAccessCodeDialogOpen(false);
+      setSelectedAdmin(null);
+      setAccessCode('');
+    } catch (err: any) {
+      setAccessCodeError(err?.data?.message || err?.message || 'Failed to save access code.');
     }
   };
 
@@ -137,7 +181,8 @@ const AdminManagementPage: React.FC = () => {
               Admin Access Management
             </Typography>
             <Typography variant="body2" color="text.secondary">
-              Super admin controls every admin account. New admins receive a Firebase setup link.
+              Super admin controls every admin account, password resets, and the 6-digit access code
+              required after admin login.
             </Typography>
           </Box>
         </Box>
@@ -167,6 +212,7 @@ const AdminManagementPage: React.FC = () => {
                 <TableCell sx={{ fontWeight: 700 }}>Role</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Setup Status</TableCell>
+                <TableCell sx={{ fontWeight: 700 }}>Access Code</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Created</TableCell>
                 <TableCell sx={{ fontWeight: 700 }}>Last Login</TableCell>
                 <TableCell sx={{ fontWeight: 700 }} align="right">
@@ -201,11 +247,35 @@ const AdminManagementPage: React.FC = () => {
                       <Chip label="Ready" color="success" size="small" variant="outlined" />
                     )}
                   </TableCell>
+                  <TableCell>
+                    {admin.role === 'ROLE_SUPER_ADMIN' ? (
+                      <Chip label="Not required" size="small" variant="outlined" />
+                    ) : admin.hasAdminAccessCode ? (
+                      <Chip label="Configured" color="success" size="small" variant="outlined" />
+                    ) : (
+                      <Chip label="Missing" color="warning" size="small" />
+                    )}
+                  </TableCell>
                   <TableCell>{formatDate(admin.createdAt)}</TableCell>
                   <TableCell>{formatDate(admin.lastLoginAt)}</TableCell>
                   <TableCell align="right">
                     {admin.role !== 'ROLE_SUPER_ADMIN' && (
                       <Box display="flex" gap={0.5} justifyContent="flex-end">
+                        <Tooltip
+                          title={
+                            admin.hasAdminAccessCode
+                              ? 'Update 6-digit admin access code'
+                              : 'Set 6-digit admin access code'
+                          }
+                        >
+                          <IconButton size="small" onClick={() => openAccessCodeDialog(admin)}>
+                            <VpnKey
+                              sx={{
+                                color: admin.hasAdminAccessCode ? 'primary.main' : 'warning.main',
+                              }}
+                            />
+                          </IconButton>
+                        </Tooltip>
                         <Tooltip title={admin.enabled ? 'Disable account' : 'Enable account'}>
                           <IconButton size="small" onClick={() => handleToggle(admin)}>
                             {admin.enabled ? (
@@ -240,8 +310,9 @@ const AdminManagementPage: React.FC = () => {
         <DialogTitle sx={{ fontWeight: 800 }}>Add New Admin</DialogTitle>
         <DialogContent>
           <Typography variant="body2" color="text.secondary" mb={2}>
-            We will create the admin account and send a Firebase setup link so the admin can choose
-            their own password.
+            We will create the admin account and send a setup email so the admin can choose their
+            own password. After that, set the 6-digit access code from the actions menu before the
+            admin can enter the panel.
           </Typography>
           {formError && (
             <Alert severity="error" sx={{ mb: 2 }}>
@@ -274,6 +345,58 @@ const AdminManagementPage: React.FC = () => {
             sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
           >
             {isCreating ? 'Creating...' : 'Create Admin'}
+          </Button>
+        </DialogActions>
+      </Dialog>
+
+      <Dialog
+        open={accessCodeDialogOpen}
+        onClose={() => setAccessCodeDialogOpen(false)}
+        maxWidth="xs"
+        fullWidth
+        PaperProps={{ sx: { borderRadius: 3 } }}
+      >
+        <DialogTitle sx={{ fontWeight: 800 }}>
+          {selectedAdmin?.hasAdminAccessCode ? 'Update Access Code' : 'Set Access Code'}
+        </DialogTitle>
+        <DialogContent>
+          <Typography variant="body2" color="text.secondary" mb={2}>
+            {selectedAdmin?.email
+              ? `This 6-digit code will be required every time ${selectedAdmin.email} logs in.`
+              : 'Set a 6-digit code that the admin must enter after password login.'}
+          </Typography>
+          {accessCodeError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {accessCodeError}
+            </Alert>
+          )}
+          <TextField
+            label="6-digit access code"
+            fullWidth
+            value={accessCode}
+            onChange={(event) => {
+              const numeric = event.target.value.replace(/\D/g, '').slice(0, 6);
+              setAccessCode(numeric);
+              setAccessCodeError('');
+            }}
+            inputProps={{
+              inputMode: 'numeric',
+              maxLength: 6,
+            }}
+            helperText="Example: 482615"
+          />
+        </DialogContent>
+        <DialogActions sx={{ px: 3, pb: 3 }}>
+          <Button onClick={() => setAccessCodeDialogOpen(false)} sx={{ textTransform: 'none' }}>
+            Cancel
+          </Button>
+          <Button
+            variant="contained"
+            onClick={handleAccessCodeSubmit}
+            disabled={isSavingAccessCode}
+            sx={{ fontWeight: 700, textTransform: 'none', borderRadius: 2 }}
+          >
+            {isSavingAccessCode ? 'Saving...' : 'Save Code'}
           </Button>
         </DialogActions>
       </Dialog>

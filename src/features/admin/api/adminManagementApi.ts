@@ -7,6 +7,7 @@ export interface AdminUser {
   role: string;
   enabled: boolean;
   mustChangePassword: boolean;
+  hasAdminAccessCode: boolean;
   createdById: number | null;
   createdAt: string | null;
   lastLoginAt: string | null;
@@ -15,6 +16,11 @@ export interface AdminUser {
 export interface CreateAdminRequest {
   email: string;
   name: string;
+}
+
+export interface SetAdminAccessCodeRequest {
+  id: number;
+  code: string;
 }
 
 export const adminManagementApi = baseApiWithAuth.injectEndpoints({
@@ -48,6 +54,15 @@ export const adminManagementApi = baseApiWithAuth.injectEndpoints({
       }),
       invalidatesTags: ['AdminUsers'],
     }),
+
+    setAdminAccessCode: builder.mutation<AdminUser, SetAdminAccessCodeRequest>({
+      query: ({ id, code }) => ({
+        url: `/api/super-admin/admin-users/${id}/access-code`,
+        method: 'POST',
+        body: { code },
+      }),
+      invalidatesTags: ['AdminUsers'],
+    }),
   }),
 });
 
@@ -56,4 +71,5 @@ export const {
   useCreateAdminMutation,
   useToggleAdminStatusMutation,
   useResetAdminPasswordMutation,
+  useSetAdminAccessCodeMutation,
 } = adminManagementApi;

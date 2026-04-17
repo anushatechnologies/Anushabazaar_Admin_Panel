@@ -1,0 +1,9 @@
+RewriteEngine On
+
+# Let Apache serve existing files and folders normally.
+RewriteCond %{REQUEST_FILENAME} -f [OR]
+RewriteCond %{REQUEST_FILENAME} -d
+RewriteRule ^ - [L]
+
+# React Router fallback for GoDaddy/cPanel Apache hosting.
+RewriteRule ^ index.html [L]

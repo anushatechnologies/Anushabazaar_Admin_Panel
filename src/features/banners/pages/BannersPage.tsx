@@ -20,7 +20,6 @@ import {
 } from '@mui/material';
 import {
   Add as AddIcon,
-  ArrowOutward as ArrowOutwardIcon,
   Search as SearchIcon,
   Edit as EditIcon,
   Delete as DeleteIcon,
@@ -38,12 +37,7 @@ import {
   useUpdateBannerMutation,
   Banner,
 } from '../api/bannerApi';
-import {
-  GlassPageHeader,
-  GlassBadge,
-  GradientText,
-  GlassCard,
-} from '../../../components/glassmorphism/GlassComponents';
+import { GlassBadge, GlassCard } from '../../../components/glassmorphism/GlassComponents';
 import { SkeletonPageHeader, SkeletonTable } from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
@@ -246,7 +240,7 @@ export default function BannersPage() {
 
   const getActionChipLabel = (banner: Banner) => {
     if (!banner.actionType || banner.actionType === 'NONE') {
-      return 'No action';
+      return null;
     }
 
     return banner.actionValue ? `${banner.actionType}: ${banner.actionValue}` : banner.actionType;
@@ -263,15 +257,14 @@ export default function BannersPage() {
 
   return (
     <Box sx={{ p: { xs: 2, sm: 3, md: 4 }, display: 'grid', gap: { xs: 2.5, lg: 3 } }}>
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
       >
-        <GlassPageHeader
+        <GlassCard
           sx={{
-            p: { xs: 2.5, md: 3.25 },
+            p: { xs: 2.25, md: 2.75 },
             background: isDark
               ? 'linear-gradient(180deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.88) 100%)'
               : 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(245,247,255,0.98) 55%, rgba(238,242,255,0.96) 100%)',
@@ -284,9 +277,7 @@ export default function BannersPage() {
           <Box
             sx={{
               display: 'grid',
-              gap: 3,
-              gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1.4fr) minmax(320px, 0.92fr)' },
-              alignItems: 'start',
+              gap: 2.25,
             }}
           >
             <Box sx={{ display: 'grid', gap: 2 }}>
@@ -295,6 +286,7 @@ export default function BannersPage() {
                 spacing={1.2}
                 useFlexGap
                 flexWrap="wrap"
+                sx={{ display: 'none' }}
               >
                 <GlassBadge statusColor={theme.palette.primary.main}>
                   {filteredBanners.length} visible in current filter
@@ -307,17 +299,15 @@ export default function BannersPage() {
                 </GlassBadge>
               </Stack>
               <Typography
-                variant="h3"
+                variant="h5"
                 sx={{
                   fontWeight: 800,
-                  lineHeight: 1.05,
-                  fontSize: { xs: '2rem', md: '2.5rem' },
+                  lineHeight: 1.15,
+                  fontSize: { xs: '1.45rem', md: '1.85rem' },
                   maxWidth: 760,
                 }}
               >
-                <GradientText>
-                  Banner management with cleaner spacing and stronger balance
-                </GradientText>
+                Better banner alignment and cleaner management controls
               </Typography>
               <Typography
                 color="text.secondary"
@@ -338,6 +328,7 @@ export default function BannersPage() {
                 maxWidth: 720,
                 fontSize: { xs: '0.95rem', md: '1rem' },
                 lineHeight: 1.7,
+                display: 'none',
               }}
             >
               The banner library now fills the page more naturally, so even a small number of
@@ -347,7 +338,6 @@ export default function BannersPage() {
               <Button
                 variant="contained"
                 startIcon={<AddIcon />}
-                endIcon={<ArrowOutwardIcon />}
                 onClick={handleOpenCreate}
                 sx={{
                   px: 2.75,
@@ -366,7 +356,7 @@ export default function BannersPage() {
                   gap: 1.25,
                   gridTemplateColumns: {
                     xs: 'repeat(2, minmax(0, 1fr))',
-                    xl: 'repeat(2, minmax(0, 1fr))',
+                    lg: 'repeat(4, minmax(0, 1fr))',
                   },
                 }}
               >
@@ -398,7 +388,7 @@ export default function BannersPage() {
               </Box>
             </Box>
           </Box>
-        </GlassPageHeader>
+        </GlassCard>
       </motion.div>
 
       {/* Filters */}
@@ -411,7 +401,7 @@ export default function BannersPage() {
           sx={{
             display: 'grid',
             gap: 2,
-            gridTemplateColumns: { xs: '1fr', lg: 'minmax(0, 1fr) auto' },
+            gridTemplateColumns: { xs: '1fr', xl: 'minmax(0, 1fr) auto auto' },
             p: 2.25,
             background: isDark
               ? 'linear-gradient(180deg, rgba(30,41,59,0.92) 0%, rgba(15,23,42,0.88) 100%)'
@@ -419,7 +409,7 @@ export default function BannersPage() {
             backdropFilter: 'blur(14px)',
             borderRadius: 4,
             border: `1px solid ${alpha('#4f46e5', isDark ? 0.24 : 0.12)}`,
-            alignItems: 'start',
+            alignItems: 'center',
             boxShadow: isDark
               ? '0 18px 36px rgba(2,8,23,0.24)'
               : '0 14px 28px rgba(79,70,229,0.08)',
@@ -448,9 +438,9 @@ export default function BannersPage() {
           <Box
             sx={{
               display: 'flex',
-              flexDirection: 'column',
+              flexWrap: 'wrap',
               gap: 1,
-              alignItems: { lg: 'flex-end' },
+              justifyContent: { xl: 'flex-end' },
             }}
           >
             {/* Status filter */}
@@ -477,9 +467,9 @@ export default function BannersPage() {
               {(
                 [
                   { value: 'all', label: 'All Apps', color: '#6366f1' },
-                  { value: 'CUSTOMER', label: '🛍️ Customer', color: '#b45309' },
-                  { value: 'DELIVERY', label: '🛵 Delivery', color: '#059669' },
-                  { value: 'BOTH', label: '📱 Both', color: '#4f46e5' },
+                  { value: 'CUSTOMER', label: 'Customer', color: '#b45309' },
+                  { value: 'DELIVERY', label: 'Delivery', color: '#059669' },
+                  { value: 'BOTH', label: 'Both', color: '#4f46e5' },
                 ] as const
               ).map(({ value, label, color }) => (
                 <Button
@@ -508,7 +498,7 @@ export default function BannersPage() {
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
+        transition={{ duration: 0.5, delay: 0.15 }}
       >
         <GlassCard sx={{ p: { xs: 2, md: 3 }, display: 'grid', gap: 2.5 }}>
           {filteredBanners.length === 0 ? (
@@ -557,7 +547,7 @@ export default function BannersPage() {
                 sx={{
                   display: 'grid',
                   gap: 2.5,
-                  gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
+                  gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
                 }}
               >
                 <AnimatePresence mode="popLayout">
@@ -663,20 +653,22 @@ export default function BannersPage() {
                             </Typography>
 
                             <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap">
-                              <Chip
-                                label={getActionChipLabel(banner)}
-                                size="small"
-                                variant="outlined"
-                                color="secondary"
-                                sx={{ borderRadius: 999, height: 24, maxWidth: '100%' }}
-                              />
+                              {getActionChipLabel(banner) ? (
+                                <Chip
+                                  label={getActionChipLabel(banner)}
+                                  size="small"
+                                  variant="outlined"
+                                  color="secondary"
+                                  sx={{ borderRadius: 999, height: 24, maxWidth: '100%' }}
+                                />
+                              ) : null}
                               <Chip
                                 label={
                                   banner.targetApp === 'DELIVERY'
-                                    ? '🛵 Delivery App'
+                                    ? 'Delivery App'
                                     : banner.targetApp === 'BOTH'
-                                      ? '📱 Both Apps'
-                                      : '🛍️ Customer App'
+                                      ? 'Both Apps'
+                                      : 'Customer App'
                                 }
                                 size="small"
                                 sx={{
@@ -838,9 +830,9 @@ export default function BannersPage() {
                 }
                 sx={{ borderRadius: 3 }}
               >
-                <MenuItem value="CUSTOMER">🛍️ Customer App only</MenuItem>
-                <MenuItem value="DELIVERY">🛵 Delivery Partner App only</MenuItem>
-                <MenuItem value="BOTH">📱 Both Apps</MenuItem>
+                <MenuItem value="CUSTOMER">Customer App only</MenuItem>
+                <MenuItem value="DELIVERY">Delivery Partner App only</MenuItem>
+                <MenuItem value="BOTH">Both Apps</MenuItem>
               </Select>
             </FormControl>
 

@@ -72,11 +72,14 @@ const minimalVariantPayload = (product: ReturnType<typeof normalizeProductReques
   })),
 });
 
-const buildProductFormData = (product: unknown, image?: File) => {
+const buildProductFormData = (product: unknown, image?: File, video?: File) => {
   const formData = new FormData();
   formData.append('product', new Blob([JSON.stringify(product)], { type: 'application/json' }));
   if (image) {
     formData.append('image', image);
+  }
+  if (video) {
+    formData.append('video', video);
   }
   return formData;
 };
@@ -96,28 +99,28 @@ export const productApi = baseApiWithAuth.injectEndpoints({
       providesTags: (result, error, id) => [{ type: 'Product' as any, id }],
     }),
 
-    createProduct: builder.mutation<Product, { product: ProductRequest; image?: File }>({
-      query: ({ product, image }) => {
+    createProduct: builder.mutation<
+      Product,
+      { product: ProductRequest; image?: File; video?: File }
+    >({
+      query: ({ product, image, video }) => {
         const normalizedProduct = normalizeProductRequest(product);
-        const formData = new FormData();
-        formData.append('product', new Blob([JSON.stringify(normalizedProduct)], { type: 'application/json' }));
-        if (image) formData.append('image', image);
         return {
           url: '/api/products',
           method: 'POST',
-          body: formData,
+          body: buildProductFormData(normalizedProduct, image, video),
         };
       },
       invalidatesTags: ['Product' as any],
     }),
 
-    updateProduct: builder.mutation<Product, { id: number; product: ProductRequest; image?: File }>({
-      async queryFn({ id, product, image }, _api, _extraOptions, fetchWithBQ) {
+    updateProduct: builder.mutation<
+      Product,
+      { id: number; product: ProductRequest; image?: File; video?: File }
+    >({
+      async queryFn({ id, product, image, video }, _api, _extraOptions, fetchWithBQ) {
         const normalizedProduct = normalizeProductRequest(product);
-        const candidatePayloads = [
-          normalizedProduct,
-          minimalVariantPayload(normalizedProduct),
-        ];
+        const candidatePayloads = [normalizedProduct, minimalVariantPayload(normalizedProduct)];
 
         let lastError: any = null;
 
@@ -125,7 +128,7 @@ export const productApi = baseApiWithAuth.injectEndpoints({
           const result = await fetchWithBQ({
             url: `/api/products/${id}`,
             method: 'PUT',
-            body: buildProductFormData(candidate, image),
+            body: buildProductFormData(candidate, image, video),
           });
 
           if (!result.error) {
@@ -137,7 +140,10 @@ export const productApi = baseApiWithAuth.injectEndpoints({
 
         return { error: lastError };
       },
-      invalidatesTags: (result, error, { id }) => ['Product' as any, { type: 'Product' as any, id }],
+      invalidatesTags: (result, error, { id }) => [
+        'Product' as any,
+        { type: 'Product' as any, id },
+      ],
     }),
 
     deleteProduct: builder.mutation<void, number>({
@@ -148,7 +154,10 @@ export const productApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Product' as any],
     }),
 
-    addProductGalleryImage: builder.mutation<any, { productId: number; image: File; displayOrder: number }>({
+    addProductGalleryImage: builder.mutation<
+      any,
+      { productId: number; image: File; displayOrder: number }
+    >({
       query: ({ productId, image, displayOrder }) => {
         const formData = new FormData();
         formData.append('image', image);
@@ -162,7 +171,10 @@ export const productApi = baseApiWithAuth.injectEndpoints({
       invalidatesTags: ['Product' as any],
     }),
 
-    updateProductGalleryImage: builder.mutation<any, { imageId: number; image?: File; displayOrder?: number }>({
+    updateProductGalleryImage: builder.mutation<
+      any,
+      { imageId: number; image?: File; displayOrder?: number }
+    >({
       query: ({ imageId, image, displayOrder }) => {
         const formData = new FormData();
         if (image) formData.append('image', image);
@@ -194,15 +206,18 @@ export const productApi = baseApiWithAuth.injectEndpoints({
       providesTags: ['Product' as any],
     }),
 
-    filterProducts: builder.query<Product[], {
-      categoryId?: number;
-      subCategoryId?: number;
-      storeId?: number;
-      minPrice?: number;
-      maxPrice?: number;
-      trending?: boolean;
-      keyword?: string;
-    }>({
+    filterProducts: builder.query<
+      Product[],
+      {
+        categoryId?: number;
+        subCategoryId?: number;
+        storeId?: number;
+        minPrice?: number;
+        maxPrice?: number;
+        trending?: boolean;
+        keyword?: string;
+      }
+    >({
       query: (params) => ({
         url: '/api/products/filter',
         params,

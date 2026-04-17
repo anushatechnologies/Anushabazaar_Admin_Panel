@@ -1,5 +1,5 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
-import { type ActionCodeSettings, getAuth, sendPasswordResetEmail } from 'firebase/auth';
+import { getAuth } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -24,12 +24,3 @@ ensureFirebaseConfig();
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const firebaseAuth = getAuth(firebaseApp);
-
-const buildPasswordResetSettings = (): ActionCodeSettings => ({
-  url: `${window.location.origin}/login`,
-  handleCodeInApp: false,
-});
-
-export const sendAdminPasswordResetEmail = async (email: string) => {
-  await sendPasswordResetEmail(firebaseAuth, email, buildPasswordResetSettings());
-};

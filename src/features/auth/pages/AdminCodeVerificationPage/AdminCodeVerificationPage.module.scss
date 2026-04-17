@@ -1,0 +1,68 @@
+.verificationPage {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1rem;
+}
+
+.verificationPaper {
+  width: 100%;
+  max-width: 960px;
+  border-radius: 20px !important;
+  overflow: hidden;
+}
+
+.verificationContainer {
+  min-height: 560px;
+}
+
+.leftPanel {
+  padding: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+
+  @media (min-width: 768px) {
+    padding: 2rem;
+  }
+}
+
+.otpRow {
+  display: flex;
+  justify-content: center;
+  gap: 0.75rem;
+  margin: 1.5rem 0;
+}
+
+.otpInput {
+  width: 54px;
+
+  :global(.MuiOutlinedInput-root) {
+    border-radius: 16px;
+    background: rgba(255, 255, 255, 0.96);
+    font-size: 1.35rem;
+    font-weight: 800;
+    text-align: center;
+  }
+
+  :global(.MuiOutlinedInput-input) {
+    text-align: center;
+    padding: 16px 0;
+  }
+}
+
+.helperText {
+  text-align: center;
+  opacity: 0.8;
+}
+
+.rightPanel {
+  position: relative;
+  color: white;
+  display: none;
+
+  @media (min-width: 900px) {
+    display: flex;
+  }
+}

@@ -1,6 +1,6 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Box, Button, Divider, LinearProgress, Stack, Typography } from '@mui/material';
+import { Box, Button, LinearProgress, Stack, Typography } from '@mui/material';
 import {
   ArrowOutward as ArrowOutwardIcon,
   Assignment as AssignmentIcon,
@@ -20,11 +20,7 @@ import {
   SkeletonStatCards,
 } from '../../../components/skeletons/LoadingSkeletons';
 import EmptyState from '../../../components/empty-state/EmptyState';
-import {
-  GlassBadge,
-  GlassCard,
-  GradientText,
-} from '../../../components/glassmorphism/GlassComponents';
+import { GlassBadge, GlassCard } from '../../../components/glassmorphism/GlassComponents';
 import { useErrorHandler } from '../../../hooks/useErrorHandler';
 import { useAppTheme } from '../../../contexts/ThemeContext';
 
@@ -219,110 +215,105 @@ export default function DeliveryDashboard() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: 'easeOut' }}
         sx={{
-          p: { xs: 2.5, md: 3.5 },
-          position: 'relative',
-          overflow: 'hidden',
+          p: { xs: 2.25, md: 2.75 },
           background: isDark
             ? 'linear-gradient(180deg, rgba(15,23,42,0.94) 0%, rgba(15,23,42,0.88) 100%)'
             : 'linear-gradient(135deg, rgba(255,255,255,0.98) 0%, rgba(245,247,255,0.98) 55%, rgba(238,242,255,0.96) 100%)',
           border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.24 : 0.12)}`,
           boxShadow: isDark ? '0 24px 48px rgba(2,6,23,0.38)' : '0 22px 40px rgba(79,70,229,0.10)',
-          '&::before': {
-            content: '""',
-            position: 'absolute',
-            width: 240,
-            height: 240,
-            right: -70,
-            top: -90,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.18)} 0%, transparent 72%)`,
-            pointerEvents: 'none',
-          },
-          '&::after': {
-            content: '""',
-            position: 'absolute',
-            width: 220,
-            height: 220,
-            left: -100,
-            bottom: -120,
-            borderRadius: '50%',
-            background: `radial-gradient(circle, ${alpha(theme.palette.info.main, 0.14)} 0%, transparent 74%)`,
-            pointerEvents: 'none',
-          },
         }}
       >
         <Box
           sx={{
-            position: 'relative',
-            zIndex: 1,
             display: 'grid',
-            gap: 3,
-            gridTemplateColumns: {
-              xs: '1fr',
-              xl: 'minmax(0, 1.55fr) minmax(320px, 0.95fr)',
-            },
+            gap: 2.5,
           }}
         >
-          <Box sx={{ display: 'grid', gap: 2 }}>
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.2} useFlexGap flexWrap="wrap">
-              <GlassBadge statusColor={theme.palette.success.main}>Live operations</GlassBadge>
-              <GlassBadge statusColor={theme.palette.primary.main}>
-                {approvalRate}% team approved
-              </GlassBadge>
-              <GlassBadge statusColor={theme.palette.info.main}>
-                {liveCoverage}% online coverage
-              </GlassBadge>
-            </Stack>
-
+          <Box
+            sx={{
+              display: 'grid',
+              gap: 2.25,
+              gridTemplateColumns: {
+                xs: '1fr',
+                xl: 'minmax(0, 1.1fr) auto',
+              },
+              alignItems: 'center',
+            }}
+          >
             <Box>
               <Typography
-                variant="h3"
-                sx={{
-                  fontWeight: 800,
-                  lineHeight: 1.05,
-                  fontSize: { xs: '2rem', md: '2.6rem' },
-                  maxWidth: 780,
-                }}
+                variant="overline"
+                sx={{ letterSpacing: 1.6, color: 'text.secondary', fontWeight: 800 }}
               >
-                <GradientText>
-                  Delivery operations with cleaner visibility and faster actions
-                </GradientText>
+                Delivery Control Tower
+              </Typography>
+              <Typography
+                variant="h5"
+                sx={{ mt: 0.35, fontWeight: 800, maxWidth: 700, lineHeight: 1.15 }}
+              >
+                Cleaner alignment for rider activity, approvals, and live dispatch.
               </Typography>
               <Typography
                 color="text.secondary"
                 sx={{
-                  mt: 1.2,
-                  maxWidth: 760,
+                  mt: 0.9,
+                  maxWidth: 780,
                   fontSize: { xs: '0.95rem', md: '1rem' },
-                  lineHeight: 1.7,
+                  lineHeight: 1.65,
                 }}
               >
-                Keep approvals, rider coverage, and active assignments in one compact view. The
-                layout now uses the page width properly so the dashboard feels filled, balanced, and
-                easier to scan.
+                The page now starts with the data and actions that matter, without the oversized
+                suggestion banner taking over the screen.
               </Typography>
+              <Stack
+                direction={{ xs: 'column', sm: 'row' }}
+                spacing={1}
+                useFlexGap
+                flexWrap="wrap"
+                sx={{ mt: 1.5 }}
+              >
+                <GlassBadge statusColor={theme.palette.primary.main}>
+                  {approvalRate}% approved
+                </GlassBadge>
+                <GlassBadge statusColor={theme.palette.info.main}>
+                  {liveCoverage}% live coverage
+                </GlassBadge>
+                <GlassBadge
+                  statusColor={
+                    stats.pendingOrders > 0
+                      ? theme.palette.warning.main
+                      : theme.palette.success.main
+                  }
+                >
+                  {stats.pendingOrders} waiting
+                </GlassBadge>
+              </Stack>
             </Box>
 
-            <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1.5}>
+            <Stack
+              direction={{ xs: 'column', sm: 'row', xl: 'column' }}
+              spacing={1.2}
+              sx={{ width: '100%', maxWidth: { xl: 250 } }}
+            >
               <Button
                 variant="contained"
                 endIcon={<ArrowOutwardIcon />}
                 onClick={() => navigate('/delivery/personnel')}
                 sx={{
-                  minWidth: { xs: '100%', sm: 220 },
-                  py: 1.2,
+                  minWidth: { xs: '100%', sm: 210 },
+                  py: 1.15,
                   borderRadius: 999,
                   fontWeight: 700,
                 }}
               >
-                Open Delivery Persons
+                Delivery Persons
               </Button>
               <Button
                 variant="outlined"
                 onClick={() => navigate('/delivery/assignment-dashboard')}
                 sx={{
-                  minWidth: { xs: '100%', sm: 200 },
-                  py: 1.2,
+                  minWidth: { xs: '100%', sm: 190 },
+                  py: 1.15,
                   borderRadius: 999,
                   fontWeight: 700,
                 }}
@@ -334,106 +325,63 @@ export default function DeliveryDashboard() {
 
           <Box
             sx={{
-              borderRadius: 4,
-              p: 2.5,
               display: 'grid',
-              gap: 2,
-              border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.24 : 0.14)}`,
-              background: isDark
-                ? 'linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.84) 100%)'
-                : 'linear-gradient(180deg, rgba(255,255,255,0.88) 0%, rgba(241,245,255,0.92) 100%)',
-              boxShadow: isDark
-                ? 'inset 0 1px 0 rgba(255,255,255,0.03)'
-                : '0 14px 28px rgba(79,70,229,0.08)',
+              gap: 1.2,
+              gridTemplateColumns: {
+                xs: 'repeat(2, minmax(0, 1fr))',
+                md: 'repeat(4, minmax(0, 1fr))',
+              },
             }}
           >
-            <Box>
-              <Typography
-                variant="overline"
-                sx={{ letterSpacing: 1.2, color: 'text.secondary', fontWeight: 700 }}
+            {[
+              {
+                label: 'Online riders',
+                value: stats.onlineDeliveryPersons,
+                helper: 'Live now',
+                tone: theme.palette.success.main,
+              },
+              {
+                label: 'Active orders',
+                value: stats.activeOrders,
+                helper: 'In progress',
+                tone: theme.palette.info.main,
+              },
+              {
+                label: 'Pending approvals',
+                value: stats.pendingApprovals,
+                helper: 'Needs review',
+                tone: theme.palette.warning.main,
+              },
+              {
+                label: 'Queue backlog',
+                value: stats.pendingOrders,
+                helper: stats.pendingOrders > 0 ? 'Needs movement' : 'Under control',
+                tone:
+                  stats.pendingOrders > 0 ? theme.palette.warning.main : theme.palette.success.main,
+              },
+            ].map((item) => (
+              <Box
+                key={item.label}
+                sx={{
+                  p: 1.6,
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(item.tone, isDark ? 0.24 : 0.14)}`,
+                  background: isDark
+                    ? `linear-gradient(180deg, ${alpha(item.tone, 0.12)} 0%, rgba(15,23,42,0.72) 100%)`
+                    : `linear-gradient(180deg, rgba(255,255,255,0.9) 0%, ${alpha(item.tone, 0.08)} 100%)`,
+                }}
               >
-                Shift Snapshot
-              </Typography>
-              <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                Dispatch health at a glance
-              </Typography>
-            </Box>
-
-            <Box
-              sx={{
-                display: 'grid',
-                gap: 1.5,
-                gridTemplateColumns: { xs: '1fr', sm: 'repeat(3, minmax(0, 1fr))', xl: '1fr' },
-              }}
-            >
-              {[
-                {
-                  label: 'Online riders',
-                  value: stats.onlineDeliveryPersons,
-                  helper: 'Live now',
-                  tone: theme.palette.success.main,
-                },
-                {
-                  label: 'Active orders',
-                  value: stats.activeOrders,
-                  helper: 'Needs monitoring',
-                  tone: theme.palette.info.main,
-                },
-                {
-                  label: 'Pending approvals',
-                  value: stats.pendingApprovals,
-                  helper: 'Needs review',
-                  tone: theme.palette.warning.main,
-                },
-              ].map((item) => (
-                <Box
-                  key={item.label}
-                  sx={{
-                    p: 2,
-                    borderRadius: 3,
-                    background: alpha(item.tone, isDark ? 0.12 : 0.08),
-                    border: `1px solid ${alpha(item.tone, isDark ? 0.24 : 0.16)}`,
-                  }}
-                >
-                  <Typography variant="body2" color="text.secondary" sx={{ mb: 0.4 }}>
-                    {item.label}
-                  </Typography>
-                  <Typography variant="h4" sx={{ fontWeight: 800, color: item.tone }}>
-                    {item.value}
-                  </Typography>
-                  <Typography variant="caption" color="text.secondary">
-                    {item.helper}
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-
-            <Divider />
-
-            <Box
-              sx={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'space-between',
-                gap: 2,
-              }}
-            >
-              <Box>
-                <Typography variant="body2" color="text.secondary">
-                  Orders waiting to move
+                <Typography variant="caption" color="text.secondary">
+                  {item.label}
                 </Typography>
-                <Typography variant="h5" sx={{ fontWeight: 800 }}>
-                  {stats.pendingOrders}
+                <Typography variant="h5" sx={{ mt: 0.35, fontWeight: 800, color: item.tone }}>
+                  {item.value}
+                </Typography>
+                <Typography variant="caption" color="text.secondary">
+                  {item.helper}
                 </Typography>
               </Box>
-              <GlassBadge
-                statusColor={
-                  stats.pendingOrders > 0 ? theme.palette.warning.main : theme.palette.success.main
-                }
-              >
-                {stats.pendingOrders > 0 ? 'Attention needed' : 'Queue is healthy'}
-              </GlassBadge>
-            </Box>
+            ))}
           </Box>
         </Box>
       </GlassCard>
@@ -468,7 +416,7 @@ export default function DeliveryDashboard() {
         sx={{
           display: 'grid',
           gap: 3,
-          gridTemplateColumns: { xs: '1fr', xl: '1.25fr 0.95fr' },
+          gridTemplateColumns: { xs: '1fr', xl: '1.18fr 0.92fr' },
         }}
       >
         <motion.div
@@ -482,11 +430,21 @@ export default function DeliveryDashboard() {
                 Action Center
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                Use the extra dashboard space for real actions, not empty gaps.
+                Priority actions for the current shift.
               </Typography>
             </Box>
 
-            <Box sx={{ display: 'grid', gap: 1.5 }}>
+            <Box
+              sx={{
+                display: 'grid',
+                gap: 1.5,
+                gridTemplateColumns: {
+                  xs: '1fr',
+                  md: 'repeat(2, minmax(0, 1fr))',
+                  xl: 'repeat(3, minmax(0, 1fr))',
+                },
+              }}
+            >
               {quickActions.map((action) => (
                 <Box
                   key={action.title}
@@ -558,7 +516,7 @@ export default function DeliveryDashboard() {
                 Operations Health
               </Typography>
               <Typography color="text.secondary" sx={{ mt: 0.5 }}>
-                Progress indicators for approvals, coverage, and delivery flow.
+                Coverage and flow progress for this shift.
               </Typography>
             </Box>
 
@@ -603,21 +561,57 @@ export default function DeliveryDashboard() {
 
             <Box
               sx={{
-                p: 2,
-                borderRadius: 3,
-                border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.22 : 0.14)}`,
-                background: isDark
-                  ? 'linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.82) 100%)'
-                  : 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(241,245,255,0.94) 100%)',
+                display: 'grid',
+                gap: 1.2,
+                gridTemplateColumns: { xs: '1fr', sm: 'repeat(2, minmax(0, 1fr))' },
               }}
             >
-              <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                Dispatch note
-              </Typography>
-              <Typography variant="body2" color="text.secondary" sx={{ mt: 0.7, lineHeight: 1.7 }}>
-                Approved riders, active assignments, and completed orders are now grouped into one
-                compact visual flow so the page feels cleaner and more useful on large screens.
-              </Typography>
+              <Box
+                sx={{
+                  p: 1.75,
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(theme.palette.primary.main, isDark ? 0.22 : 0.14)}`,
+                  background: isDark
+                    ? 'linear-gradient(180deg, rgba(30,41,59,0.82) 0%, rgba(15,23,42,0.82) 100%)'
+                    : 'linear-gradient(180deg, rgba(255,255,255,0.92) 0%, rgba(241,245,255,0.94) 100%)',
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Queue status
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.6, lineHeight: 1.6 }}
+                >
+                  {stats.pendingOrders > 0
+                    ? `${stats.pendingOrders} orders are waiting to move.`
+                    : 'No dispatch backlog right now.'}
+                </Typography>
+              </Box>
+              <Box
+                sx={{
+                  p: 1.75,
+                  borderRadius: 3,
+                  border: `1px solid ${alpha(theme.palette.info.main, isDark ? 0.22 : 0.14)}`,
+                  background: isDark
+                    ? `linear-gradient(180deg, ${alpha(theme.palette.info.main, 0.12)} 0%, rgba(15,23,42,0.82) 100%)`
+                    : `linear-gradient(180deg, rgba(255,255,255,0.92) 0%, ${alpha(theme.palette.info.main, 0.08)} 100%)`,
+                }}
+              >
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Live monitoring
+                </Typography>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mt: 0.6, lineHeight: 1.6 }}
+                >
+                  {stats.activeOrders > 0
+                    ? `${stats.activeOrders} active assignments are still in motion.`
+                    : 'No active assignments need follow-up at the moment.'}
+                </Typography>
+              </Box>
             </Box>
           </GlassCard>
         </motion.div>

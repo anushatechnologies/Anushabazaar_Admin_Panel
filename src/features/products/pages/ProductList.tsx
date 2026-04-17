@@ -106,6 +106,7 @@ export default function ProductList() {
   const handleSave = async (
     data: ProductRequest,
     imageFile?: File,
+    videoFile?: File,
     galleryUploads: PendingGalleryUpload[] = [],
   ) => {
     try {
@@ -116,11 +117,16 @@ export default function ProductList() {
           id: editingProduct.id,
           product: data,
           image: imageFile,
+          video: videoFile,
         }).unwrap();
         productId = updatedProduct?.id ?? editingProduct.id;
         toast.success('Product updated successfully');
       } else {
-        const createdProduct = await createProduct({ product: data, image: imageFile }).unwrap();
+        const createdProduct = await createProduct({
+          product: data,
+          image: imageFile,
+          video: videoFile,
+        }).unwrap();
         productId = createdProduct?.id;
         toast.success('Product created successfully');
       }

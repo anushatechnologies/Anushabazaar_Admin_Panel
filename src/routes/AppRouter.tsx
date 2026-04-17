@@ -13,6 +13,9 @@ import { SUPER_ADMIN_ROLES } from '@routes/utils';
 
 // Lazy load all other pages
 const DashboardPage = lazy(() => import('@features/dashboard/pages/dashboard'));
+const ProductPerformancePage = lazy(
+  () => import('@features/dashboard/pages/ProductPerformancePage'),
+);
 const LoginPage = lazy(() => import('@features/auth/pages/LoginPage/LoginPage'));
 const ForgotPasswordPage = lazy(
   () => import('@features/auth/pages/ForgotPasswordPage/ForgotPasswordPage'),
@@ -55,6 +58,9 @@ const ChangePasswordPage = lazy(
 const ResetPasswordPage = lazy(
   () => import('@features/auth/pages/ResetPasswordPage/ResetPasswordPage'),
 );
+const AdminCodeVerificationPage = lazy(
+  () => import('@features/auth/pages/AdminCodeVerificationPage/AdminCodeVerificationPage'),
+);
 
 // Admin management (super admin only)
 const AdminManagementPage = lazy(() => import('@features/admin/pages/AdminManagementPage'));
@@ -83,6 +89,7 @@ const AppRouter: React.FC = () => {
               <Route path="/login" element={<LoginPage />} />
               <Route path="/forgot-password" element={<ForgotPasswordPage />} />
               <Route path="/reset-password" element={<ResetPasswordPage />} />
+              <Route path="/admin-code" element={<AdminCodeVerificationPage />} />
             </Route>
           </Route>
 
@@ -95,6 +102,7 @@ const AppRouter: React.FC = () => {
           <Route element={<ProtectedRoute />}>
             <Route element={<WithAuthLayout />}>
               <Route path="/" element={<DashboardPage />} />
+              <Route path="/dashboard/product-performance" element={<ProductPerformancePage />} />
               <Route path="/privacy-policy" element={<PrivacyPolicy />} />
               <Route path="/returns&refunds" element={<ReturnsRefunds />} />
               <Route path="/terms&conditions" element={<TermsConditions />} />

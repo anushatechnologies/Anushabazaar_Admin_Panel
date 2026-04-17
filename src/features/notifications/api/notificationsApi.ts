@@ -36,6 +36,40 @@ export interface SaveTokenResponse {
   message: string;
 }
 
+export interface WhatsAppCampaignStartResponse {
+  campaignId: string;
+  status: string;
+  totalRows: number;
+  message: string;
+}
+
+export interface WhatsAppCampaignRecipientResult {
+  rowNumber: number;
+  name: string;
+  phoneNumber: string;
+  status: 'SENT' | 'FAILED' | 'SKIPPED' | string;
+  message: string;
+}
+
+export interface WhatsAppCampaignStatusResponse {
+  campaignId: string;
+  templateName: string;
+  sourceFileName: string;
+  activeOnly: boolean;
+  headerImageUrl: string;
+  status: 'QUEUED' | 'RUNNING' | 'COMPLETED' | 'FAILED' | string;
+  errorMessage?: string | null;
+  totalRows: number;
+  processed: number;
+  sent: number;
+  failed: number;
+  skipped: number;
+  createdAt?: string;
+  startedAt?: string | null;
+  completedAt?: string | null;
+  results: WhatsAppCampaignRecipientResult[];
+}
+
 // RTK Query endpoints for notifications
 export const notificationsApi = baseApiWithAuth.injectEndpoints({
   endpoints: (builder) => ({
@@ -82,6 +116,21 @@ export const notificationsApi = baseApiWithAuth.injectEndpoints({
         body: data,
       }),
     }),
+
+    startWhatsAppCampaign: builder.mutation<WhatsAppCampaignStartResponse, FormData>({
+      query: (data) => ({
+        url: '/api/admin/notifications/whatsapp-campaigns',
+        method: 'POST',
+        body: data,
+      }),
+    }),
+
+    getWhatsAppCampaignStatus: builder.query<WhatsAppCampaignStatusResponse, string>({
+      query: (campaignId) => ({
+        url: `/api/admin/notifications/whatsapp-campaigns/${campaignId}`,
+        method: 'GET',
+      }),
+    }),
   }),
 });
 
@@ -91,6 +140,8 @@ export const {
   useBroadcastToCustomersMutation,
   useBroadcastToDeliveryMutation,
   useSaveTokenMutation,
+  useStartWhatsAppCampaignMutation,
+  useGetWhatsAppCampaignStatusQuery,
 } = notificationsApi;
 
 // Manual fetch functions for components

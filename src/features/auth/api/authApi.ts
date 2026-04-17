@@ -58,6 +58,14 @@ export const authApi = createApi({
         body,
       }),
     }),
+
+    verifyAdminCode: builder.mutation<any, { challengeToken: string; code: string }>({
+      query: (body) => ({
+        url: '/api/auth/adminpanel/verify-admin-code',
+        method: 'POST',
+        body,
+      }),
+    }),
   }),
 });
 
@@ -67,4 +75,5 @@ export const {
   usePreparePasswordResetMutation,
   useSyncFirebasePasswordMutation,
   useChangePasswordMutation,
+  useVerifyAdminCodeMutation,
 } = authApi;

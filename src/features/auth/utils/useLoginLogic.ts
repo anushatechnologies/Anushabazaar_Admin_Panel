@@ -6,6 +6,7 @@ import { useAppDispatch } from '@app/hooks';
 import { setCredentials } from '@features/auth/authSlice';
 import { showSnackbar } from '@components/snackbarUtils';
 import { firebaseAuth } from '@/lib/firebase';
+import { saveAdminAccessChallenge } from '@features/auth/authCookies';
 
 export const useLoginLogic = () => {
   const [loginData, setLoginData] = useState({ email: '', password: '' });
@@ -55,6 +56,23 @@ export const useLoginLogic = () => {
 
           throw new Error(firebaseMessage || localMessage);
         }
+      }
+
+      if (result.adminCodeRequired && result.adminCodeChallengeToken) {
+        saveAdminAccessChallenge({
+          challengeToken: result.adminCodeChallengeToken,
+          id: result.id,
+          email: result.email,
+          role: result.role,
+          name: result.name,
+          mustChangePassword: result.mustChangePassword,
+        });
+        showSnackbar({
+          message: 'Enter the 6-digit admin access code to continue.',
+          severity: 'info',
+        });
+        navigate('/admin-code');
+        return;
       }
 
       dispatch(

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Box, Paper, Fade, Alert, Typography } from '@mui/material';
 import { useNavigate } from 'react-router-dom';
 import { usePreparePasswordResetMutation } from '@features/auth/api/authApi';
-import { sendAdminPasswordResetEmail } from '@/lib/firebase';
 import { showSnackbar } from '@components/snackbarUtils';
 
 import ForgotPasswordForm from './compoents/ForgotPasswordForm';
@@ -17,7 +16,6 @@ const ForgotPasswordPage: React.FC = () => {
   const handleSendResetLink = async (emailValue: string) => {
     try {
       await preparePasswordReset({ email: emailValue }).unwrap();
-      await sendAdminPasswordResetEmail(emailValue);
 
       setEmailSentTo(emailValue);
       showSnackbar({
@@ -45,12 +43,12 @@ const ForgotPasswordPage: React.FC = () => {
                   Reset link sent to <strong>{emailSentTo}</strong>
                 </Alert>
                 <Typography variant="body1" color="text.secondary" mb={3}>
-                  Open the Firebase reset email, set your new password on the Firebase page, then
-                  come back and log in with the same new password.
+                  Open the email from Anusha Bazaar, set your new password, then come back and log
+                  in with the same new password.
                 </Typography>
                 <Typography variant="body2" color="text.secondary" mb={3}>
                   If you do not see the mail in 1 to 2 minutes, check Spam, Promotions, and All Mail
-                  folders for the Firebase reset email.
+                  folders for the reset email.
                 </Typography>
                 <Typography
                   variant="body2"

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   TextField,
   Checkbox,
@@ -40,7 +40,12 @@ export type PendingGalleryUpload = {
 
 type Props = {
   initialData?: any;
-  onSave: (data: ProductRequest, imageFile?: File, galleryUploads?: PendingGalleryUpload[]) => Promise<void> | void;
+  onSave: (
+    data: ProductRequest,
+    imageFile?: File,
+    videoFile?: File,
+    galleryUploads?: PendingGalleryUpload[],
+  ) => Promise<void> | void;
   onClose: () => void;
 };
 
@@ -66,35 +71,78 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
         displayOrder: Number(v.displayOrder || 1),
       }));
     }
-    return [{ name: '', sku: '', price: 0, discountPrice: undefined, stock: 0, isActive: true, displayOrder: 1 }];
+    return [
+      {
+        name: '',
+        sku: '',
+        price: 0,
+        discountPrice: undefined,
+        stock: 0,
+        isActive: true,
+        displayOrder: 1,
+      },
+    ];
   });
 
   const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | undefined>(initialData?.imageUrl);
+  const [videoFile, setVideoFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | undefined>(initialData?.videoUrl);
   const [pendingGalleryUploads, setPendingGalleryUploads] = useState<PendingGalleryUpload[]>([]);
   const [submitting, setSubmitting] = useState(false);
+  const pendingGalleryUrlsRef = useRef<string[]>([]);
+  const videoPreviewRef = useRef<string | undefined>(initialData?.videoUrl);
 
   const { data: storesData, isLoading: storesLoading } = useGetStoreTypesQuery({});
   const { data: categoriesData, isLoading: categoriesLoading } = useGetCategoriesQuery();
-  const { data: subCategoriesData, isFetching: loadingSubs } = useGetSubCategoriesByCategoryQuery(categoryId, { skip: !categoryId });
-  const { data: productDetail } = useGetProductByIdQuery(initialData?.id, { skip: !initialData?.id });
-  const [updateProductGalleryImage, { isLoading: updatingGallery }] = useUpdateProductGalleryImageMutation();
-  const [deleteProductGalleryImage, { isLoading: deletingGallery }] = useDeleteProductGalleryImageMutation();
+  const { data: subCategoriesData, isFetching: loadingSubs } = useGetSubCategoriesByCategoryQuery(
+    categoryId,
+    { skip: !categoryId },
+  );
+  const { data: productDetail } = useGetProductByIdQuery(initialData?.id, {
+    skip: !initialData?.id,
+  });
+  const [updateProductGalleryImage, { isLoading: updatingGallery }] =
+    useUpdateProductGalleryImageMutation();
+  const [deleteProductGalleryImage, { isLoading: deletingGallery }] =
+    useDeleteProductGalleryImageMutation();
 
-  const stores = storesData && 'content' in (storesData as any) ? (storesData as any).content : Array.isArray(storesData) ? storesData : [];
+  const stores =
+    storesData && 'content' in (storesData as any)
+      ? (storesData as any).content
+      : Array.isArray(storesData)
+        ? storesData
+        : [];
   const categories = categoriesData || [];
   const subCategories = subCategoriesData || [];
 
   const existingGalleryImages: ProductGalleryImage[] = useMemo(() => {
     const detail = productDetail as any;
-    return detail?.images || detail?.galleryImages || initialData?.images || initialData?.galleryImages || [];
+    return (
+      detail?.images ||
+      detail?.galleryImages ||
+      initialData?.images ||
+      initialData?.galleryImages ||
+      []
+    );
   }, [initialData, productDetail]);
 
   useEffect(() => {
-    return () => {
-      pendingGalleryUploads.forEach((item) => URL.revokeObjectURL(item.previewUrl));
-    };
+    pendingGalleryUrlsRef.current = pendingGalleryUploads.map((item) => item.previewUrl);
   }, [pendingGalleryUploads]);
+
+  useEffect(() => {
+    videoPreviewRef.current = videoPreview;
+  }, [videoPreview]);
+
+  useEffect(() => {
+    return () => {
+      pendingGalleryUrlsRef.current.forEach((previewUrl) => URL.revokeObjectURL(previewUrl));
+      if (videoPreviewRef.current?.startsWith('blob:')) {
+        URL.revokeObjectURL(videoPreviewRef.current);
+      }
+    };
+  }, []);
 
   const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -117,9 +165,21 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
     setPendingGalleryUploads((current) => [...current, ...nextUploads]);
   };
 
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (videoPreview?.startsWith('blob:')) {
+      URL.revokeObjectURL(videoPreview);
+    }
+
+    setVideoFile(file);
+    setVideoPreview(URL.createObjectURL(file));
+  };
+
   const handlePendingGalleryOrderChange = (index: number, displayOrder: number) => {
     setPendingGalleryUploads((current) =>
-      current.map((item, itemIndex) => (itemIndex === index ? { ...item, displayOrder } : item))
+      current.map((item, itemIndex) => (itemIndex === index ? { ...item, displayOrder } : item)),
     );
   };
 
@@ -163,7 +223,8 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
       const variant = variants[index];
       if (!variant.name.trim()) return toast.error(`Variant ${index + 1}: Name is required`);
       if (!variant.sku.trim()) return toast.error(`Variant ${index + 1}: SKU is required`);
-      if (variant.price <= 0) return toast.error(`Variant ${index + 1}: Price must be greater than 0`);
+      if (variant.price <= 0)
+        return toast.error(`Variant ${index + 1}: Price must be greater than 0`);
       if (variant.stock < 0) return toast.error(`Variant ${index + 1}: Stock cannot be negative`);
     }
 
@@ -186,36 +247,63 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
 
     setSubmitting(true);
     try {
-      await onSave(productData, imageFile || undefined, pendingGalleryUploads);
+      await onSave(
+        productData,
+        imageFile || undefined,
+        videoFile || undefined,
+        pendingGalleryUploads,
+      );
     } finally {
       setSubmitting(false);
     }
   };
 
   const renderImageCard = (key: string | number, content: React.ReactNode) => (
-    <Paper key={key} variant="outlined" sx={{ p: 1.5, borderRadius: 3, display: 'grid', gap: 1.25, minWidth: 170 }}>
-      <Box sx={{ display: 'grid', gap: 1.25 }}>
-      {content}
-      </Box>
+    <Paper
+      key={key}
+      variant="outlined"
+      sx={{ p: 1.5, borderRadius: 3, display: 'grid', gap: 1.25, minWidth: 170 }}
+    >
+      <Box sx={{ display: 'grid', gap: 1.25 }}>{content}</Box>
     </Paper>
   );
 
   return (
     <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1, px: 1, py: 1 }}>
       <Stack spacing={2.5}>
-        <TextField label="Product Name *" value={name} onChange={(e) => setName(e.target.value)} fullWidth required />
-        <TextField label="Description" value={description} onChange={(e) => setDescription(e.target.value)} fullWidth multiline minRows={2} maxRows={6} />
+        <TextField
+          label="Product Name *"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          fullWidth
+          required
+        />
+        <TextField
+          label="Description"
+          value={description}
+          onChange={(e) => setDescription(e.target.value)}
+          fullWidth
+          multiline
+          minRows={2}
+          maxRows={6}
+        />
 
         <FormControl fullWidth disabled={categoriesLoading}>
           <InputLabel>Category *</InputLabel>
           <Select
-            value={categories.some((category: any) => Number(category.id) === categoryId) ? categoryId : ''}
+            value={
+              categories.some((category: any) => Number(category.id) === categoryId)
+                ? categoryId
+                : ''
+            }
             onChange={(e) => setCategoryId(Number(e.target.value))}
             label="Category *"
           >
             <MenuItem value="">{categoriesLoading ? 'Loading...' : 'Select a category'}</MenuItem>
             {categories.map((category: any) => (
-              <MenuItem key={category.id} value={category.id}>{category.name}</MenuItem>
+              <MenuItem key={category.id} value={category.id}>
+                {category.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -223,13 +311,19 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
         <FormControl fullWidth disabled={!categoryId || loadingSubs}>
           <InputLabel>SubCategory *</InputLabel>
           <Select
-            value={subCategories.some((subCategory: any) => Number(subCategory.id) === subCategoryId) ? subCategoryId : ''}
+            value={
+              subCategories.some((subCategory: any) => Number(subCategory.id) === subCategoryId)
+                ? subCategoryId
+                : ''
+            }
             onChange={(e) => setSubCategoryId(Number(e.target.value))}
             label="SubCategory *"
           >
             <MenuItem value="">{loadingSubs ? 'Loading...' : 'Select a subcategory'}</MenuItem>
             {subCategories.map((subCategory: any) => (
-              <MenuItem key={subCategory.id} value={subCategory.id}>{subCategory.name}</MenuItem>
+              <MenuItem key={subCategory.id} value={subCategory.id}>
+                {subCategory.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
@@ -243,32 +337,75 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
           >
             <MenuItem value="">{storesLoading ? 'Loading stores...' : 'Select a store'}</MenuItem>
             {stores.map((store: any) => (
-              <MenuItem key={store.id} value={store.id}>{store.name}</MenuItem>
+              <MenuItem key={store.id} value={store.id}>
+                {store.name}
+              </MenuItem>
             ))}
           </Select>
         </FormControl>
 
-        <TextField label="Display Order" type="number" value={displayOrder} onChange={(e) => setDisplayOrder(Number(e.target.value))} fullWidth />
+        <TextField
+          label="Display Order"
+          type="number"
+          value={displayOrder}
+          onChange={(e) => setDisplayOrder(Number(e.target.value))}
+          fullWidth
+        />
 
         <Stack direction={{ xs: 'column', sm: 'row' }} spacing={1}>
-          <FormControlLabel control={<Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />} label="Active" />
-          <FormControlLabel control={<Checkbox checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />} label="Best Seller" />
-          <FormControlLabel control={<Checkbox checked={isTrending} onChange={(e) => setIsTrending(e.target.checked)} />} label="Trending" />
+          <FormControlLabel
+            control={
+              <Checkbox checked={isActive} onChange={(e) => setIsActive(e.target.checked)} />
+            }
+            label="Active"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox checked={bestSeller} onChange={(e) => setBestSeller(e.target.checked)} />
+            }
+            label="Best Seller"
+          />
+          <FormControlLabel
+            control={
+              <Checkbox checked={isTrending} onChange={(e) => setIsTrending(e.target.checked)} />
+            }
+            label="Trending"
+          />
         </Stack>
 
         <VariantForm variants={variants} onChange={setVariants} />
 
         <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, display: 'grid', gap: 1.5 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 2, flexWrap: 'wrap' }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
             <Box>
-              <Typography variant="h6" fontWeight={700}>Main thumbnail</Typography>
+              <Typography variant="h6" fontWeight={700}>
+                Main thumbnail
+              </Typography>
               <Typography variant="body2" color="text.secondary">
                 This is the primary image shown in the product list and product card.
               </Typography>
             </Box>
-            <Chip label={imagePreview ? 'Image selected' : 'No image selected'} color={imagePreview ? 'success' : 'default'} size="small" />
+            <Chip
+              label={imagePreview ? 'Image selected' : 'No image selected'}
+              color={imagePreview ? 'success' : 'default'}
+              size="small"
+            />
           </Box>
-          <input type="file" accept="image/*" onChange={handleImageChange} style={{ display: 'none' }} id="product-image" />
+          <input
+            type="file"
+            accept="image/*"
+            onChange={handleImageChange}
+            style={{ display: 'none' }}
+            id="product-image"
+          />
           <label htmlFor="product-image">
             <Button component="span" variant="outlined" startIcon={<Upload />}>
               {imagePreview ? 'Replace main image' : 'Upload main image'}
@@ -276,14 +413,24 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
           </label>
           {imagePreview && (
             <Box sx={{ position: 'relative', width: 144 }}>
-              <img src={imagePreview} alt="Main preview" style={{ width: 144, height: 144, objectFit: 'cover', borderRadius: 16 }} />
+              <img
+                src={imagePreview}
+                alt="Main preview"
+                style={{ width: 144, height: 144, objectFit: 'cover', borderRadius: 16 }}
+              />
               <IconButton
                 size="small"
                 onClick={() => {
                   setImageFile(null);
                   setImagePreview(undefined);
                 }}
-                sx={{ position: 'absolute', top: 8, right: 8, bgcolor: 'rgba(15,23,42,0.8)', color: '#fff' }}
+                sx={{
+                  position: 'absolute',
+                  top: 8,
+                  right: 8,
+                  bgcolor: 'rgba(15,23,42,0.8)',
+                  color: '#fff',
+                }}
               >
                 <Close fontSize="small" />
               </IconButton>
@@ -291,12 +438,97 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
           )}
         </Paper>
 
-        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, display: 'grid', gap: 2 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2, flexWrap: 'wrap' }}>
+        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, display: 'grid', gap: 1.5 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
             <Box>
-              <Typography variant="h6" fontWeight={700}>Gallery manager</Typography>
+              <Typography variant="h6" fontWeight={700}>
+                Product video
+              </Typography>
               <Typography variant="body2" color="text.secondary">
-                Add secondary product images here. Each image has its own remove button, and you can change the display order.
+                Optional. Upload a short product video to show in the product details.
+              </Typography>
+            </Box>
+            <Chip
+              label={videoPreview ? 'Video ready' : 'Optional'}
+              color={videoPreview ? 'success' : 'default'}
+              size="small"
+            />
+          </Box>
+          <input
+            type="file"
+            accept="video/*"
+            onChange={handleVideoChange}
+            style={{ display: 'none' }}
+            id="product-video"
+          />
+          <label htmlFor="product-video">
+            <Button component="span" variant="outlined" startIcon={<Upload />}>
+              {videoPreview ? 'Replace product video' : 'Upload product video'}
+            </Button>
+          </label>
+          {initialData?.videoUrl && !videoFile && (
+            <Typography variant="caption" color="text.secondary">
+              Current video is already saved. Upload a new file only if you want to replace it.
+            </Typography>
+          )}
+          {videoPreview && (
+            <Box sx={{ position: 'relative', width: '100%', maxWidth: 280 }}>
+              <Box
+                component="video"
+                src={videoPreview}
+                controls
+                sx={{ width: '100%', maxHeight: 220, borderRadius: 2, backgroundColor: '#000' }}
+              />
+              {videoFile && (
+                <IconButton
+                  size="small"
+                  onClick={() => {
+                    if (videoPreview?.startsWith('blob:')) {
+                      URL.revokeObjectURL(videoPreview);
+                    }
+                    setVideoFile(null);
+                    setVideoPreview(initialData?.videoUrl);
+                  }}
+                  sx={{
+                    position: 'absolute',
+                    top: 8,
+                    right: 8,
+                    bgcolor: 'rgba(15,23,42,0.8)',
+                    color: '#fff',
+                  }}
+                >
+                  <Close fontSize="small" />
+                </IconButton>
+              )}
+            </Box>
+          )}
+        </Paper>
+
+        <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3, display: 'grid', gap: 2 }}>
+          <Box
+            sx={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              gap: 2,
+              flexWrap: 'wrap',
+            }}
+          >
+            <Box>
+              <Typography variant="h6" fontWeight={700}>
+                Gallery manager
+              </Typography>
+              <Typography variant="body2" color="text.secondary">
+                Add secondary product images here. Each image has its own remove button, and you can
+                change the display order.
               </Typography>
             </Box>
             <Chip
@@ -306,27 +538,44 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
               color="primary"
               variant="outlined"
             />
-            <input multiple type="file" accept="image/*" onChange={handleGallerySelection} style={{ display: 'none' }} id="gallery-images" />
+            <input
+              multiple
+              type="file"
+              accept="image/*"
+              onChange={handleGallerySelection}
+              style={{ display: 'none' }}
+              id="gallery-images"
+            />
             <label htmlFor="gallery-images">
-              <Button component="span" variant="outlined" startIcon={<Upload />}>Add images to gallery</Button>
+              <Button component="span" variant="outlined" startIcon={<Upload />}>
+                Add images to gallery
+              </Button>
             </label>
           </Box>
 
           {!!existingGalleryImages.length && (
             <>
-              <Typography variant="subtitle2" fontWeight={700}>Existing gallery images</Typography>
+              <Typography variant="subtitle2" fontWeight={700}>
+                Existing gallery images
+              </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                 {existingGalleryImages.map((image) =>
                   renderImageCard(
                     image.id,
                     <>
-                      <img src={image.imageUrl} alt="Gallery" style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }} />
+                      <img
+                        src={image.imageUrl}
+                        alt="Gallery"
+                        style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }}
+                      />
                       <TextField
                         size="small"
                         label="Display Order"
                         type="number"
                         defaultValue={image.displayOrder}
-                        onBlur={(e) => handleUpdateExistingGalleryOrder(image.id, Number(e.target.value))}
+                        onBlur={(e) =>
+                          handleUpdateExistingGalleryOrder(image.id, Number(e.target.value))
+                        }
                       />
                       <Button
                         color="error"
@@ -337,8 +586,8 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
                       >
                         Delete this image
                       </Button>
-                    </>
-                  )
+                    </>,
+                  ),
                 )}
               </Box>
               <Divider />
@@ -347,25 +596,38 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
 
           {!!pendingGalleryUploads.length && (
             <>
-              <Typography variant="subtitle2" fontWeight={700}>New images to upload</Typography>
+              <Typography variant="subtitle2" fontWeight={700}>
+                New images to upload
+              </Typography>
               <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1.5 }}>
                 {pendingGalleryUploads.map((item, index) =>
                   renderImageCard(
                     `${item.file.name}-${index}`,
                     <>
-                      <img src={item.previewUrl} alt={item.file.name} style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }} />
+                      <img
+                        src={item.previewUrl}
+                        alt={item.file.name}
+                        style={{ width: '100%', height: 120, objectFit: 'cover', borderRadius: 12 }}
+                      />
                       <TextField
                         size="small"
                         label="Display Order"
                         type="number"
                         value={item.displayOrder}
-                        onChange={(e) => handlePendingGalleryOrderChange(index, Number(e.target.value))}
+                        onChange={(e) =>
+                          handlePendingGalleryOrderChange(index, Number(e.target.value))
+                        }
                       />
-                      <Button color="error" variant="outlined" startIcon={<Delete />} onClick={() => removePendingGalleryUpload(index)}>
+                      <Button
+                        color="error"
+                        variant="outlined"
+                        startIcon={<Delete />}
+                        onClick={() => removePendingGalleryUpload(index)}
+                      >
                         Remove before save
                       </Button>
-                    </>
-                  )
+                    </>,
+                  ),
                 )}
               </Box>
             </>
@@ -379,7 +641,9 @@ export default function ProductForm({ initialData, onSave, onClose }: Props) {
         </Paper>
 
         <Stack direction={{ xs: 'column', sm: 'row' }} justifyContent="flex-end" spacing={1.5}>
-          <Button onClick={onClose} disabled={submitting}>Cancel</Button>
+          <Button onClick={onClose} disabled={submitting}>
+            Cancel
+          </Button>
           <Button type="submit" variant="contained" disabled={submitting || storesLoading}>
             {submitting ? 'Saving...' : initialData?.id ? 'Update Product' : 'Create Product'}
           </Button>

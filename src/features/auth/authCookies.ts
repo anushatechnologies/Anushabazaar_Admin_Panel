@@ -6,9 +6,19 @@ export interface StoredAuthUser {
   mustChangePassword?: boolean;
 }
 
+export interface StoredAdminAccessChallenge {
+  challengeToken: string;
+  id: number;
+  email: string;
+  role: string;
+  name?: string;
+  mustChangePassword?: boolean;
+}
+
 const ACCESS_TOKEN_COOKIE = 'anusha_admin_token';
 const REFRESH_TOKEN_COOKIE = 'anusha_admin_refresh_token';
 const USER_COOKIE = 'anusha_admin_user';
+const ADMIN_ACCESS_CHALLENGE_KEY = 'anusha_admin_access_challenge';
 const REFRESH_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 const USER_COOKIE_MAX_AGE = 30 * 24 * 60 * 60;
 
@@ -81,8 +91,34 @@ export const saveAuthSession = (params: {
   }
 };
 
+export const getStoredAdminAccessChallenge = (): StoredAdminAccessChallenge | null => {
+  if (typeof window === 'undefined') return null;
+
+  const saved = window.sessionStorage.getItem(ADMIN_ACCESS_CHALLENGE_KEY);
+  if (!saved) return null;
+
+  try {
+    return JSON.parse(saved) as StoredAdminAccessChallenge;
+  } catch (error) {
+    console.error('Error parsing admin access challenge:', error);
+    window.sessionStorage.removeItem(ADMIN_ACCESS_CHALLENGE_KEY);
+    return null;
+  }
+};
+
+export const saveAdminAccessChallenge = (challenge: StoredAdminAccessChallenge) => {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.setItem(ADMIN_ACCESS_CHALLENGE_KEY, JSON.stringify(challenge));
+};
+
+export const clearAdminAccessChallenge = () => {
+  if (typeof window === 'undefined') return;
+  window.sessionStorage.removeItem(ADMIN_ACCESS_CHALLENGE_KEY);
+};
+
 export const clearAuthSession = () => {
   clearCookieValue(ACCESS_TOKEN_COOKIE);
   clearCookieValue(REFRESH_TOKEN_COOKIE);
   clearCookieValue(USER_COOKIE);
+  clearAdminAccessChallenge();
 };
