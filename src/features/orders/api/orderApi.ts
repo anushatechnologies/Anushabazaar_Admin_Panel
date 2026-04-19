@@ -109,6 +109,15 @@ export const orderApi = baseApiWithAuth.injectEndpoints({
       }),
     }),
 
+    // Notify store via WhatsApp BEFORE admin formally accepts — store can ACCEPT/REJECT
+    // POST /api/admin/orders/{orderId}/notify-store
+    notifyStore: builder.mutation<{ success: boolean; message: string }, number>({
+      query: (orderId) => ({
+        url: `/api/admin/orders/${orderId}/notify-store`,
+        method: 'POST',
+      }),
+    }),
+
     // Broadcast order to all riders of a vehicle type (first-come-first-serve)
     broadcastOrder: builder.mutation<
       {
@@ -145,5 +154,6 @@ export const {
   useAdminStoreAcceptMutation,
   useGenerateDeliveryOtpMutation,
   useSendStorePickupOtpMutation,
+  useNotifyStoreMutation,
   useBroadcastOrderMutation,
 } = orderApi;

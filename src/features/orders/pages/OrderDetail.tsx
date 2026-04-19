@@ -32,6 +32,8 @@ import {
   Inventory as InventoryIcon,
   CheckCircle as CheckIcon,
   Cancel as CancelIcon,
+  AccountBalanceWallet as WalletIcon,
+  Warning as WarningIcon,
 } from '@mui/icons-material';
 import { motion } from 'framer-motion';
 import {
@@ -318,13 +320,67 @@ const OrderDetail: React.FC = () => {
               <Stack spacing={1} sx={{ mt: 2 }}>
                 <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
                   <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                    Subtotal
+                  </Typography>
+                  <Typography variant="body2" fontWeight={700}>
+                    ₹{Number(order.subtotal || 0).toFixed(2)}
+                  </Typography>
+                </Box>
+                {Number(order.deliveryCharge) > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                      Delivery
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700}>
+                      ₹{Number(order.deliveryCharge).toFixed(2)}
+                    </Typography>
+                  </Box>
+                )}
+                {Number(order.discount) > 0 && (
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                    <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                      Discount
+                    </Typography>
+                    <Typography variant="body2" fontWeight={700} color="#10b981">
+                      −₹{Number(order.discount).toFixed(2)}
+                    </Typography>
+                  </Box>
+                )}
+                {Number(order.walletApplied) > 0 && (
+                  <Box
+                    sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                  >
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <WalletIcon sx={{ fontSize: 14, color: '#6366f1' }} />
+                      <Typography variant="body2" sx={{ opacity: 0.7 }}>
+                        Wallet Paid
+                      </Typography>
+                    </Box>
+                    <Typography variant="body2" fontWeight={800} color="#6366f1">
+                      ₹{Number(order.walletApplied).toFixed(2)}
+                    </Typography>
+                  </Box>
+                )}
+                <Divider sx={{ opacity: 0.2, my: 0.5 }} />
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" fontWeight={800}>
+                    Grand Total
+                  </Typography>
+                  <Typography variant="body2" fontWeight={900} color={currentTheme.accent}>
+                    ₹{Number(order.grandTotal).toFixed(2)}
+                  </Typography>
+                </Box>
+                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                  <Typography variant="body2" sx={{ opacity: 0.7 }}>
                     Method
                   </Typography>
                   <Typography variant="body2" fontWeight={800}>
                     {order.paymentMethod}
                   </Typography>
                 </Box>
-                <Box sx={{ display: 'flex', justifyContent: 'space-between' }}>
+                <Box
+                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}
+                >
                   <Typography variant="body2" sx={{ opacity: 0.7 }}>
                     Status
                   </Typography>
@@ -335,6 +391,26 @@ const OrderDetail: React.FC = () => {
                     {order.paymentStatus}
                   </GlassBadge>
                 </Box>
+                {order.orderStatus?.toLowerCase() === 'cancelled' &&
+                  order.paymentMethod?.toUpperCase() === 'WALLET' && (
+                    <Box
+                      sx={{
+                        mt: 1,
+                        p: 1.5,
+                        borderRadius: 2,
+                        bgcolor: '#6366f110',
+                        border: '1px solid #6366f130',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: 1,
+                      }}
+                    >
+                      <WalletIcon sx={{ fontSize: 16, color: '#6366f1' }} />
+                      <Typography variant="caption" fontWeight={700} color="#6366f1">
+                        ₹{Number(order.grandTotal).toFixed(2)} refunded to customer wallet
+                      </Typography>
+                    </Box>
+                  )}
               </Stack>
             </GlassCard>
           </Stack>
@@ -512,6 +588,32 @@ const OrderDetail: React.FC = () => {
       >
         <DialogTitle sx={{ fontWeight: 900 }}>Reject Confirmation</DialogTitle>
         <DialogContent>
+          {order.paymentMethod?.toUpperCase() === 'WALLET' && (
+            <Box
+              sx={{
+                mb: 2,
+                p: 2,
+                borderRadius: 2,
+                bgcolor: '#f59e0b10',
+                border: '1px solid #f59e0b40',
+                display: 'flex',
+                gap: 1.5,
+                alignItems: 'flex-start',
+              }}
+            >
+              <WarningIcon sx={{ color: '#f59e0b', mt: 0.2, fontSize: 20 }} />
+              <Box>
+                <Typography variant="body2" fontWeight={800} color="#b45309">
+                  Wallet-paid order — refund will be issued automatically
+                </Typography>
+                <Typography variant="caption" sx={{ opacity: 0.85 }}>
+                  Confirming rejection will immediately credit{' '}
+                  <strong>₹{Number(order.grandTotal).toFixed(2)}</strong> back to the customer's
+                  wallet. This cannot be undone.
+                </Typography>
+              </Box>
+            </Box>
+          )}
           <DialogContentText mb={2} sx={{ opacity: 0.8 }}>
             Please specify the reason for the rejection. The customer will see this message.
           </DialogContentText>

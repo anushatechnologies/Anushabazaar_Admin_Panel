@@ -43,6 +43,8 @@ export interface OrderResponse {
   deliveryCharge?: number;
   platformFee?: number;
   discount?: number;
+  walletApplied?: number;
+  paidAmount?: number;
   orderStatus: string;
   status?: string;
   paymentStatus: string;
@@ -72,6 +74,8 @@ export interface AdminOrderSummaryDto {
   orderStatus: string;
   paymentStatus: string;
   placedAt: string;
+  riderAssigned?: boolean;
+  deliveryPersonName?: string;
   /** Populated when order spans multiple stores */
   storeNames?: string[];
   storeIds?: number[];
@@ -93,6 +97,8 @@ export interface AdminOrderDetailDto {
   deliveryCharge?: number;
   platformFee?: number;
   discount?: number;
+  walletApplied?: number;
+  paidAmount?: number;
   grandTotal: number;
   paymentMethod: string;
   orderStatus: string;

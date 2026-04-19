@@ -1,5 +1,6 @@
 import { getApp, getApps, initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { getDatabase } from 'firebase/database';
 
 const firebaseConfig = {
   apiKey: import.meta.env.VITE_FIREBASE_API_KEY,
@@ -8,6 +9,7 @@ const firebaseConfig = {
   appId: import.meta.env.VITE_FIREBASE_APP_ID,
   messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID,
   storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET,
+  databaseURL: import.meta.env.VITE_FIREBASE_DATABASE_URL,
 };
 
 const requiredKeys = ['apiKey', 'authDomain', 'projectId', 'appId'] as const;
@@ -24,3 +26,6 @@ ensureFirebaseConfig();
 const firebaseApp = getApps().length > 0 ? getApp() : initializeApp(firebaseConfig);
 
 export const firebaseAuth = getAuth(firebaseApp);
+
+// Realtime Database — only available when VITE_FIREBASE_DATABASE_URL is set
+export const firebaseDb = firebaseConfig.databaseURL ? getDatabase(firebaseApp) : null;

@@ -51,6 +51,7 @@ import {
   useAssignDeliveryMutation,
   useGenerateDeliveryOtpMutation,
   useSendStorePickupOtpMutation,
+  useNotifyStoreMutation,
   useBroadcastOrderMutation,
 } from '../api/orderApi';
 import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/deliveryApi';
@@ -126,12 +127,14 @@ const AdminOrderDashboard: React.FC = () => {
   );
 
   const [sendingOtpOrderId, setSendingOtpOrderId] = useState<number | null>(null);
+  const [notifyingStoreOrderId, setNotifyingStoreOrderId] = useState<number | null>(null);
 
   const [acceptOrder] = useAcceptOrderMutation();
   const [rejectOrder, { isLoading: isRejecting }] = useRejectOrderMutation();
   const [assignDelivery, { isLoading: isAssigning }] = useAssignDeliveryMutation();
   const [generateOtp, { isLoading: isGeneratingOtp }] = useGenerateDeliveryOtpMutation();
   const [sendStoreOtp, { isLoading: isSendingStoreOtp }] = useSendStorePickupOtpMutation();
+  const [notifyStore] = useNotifyStoreMutation();
   const [broadcastOrder, { isLoading: isBroadcasting }] = useBroadcastOrderMutation();
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
@@ -245,7 +248,20 @@ const AdminOrderDashboard: React.FC = () => {
       const res = await generateOtp(orderId).unwrap();
       toast.success(`New Delivery OTP: ${res.deliveryOtp}`, 6000);
     } catch (error: any) {
-      toast.error('Failed to generate OTP');
+      toast.error(error?.data?.error || error?.data?.message || 'Failed to generate OTP');
+    }
+  };
+
+  const handleNotifyStore = async (orderId: number) => {
+    if (notifyingStoreOrderId === orderId) return;
+    setNotifyingStoreOrderId(orderId);
+    try {
+      await notifyStore(orderId).unwrap();
+      toast.success('Store notified via WhatsApp! Waiting for store response...');
+    } catch (error: any) {
+      toast.error(error?.data?.message || 'Failed to notify store');
+    } finally {
+      setNotifyingStoreOrderId(null);
     }
   };
 
@@ -396,6 +412,11 @@ const AdminOrderDashboard: React.FC = () => {
                         <Typography variant="caption" color="text.secondary">
                           {order.customerPhone}
                         </Typography>
+                        {order.deliveryPersonName && (
+                          <Typography variant="caption" display="block" color="primary.main">
+                            Rider: {order.deliveryPersonName}
+                          </Typography>
+                        )}
                         {(order as any).storeNames?.length > 0 && (
                           <Stack
                             direction="row"
@@ -467,6 +488,16 @@ const AdminOrderDashboard: React.FC = () => {
                             <>
                               <Button
                                 size="small"
+                                variant="outlined"
+                                color="warning"
+                                startIcon={<StoreIcon fontSize="small" />}
+                                onClick={() => handleNotifyStore(order.id)}
+                                disabled={notifyingStoreOrderId === order.id}
+                              >
+                                {notifyingStoreOrderId === order.id ? 'Notifying…' : 'Notify Store'}
+                              </Button>
+                              <Button
+                                size="small"
                                 color="success"
                                 onClick={() => handleAcceptOrder(order.id)}
                               >
@@ -508,17 +539,32 @@ const AdminOrderDashboard: React.FC = () => {
                               </Button>
                             </Stack>
                           )}
-                          {(order.orderStatus ?? '').toLowerCase() === 'assigned' && (
-                            <Button
-                              variant="outlined"
-                              size="small"
-                              startIcon={<OtpIcon fontSize="small" />}
-                              onClick={() => handleGenerateOtp(order.id)}
-                              disabled={isGeneratingOtp}
-                            >
-                              {isGeneratingOtp ? 'Generating…' : 'Delivery OTP'}
-                            </Button>
-                          )}
+                          {(order.orderStatus ?? '').toLowerCase() === 'assigned' &&
+                            order.riderAssigned === false && (
+                              <Button
+                                variant="contained"
+                                size="small"
+                                onClick={() => {
+                                  setSelectedOrderId(order.id);
+                                  setAssignDialogOpen(true);
+                                }}
+                                startIcon={<LocalShippingIcon />}
+                              >
+                                Assign Rider
+                              </Button>
+                            )}
+                          {(order.orderStatus ?? '').toLowerCase() === 'assigned' &&
+                            order.riderAssigned !== false && (
+                              <Button
+                                variant="outlined"
+                                size="small"
+                                startIcon={<OtpIcon fontSize="small" />}
+                                onClick={() => handleGenerateOtp(order.id)}
+                                disabled={isGeneratingOtp}
+                              >
+                                {isGeneratingOtp ? 'Generating…' : 'Delivery OTP'}
+                              </Button>
+                            )}
                         </Stack>
                       </TableCell>
                     </TableRow>
@@ -617,6 +663,28 @@ const AdminOrderDashboard: React.FC = () => {
                     </Paper>
                   </Grid>
                 )}
+
+                {(orderDetail.orderStatus ?? '').toLowerCase() === 'assigned' &&
+                  !orderDetail.deliveryPersonName && (
+                    <Grid size={12}>
+                      <Alert
+                        severity="warning"
+                        action={
+                          <Button
+                            color="inherit"
+                            size="small"
+                            onClick={() => {
+                              setAssignDialogOpen(true);
+                            }}
+                          >
+                            Assign Rider
+                          </Button>
+                        }
+                      >
+                        This order is marked as assigned, but no rider is linked yet.
+                      </Alert>
+                    </Grid>
+                  )}
 
                 {/* Pricing breakdown */}
                 {(orderDetail as any).subtotal != null && (
@@ -873,22 +941,23 @@ const AdminOrderDashboard: React.FC = () => {
                 )}
                 <Grid size={12}>
                   <Stack direction="row" spacing={1} justifyContent="flex-end" sx={{ mb: 2 }}>
-                    {(orderDetail.orderStatus ?? '').toLowerCase() === 'assigned' && (
-                      <Button
-                        variant="outlined"
-                        startIcon={
-                          isGeneratingOtp ? (
-                            <CircularProgress size={16} color="inherit" />
-                          ) : (
-                            <OtpIcon />
-                          )
-                        }
-                        onClick={() => handleGenerateOtp(orderDetail.id)}
-                        disabled={isGeneratingOtp}
-                      >
-                        {isGeneratingOtp ? 'Generating…' : 'Generate Delivery OTP'}
-                      </Button>
-                    )}
+                    {(orderDetail.orderStatus ?? '').toLowerCase() === 'assigned' &&
+                      orderDetail.deliveryPersonName && (
+                        <Button
+                          variant="outlined"
+                          startIcon={
+                            isGeneratingOtp ? (
+                              <CircularProgress size={16} color="inherit" />
+                            ) : (
+                              <OtpIcon />
+                            )
+                          }
+                          onClick={() => handleGenerateOtp(orderDetail.id)}
+                          disabled={isGeneratingOtp}
+                        >
+                          {isGeneratingOtp ? 'Generating…' : 'Generate Delivery OTP'}
+                        </Button>
+                      )}
                   </Stack>
                 </Grid>
                 <Grid size={12}>
