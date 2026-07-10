@@ -42,6 +42,7 @@ import {
   Store as StoreIcon,
   Send as SendIcon,
   CellTower as BroadcastIcon,
+  CurrencyRupee as RefundIcon,
 } from '@mui/icons-material';
 import {
   useGetAdminOrdersQuery,
@@ -53,6 +54,7 @@ import {
   useSendStorePickupOtpMutation,
   useNotifyStoreMutation,
   useBroadcastOrderMutation,
+  useRefundAdminOrderMutation,
 } from '../api/orderApi';
 import { useGetAvailableDeliveryPersonsQuery } from '../../delivery/api/deliveryApi';
 import { AdminOrderSummaryDto, CustomerAddressDto } from '../types/index';
@@ -96,8 +98,11 @@ const AdminOrderDashboard: React.FC = () => {
   const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null);
   const [detailDialogOpen, setDetailDialogOpen] = useState(false);
   const [rejectDialogOpen, setRejectDialogOpen] = useState(false);
+  const [refundDialogOpen, setRefundDialogOpen] = useState(false);
   const [assignDialogOpen, setAssignDialogOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState('');
+  const [refundReason, setRefundReason] = useState('');
+  const [refundAmount, setRefundAmount] = useState('');
   const [selectedDeliveryPerson, setSelectedDeliveryPerson] = useState<number | null>(null);
   const [activeTab, setActiveTab] = useState(0);
   // Broadcast (vehicle-type FCFS) state
@@ -136,6 +141,7 @@ const AdminOrderDashboard: React.FC = () => {
   const [sendStoreOtp, { isLoading: isSendingStoreOtp }] = useSendStorePickupOtpMutation();
   const [notifyStore] = useNotifyStoreMutation();
   const [broadcastOrder, { isLoading: isBroadcasting }] = useBroadcastOrderMutation();
+  const [refundAdminOrder, { isLoading: isRefunding }] = useRefundAdminOrderMutation();
 
   const { data: availablePersonnel, isLoading: isLoadingPersonnel } =
     useGetAvailableDeliveryPersonsQuery();
@@ -198,6 +204,25 @@ const AdminOrderDashboard: React.FC = () => {
       } catch (error) {
         toast.error('Failed to reject order');
       }
+    }
+  };
+
+  const handleRefundOrder = async () => {
+    if (!selectedOrderId) return;
+    try {
+      const amount = Number(refundAmount);
+      const res = await refundAdminOrder({
+        orderId: selectedOrderId,
+        ...(amount > 0 ? { amount } : {}),
+        reason: refundReason.trim() || 'Refund processed by admin',
+      }).unwrap();
+      toast.success(res.message || 'Refund processed successfully!');
+      setRefundDialogOpen(false);
+      setRefundReason('');
+      setRefundAmount('');
+      refetch();
+    } catch (error: any) {
+      toast.error(error?.data?.message || error?.data?.error || 'Failed to process refund');
     }
   };
 
@@ -280,7 +305,15 @@ const AdminOrderDashboard: React.FC = () => {
 
   const formatAddress = (addr?: CustomerAddressDto) => {
     if (!addr) return 'No address provided';
-    return `${addr.addressLine1}${addr.addressLine2 ? ', ' + addr.addressLine2 : ''}, ${addr.landmark ? addr.landmark + ', ' : ''}${addr.city}, ${addr.state} - ${addr.postalCode}`;
+    const parts = [
+      addr.flatNumber,
+      addr.addressLine1,
+      addr.addressLine2,
+      addr.landmark,
+      addr.city,
+      addr.state,
+    ].filter((value): value is string => Boolean(value && String(value).trim()));
+    return `${parts.join(', ')}${addr.postalCode ? ' - ' + addr.postalCode : ''}`;
   };
 
   if (isLoading)
@@ -694,10 +727,25 @@ const AdminOrderDashboard: React.FC = () => {
                         Pricing Breakdown
                       </Typography>
                       <Stack spacing={0.5}>
+                        {(() => {
+                          const walletApplied = Number((orderDetail as any).walletApplied ?? 0);
+                          const remainingPayable = Math.max(
+                            Number(orderDetail.grandTotal ?? 0) - walletApplied,
+                            0,
+                          );
+
+                          return (
+                            <>
                         {[
                           { label: 'Subtotal', value: (orderDetail as any).subtotal },
                           { label: 'Delivery', value: (orderDetail as any).deliveryCharge },
                           { label: 'Platform Fee', value: (orderDetail as any).platformFee },
+                          { label: 'Small Cart Fee', value: (orderDetail as any).smallCartFee },
+                          { label: 'Taxable Value', value: (orderDetail as any).taxableAmount },
+                          { label: 'CGST', value: (orderDetail as any).cgstAmount },
+                          { label: 'SGST', value: (orderDetail as any).sgstAmount },
+                          { label: 'IGST', value: (orderDetail as any).igstAmount },
+                          { label: 'Total GST', value: (orderDetail as any).tax },
                           { label: 'Discount', value: -((orderDetail as any).discount ?? 0) },
                         ].map(
                           ({ label, value }) =>
@@ -717,6 +765,16 @@ const AdminOrderDashboard: React.FC = () => {
                               </Box>
                             ),
                         )}
+                        {walletApplied > 0 && (
+                          <Box display="flex" justifyContent="space-between">
+                            <Typography variant="body2" color="primary.main">
+                              Wallet Paid
+                            </Typography>
+                            <Typography variant="body2" fontWeight={700} color="primary.main">
+                              ₹{walletApplied.toFixed(2)}
+                            </Typography>
+                          </Box>
+                        )}
                         <Box
                           display="flex"
                           justifyContent="space-between"
@@ -731,6 +789,86 @@ const AdminOrderDashboard: React.FC = () => {
                             ₹{orderDetail.grandTotal?.toFixed(2)}
                           </Typography>
                         </Box>
+                        {walletApplied > 0 && (
+                          <Box display="flex" justifyContent="space-between">
+                            <Typography variant="subtitle2" fontWeight={800}>
+                              Remaining Payable
+                            </Typography>
+                            <Typography variant="subtitle2" fontWeight={800} color="secondary.main">
+                              ₹{remainingPayable.toFixed(2)}
+                            </Typography>
+                          </Box>
+                        )}
+                            </>
+                          );
+                        })()}
+                      </Stack>
+                    </Paper>
+                  </Grid>
+                )}
+
+                {/* Refund status/action */}
+                {['ONLINE', 'ONLINE_WALLET'].includes(
+                  String(orderDetail.paymentMethod || '').toUpperCase(),
+                ) && (
+                  <Grid size={12}>
+                    <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
+                      <Stack
+                        direction={{ xs: 'column', sm: 'row' }}
+                        justifyContent="space-between"
+                        alignItems={{ xs: 'flex-start', sm: 'center' }}
+                        spacing={2}
+                      >
+                        <Box>
+                          <Typography variant="overline" color="text.secondary" display="block">
+                            Cashfree Refund
+                          </Typography>
+                          <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+                            <Chip
+                              size="small"
+                              label={(orderDetail as any).refundStatus || 'NOT_REQUESTED'}
+                              color={
+                                (orderDetail as any).refundStatus === 'PROCESSED'
+                                  ? 'success'
+                                  : (orderDetail as any).refundStatus === 'FAILED'
+                                    ? 'error'
+                                    : 'warning'
+                              }
+                              variant="outlined"
+                            />
+                            {(orderDetail as any).refundAmount > 0 && (
+                              <Typography variant="body2" color="text.secondary">
+                                ₹{Number((orderDetail as any).refundAmount).toFixed(2)}
+                              </Typography>
+                            )}
+                            {(orderDetail as any).refundId && (
+                              <Typography variant="caption" color="text.secondary">
+                                {(orderDetail as any).refundId}
+                              </Typography>
+                            )}
+                          </Stack>
+                        </Box>
+                        <Button
+                          variant="contained"
+                          color="warning"
+                          startIcon={<RefundIcon />}
+                          disabled={
+                            isRefunding ||
+                            !['PAID', 'PARTIALLY_REFUNDED'].includes(
+                              String(orderDetail.paymentStatus || '').toUpperCase(),
+                            ) ||
+                            ['PROCESSED', 'PENDING'].includes(
+                              String((orderDetail as any).refundStatus || '').toUpperCase(),
+                            )
+                          }
+                          onClick={() => {
+                            setRefundReason(`Refund for order ${orderDetail.orderNumber}`);
+                            setRefundAmount('');
+                            setRefundDialogOpen(true);
+                          }}
+                        >
+                          Process Refund
+                        </Button>
                       </Stack>
                     </Paper>
                   </Grid>
@@ -978,6 +1116,44 @@ const AdminOrderDashboard: React.FC = () => {
             )
           )}
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={refundDialogOpen} onClose={() => setRefundDialogOpen(false)} fullWidth maxWidth="sm">
+        <DialogTitle>Process Cashfree Refund</DialogTitle>
+        <DialogContent>
+          <Stack spacing={2} sx={{ mt: 1 }}>
+            <Alert severity="warning">
+              Leave amount empty for full Cashfree paid amount. Enter amount only for partial refund.
+            </Alert>
+            <TextField
+              fullWidth
+              label="Refund Amount"
+              placeholder="Optional, e.g. 100"
+              value={refundAmount}
+              type="number"
+              onChange={(e) => setRefundAmount(e.target.value)}
+            />
+            <TextField
+              fullWidth
+              multiline
+              rows={3}
+              label="Reason"
+              value={refundReason}
+              onChange={(e) => setRefundReason(e.target.value)}
+            />
+          </Stack>
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setRefundDialogOpen(false)}>Cancel</Button>
+          <Button
+            variant="contained"
+            color="warning"
+            onClick={handleRefundOrder}
+            disabled={isRefunding}
+          >
+            {isRefunding ? 'Processing...' : 'Refund'}
+          </Button>
+        </DialogActions>
       </Dialog>
 
       <Dialog open={rejectDialogOpen} onClose={() => setRejectDialogOpen(false)}>
