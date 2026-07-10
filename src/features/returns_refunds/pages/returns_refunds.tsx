@@ -1,5 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Divider, Button, Stack, TextField, CircularProgress } from '@mui/material';
+import {
+  Box,
+  Typography,
+  Divider,
+  Button,
+  Stack,
+  TextField,
+  CircularProgress,
+} from '@mui/material';
 import { useGetPolicyQuery, useUpdatePolicyMutation } from '../../settings/api/policyApi';
 
 const PoliciesPage = () => {
@@ -8,6 +16,7 @@ const PoliciesPage = () => {
   const [isEditing, setIsEditing] = useState(false);
 
   const [content, setContent] = useState({
+    cancellationAndRefund: '',
     taxes: '',
     cancellation: '',
     returns: '',
@@ -24,7 +33,7 @@ const PoliciesPage = () => {
         setContent(parsed);
       } catch (e) {
         // Fallback for raw text if needed, but we'll try to keep it as JSON
-        setContent(prev => ({ ...prev, returns: data.policy.content }));
+        setContent((prev) => ({ ...prev, returns: data.policy.content }));
       }
     }
   }, [data]);
@@ -61,8 +70,33 @@ const PoliciesPage = () => {
           boxShadow: '0 4px 20px rgba(0,0,0,0.05)',
         }}
       >
+        {/* CANCELLATION & REFUND POLICY */}
+        <Typography sx={{ fontSize: '24px', fontWeight: 700, mb: 3 }}>
+          Cancellation & Refund Policy
+        </Typography>
+        {isEditing ? (
+          <TextField
+            fullWidth
+            multiline
+            rows={10}
+            value={content.cancellationAndRefund}
+            onChange={(e) => setContent({ ...content, cancellationAndRefund: e.target.value })}
+            sx={{ mb: 4, backgroundColor: 'var(--bg-color)' }}
+          />
+        ) : (
+          <Typography
+            sx={{ fontSize: '15px', lineHeight: 1.8, opacity: 0.8, mb: 4, whiteSpace: 'pre-line' }}
+          >
+            {content.cancellationAndRefund}
+          </Typography>
+        )}
+
+        <Divider sx={{ my: 4, borderColor: 'var(--border-soft)' }} />
+
         {/* TAXES */}
-        <Typography sx={{ fontSize: '24px', fontWeight: 700, mb: 3 }}>Taxes on Your Order</Typography>
+        <Typography sx={{ fontSize: '24px', fontWeight: 700, mb: 3 }}>
+          Taxes on Your Order
+        </Typography>
         {isEditing ? (
           <TextField
             fullWidth
@@ -83,7 +117,9 @@ const PoliciesPage = () => {
         <Divider sx={{ my: 4, borderColor: 'var(--border-soft)' }} />
 
         {/* ORDER CANCELLATION */}
-        <Typography sx={{ fontSize: '24px', fontWeight: 700, mb: 3 }}>Order Cancellation</Typography>
+        <Typography sx={{ fontSize: '24px', fontWeight: 700, mb: 3 }}>
+          Order Cancellation
+        </Typography>
         {isEditing ? (
           <TextField
             fullWidth
